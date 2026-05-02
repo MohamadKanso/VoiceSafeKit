@@ -108,7 +108,6 @@ const clearButton = document.querySelector("#clearButton");
 const fileInput = document.querySelector("#fileInput");
 const recordingStatus = document.querySelector("#recordingStatus");
 const recorderCard = document.querySelector(".recorder-card");
-const audioPreview = document.querySelector("#audioPreview");
 const decisionEl = document.querySelector("#decision");
 const scoreEl = document.querySelector("#score");
 const summaryEl = document.querySelector("#summary");
@@ -119,9 +118,6 @@ const heroDecision = document.querySelector("#heroDecision");
 const heroSummary = document.querySelector("#heroSummary");
 const sampleButtons = [...document.querySelectorAll("[data-sample]")];
 
-let mediaRecorder = null;
-let audioChunks = [];
-let activeStream = null;
 let recognition = null;
 let isRecordingActive = false;
 let recordingBaseText = "";
@@ -275,69 +271,35 @@ function setSample(name) {
 
 // ─── recording ──────────────────────────────────────────────────────────────
 
-async function startRecording() {
-  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+function startRecording() {
+  if (!SpeechRecognition) {
     recordingStatus.textContent =
-      "This browser cannot record audio here. Try Chrome or Edge on the HTTPS GitHub Pages link.";
+      "Live speech-to-text is not supported in this browser. Try Chrome or Edge.";
     startRecordingButton.disabled = true;
     return;
   }
 
-  try {
-    activeStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    audioChunks = [];
-    isRecordingActive = true;
-    mediaRecorder = new MediaRecorder(activeStream);
-    recordingBaseText = transcriptInput.value.trim();
-    speechText = "";
-
-    mediaRecorder.addEventListener("dataavailable", (event) => {
-      if (event.data.size > 0) audioChunks.push(event.data);
-    });
-
-    mediaRecorder.addEventListener("stop", () => {
-      const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || "audio/webm" });
-      audioPreview.src = URL.createObjectURL(audioBlob);
-      audioPreview.hidden = false;
-      activeStream?.getTracks().forEach((t) => t.stop());
-      activeStream = null;
-      recorderCard.classList.remove("recording");
-      startRecordingButton.disabled = false;
-      stopRecordingButton.disabled = true;
-      mediaRecorder = null;
-      recordingStatus.textContent =
-        speechText.trim().length > 0
-          ? "Done. Transcript updated from your recording."
-          : "Recording saved. If no words appeared, your browser may not support live speech-to-text — paste the transcript manually.";
-      refresh();
-    });
-
-    mediaRecorder.start();
-    startSpeechRecognition();
-    recorderCard.classList.add("recording");
-    startRecordingButton.disabled = true;
-    stopRecordingButton.disabled = false;
-    recordingStatus.textContent = SpeechRecognition
-      ? "Listening — speak now. Words will appear automatically."
-      : "Recording audio. Live speech-to-text is not available in this browser.";
-  } catch (error) {
-    isRecordingActive = false;
-    recordingStatus.textContent = `Microphone access failed: ${error.message}`;
-    activeStream?.getTracks().forEach((t) => t.stop());
-    activeStream = null;
-    if (mediaRecorder?.state === "recording") mediaRecorder.stop();
-    recorderCard.classList.remove("recording");
-    startRecordingButton.disabled = false;
-    stopRecordingButton.disabled = true;
-  }
+  isRecordingActive = true;
+  recordingBaseText = transcriptInput.value.trim();
+  speechText = "";
+  recorderCard.classList.add("recording");
+  startRecordingButton.disabled = true;
+  stopRecordingButton.disabled = false;
+  recordingStatus.textContent = "Listening — speak now. Words will appear automatically.";
+  startSpeechRecognition();
 }
 
 function stopRecording() {
   isRecordingActive = false;
   stopSpeechRecognition();
-  if (mediaRecorder?.state === "recording") {
-    mediaRecorder.stop();
-  }
+  recorderCard.classList.remove("recording");
+  startRecordingButton.disabled = false;
+  stopRecordingButton.disabled = true;
+  recordingStatus.textContent =
+    speechText.trim().length > 0
+      ? "Done. Your words are in the transcript box below."
+      : "Stopped. Nothing was heard — check your microphone or try again.";
+  refresh();
 }
 
 function stopSpeechRecognition() {
@@ -414,7 +376,6 @@ async function handleFileUpload(event) {
   if (!file) return;
 
   const isText = file.type.startsWith("text/") || /\.(txt|md|json)$/i.test(file.name);
-  const isAudio = file.type.startsWith("audio/");
 
   if (isText) {
     transcriptInput.value = await file.text();
@@ -423,22 +384,12 @@ async function handleFileUpload(event) {
     return;
   }
 
-  if (isAudio) {
-    audioPreview.src = URL.createObjectURL(file);
-    audioPreview.hidden = false;
-    recordingStatus.textContent =
-      `Audio loaded: ${file.name}. Paste or type the transcript below to check it.`;
-    return;
-  }
-
-  recordingStatus.textContent = "Unsupported file. Upload a .txt transcript or an audio file.";
+  recordingStatus.textContent = "Unsupported file. Upload a .txt transcript file.";
 }
 
 function clearAll() {
   transcriptInput.value = "";
   fileInput.value = "";
-  audioPreview.removeAttribute("src");
-  audioPreview.hidden = true;
   recordingStatus.textContent = "Cleared. Record, upload, or type a new transcript.";
   sampleButtons.forEach((btn) => btn.classList.remove("active"));
   refresh();
@@ -456,9 +407,9 @@ sampleButtons.forEach((btn) =>
   btn.addEventListener("click", () => setSample(btn.dataset.sample))
 );
 
-if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+if (!SpeechRecognition) {
   recordingStatus.textContent =
-    "Audio recording is unavailable in this browser. The transcript checker still works.";
+    "Live speech-to-text is not available in this browser. Try Chrome or Edge. The text checker still works.";
   startRecordingButton.disabled = true;
 }
 

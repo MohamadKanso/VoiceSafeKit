@@ -112,8 +112,8 @@
 
           <div class="recorder-card">
             <div>
-              <span class="small-label">Browser recorder</span>
-              <p id="recordingStatus">Ready. Recording works on HTTPS or localhost.</p>
+              <span class="small-label">Voice to text</span>
+              <p id="recordingStatus">Press the circle to start. Your words will appear in the transcript below.</p>
             </div>
             <div class="recorder-actions">
               <button class="icon-button" id="startRecording" title="Start recording">
@@ -123,12 +123,11 @@
                 <span></span>
               </button>
             </div>
-            <audio id="audioPreview" controls hidden></audio>
           </div>
 
           <div class="upload-row">
-            <label class="upload-button" for="fileInput">Upload text or audio</label>
-            <input id="fileInput" type="file" accept=".txt,.md,.json,text/plain,audio/*">
+            <label class="upload-button" for="fileInput">Upload transcript</label>
+            <input id="fileInput" type="file" accept=".txt,.md,.json,text/plain">
             <button class="ghost-button" id="clearButton">Clear</button>
           </div>
 

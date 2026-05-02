@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VoiceSafeKit</title>
+  <meta
+    name="description"
+    content="A privacy and safety checker for local voice assistant transcripts."
+  >
+  <link
+    rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23101211'/%3E%3Ccircle cx='16' cy='16' r='9' fill='%23f7f4ee'/%3E%3Cpath d='M11 16c3 4 7 5 11 2' fill='none' stroke='%231f8f5f' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E"
+  >
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="VoiceSafeKit home">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>VoiceSafeKit</span>
+    </a>
+    <nav aria-label="Primary navigation">
+      <a href="#workflow">Workflow</a>
+      <a href="#demo">Try Demo</a>
+      <a href="https://github.com/MohamadKanso/VoiceSafeKit">GitHub</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Privacy layer for voice assistants</p>
+        <h1>Check what a voice assistant heard before an LLM sees it.</h1>
+        <p>
+          VoiceSafeKit finds private details, risky requests, and emergency language
+          in voice transcripts. It then explains what to remove in simple words.
+        </p>
+        <div class="hero-actions">
+          <a class="button primary" href="#demo">Try the demo</a>
+          <a class="button secondary" href="https://github.com/MohamadKanso/VoiceSafeKit">
+            View GitHub
+          </a>
+        </div>
+      </div>
+      <div class="hero-panel" aria-label="Voice safety summary">
+        <div class="waveform" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <div class="decision-card">
+          <span class="small-label">Current decision</span>
+          <strong id="heroDecision">REVIEW</strong>
+          <p id="heroSummary">Private details found. Redact before sending to an LLM.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="workflow" class="workflow">
+      <div class="section-heading">
+        <p class="eyebrow">Simple workflow</p>
+        <h2>Three steps: Capture, Check, Protect.</h2>
+      </div>
+      <div class="steps">
+        <article>
+          <span>01</span>
+          <h3>Capture</h3>
+          <p>The assistant turns speech into text. VoiceSafeKit receives that transcript.</p>
+        </article>
+        <article>
+          <span>02</span>
+          <h3>Check</h3>
+          <p>It looks for private data, risky advice requests, and urgent safety language.</p>
+        </article>
+        <article>
+          <span>03</span>
+          <h3>Protect</h3>
+          <p>It creates a safer transcript and plain guidance for the assistant.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="demo" class="demo-shell">
+      <div class="demo-header">
+        <div>
+          <p class="eyebrow">Live demo</p>
+          <h2>Paste a transcript or choose a sample.</h2>
+        </div>
+        <div class="sample-buttons" aria-label="Transcript samples">
+          <button data-sample="password">Password reset</button>
+          <button data-sample="medical">Medical question</button>
+          <button data-sample="safe">Safe reminder</button>
+        </div>
+      </div>
+
+      <div class="app-grid">
+        <section class="panel transcript-panel">
+          <div class="panel-title">
+            <span>Capture</span>
+            <strong>Voice transcript</strong>
+          </div>
+          <textarea id="transcriptInput" spellcheck="true"></textarea>
+          <button class="button primary full" id="analyzeButton">Check transcript</button>
+        </section>
+
+        <section class="panel">
+          <div class="panel-title">
+            <span>Check</span>
+            <strong>Privacy and safety result</strong>
+          </div>
+          <div class="score-row">
+            <div>
+              <span class="small-label">Decision</span>
+              <strong id="decision">REVIEW</strong>
+            </div>
+            <div>
+              <span class="small-label">Risk score</span>
+              <strong id="score">58/100</strong>
+            </div>
+          </div>
+          <p id="summary" class="summary"></p>
+          <div id="findings" class="findings"></div>
+        </section>
+
+        <section class="panel protected-panel">
+          <div class="panel-title">
+            <span>Protect</span>
+            <strong>Safe version to send forward</strong>
+          </div>
+          <pre id="safeTranscript"></pre>
+          <div id="guidance" class="guidance"></div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>VoiceSafeKit is a demo safety layer, not legal, medical, or security advice.</span>
+    <a href="https://github.com/OpenVoiceOS/ovos-core">OpenVoiceOS</a>
+    <a href="https://github.com/OHF-Voice/wyoming">Wyoming protocol</a>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

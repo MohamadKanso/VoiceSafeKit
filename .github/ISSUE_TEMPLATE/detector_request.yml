@@ -1,0 +1,20 @@
+name: Detector request
+description: Suggest a new privacy or safety detector.
+title: "[detector] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: What should VoiceSafeKit detect?
+      description: Explain the kind of transcript risk in simple language.
+    validations:
+      required: true
+  - type: textarea
+    id: examples
+    attributes:
+      label: Example transcript
+      description: Use fake data only.
+    validations:
+      required: true
+

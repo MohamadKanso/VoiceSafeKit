@@ -1,0 +1,1130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How VoiceSafeKit Works - Technical Paper</title>
+  <meta name="description" content="A technical walkthrough of how VoiceSafeKit was built: in-browser Whisper transcription, privacy rule detection, and client-side AI safety filtering.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23030504'/%3E%3Cpath d='M7 8h18v16H7z' fill='none' stroke='%2300ff84' stroke-width='2'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      --bg: #030504;
+      --panel: rgba(7,14,11,0.9);
+      --green: #00ff84;
+      --green-2: #97ffd0;
+      --text: #f6fff9;
+      --muted: #8aa596;
+      --dim: #526a5c;
+      --line: rgba(0,255,132,0.28);
+      --line-soft: rgba(246,255,249,0.1);
+      --amber: #c8ff4d;
+      --red: #ff5c5c;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: radial-gradient(circle at 20% 10%, rgba(0,255,132,0.12), transparent 30%),
+                  radial-gradient(circle at 80% 20%, rgba(151,255,208,0.06), transparent 28%),
+                  linear-gradient(180deg, #030504, #010201 80%);
+      color: var(--text);
+      font-family: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+      font-weight: 350;
+      line-height: 1.7;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(circle at 1px 1px, rgba(0,255,132,0.18) 1px, transparent 0) 0 0 / 22px 22px;
+      mask-image: linear-gradient(180deg, black 0%, transparent 70%);
+      z-index: 0;
+    }
+
+    /* Progress bar */
+    #progress-bar {
+      position: fixed;
+      top: 0; left: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--green), var(--green-2));
+      width: 0%;
+      z-index: 100;
+      transition: width 0.1s ease;
+      box-shadow: 0 0 12px rgba(0,255,132,0.7);
+    }
+
+    /* Topbar */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 18px 32px;
+      background: rgba(3,5,4,0.88);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(14px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 500;
+      text-decoration: none;
+    }
+
+    .brand-mark {
+      width: 28px; height: 28px;
+      display: grid;
+      grid-template-columns: repeat(2,1fr);
+      gap: 3px; padding: 5px;
+      border: 1px solid var(--line);
+    }
+
+    .brand-mark span { background: var(--green); }
+    .brand-mark span:nth-child(2), .brand-mark span:nth-child(3) {
+      background: transparent;
+      box-shadow: inset 0 0 0 1px rgba(0,255,132,0.5);
+    }
+
+    .topbar nav { display: flex; align-items: center; gap: 20px; }
+    .topbar nav a { color: var(--muted); font-size: 13px; text-decoration: none; }
+    .topbar nav a:hover { color: var(--green); }
+
+    .back-link {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--green);
+      font-size: 13px;
+      font-family: "SFMono-Regular", Consolas, monospace;
+      text-decoration: none;
+    }
+
+    /* Layout */
+    .page-wrap {
+      position: relative;
+      z-index: 1;
+      width: min(820px, calc(100vw - 40px));
+      margin: 0 auto;
+      padding: 64px 0 120px;
+    }
+
+    /* Paper header */
+    .paper-header {
+      padding-bottom: 48px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 64px;
+    }
+
+    .paper-label {
+      color: var(--green);
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    h1.paper-title {
+      font-size: clamp(32px, 5vw, 52px);
+      font-weight: 280;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      margin-bottom: 20px;
+    }
+
+    h1.paper-title em {
+      color: var(--green);
+      font-style: normal;
+    }
+
+    .paper-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 24px;
+    }
+
+    .paper-meta span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .meta-dot {
+      width: 6px; height: 6px;
+      background: var(--green);
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Abstract */
+    .abstract-box {
+      background: rgba(0,255,132,0.04);
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--green);
+      padding: 24px 28px;
+      margin-bottom: 64px;
+    }
+
+    .abstract-box .abstract-label {
+      color: var(--green);
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .abstract-box p {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.75;
+    }
+
+    /* Sections */
+    .section {
+      margin-bottom: 72px;
+      opacity: 0;
+      transform: translateY(22px);
+      transition: opacity 0.55s ease, transform 0.55s ease;
+    }
+
+    .section.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    .section-num {
+      color: var(--green);
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    h2.section-title {
+      font-size: clamp(22px, 3.5vw, 32px);
+      font-weight: 320;
+      line-height: 1.15;
+      margin-bottom: 24px;
+    }
+
+    p {
+      color: var(--muted);
+      margin-bottom: 16px;
+      font-size: 15px;
+    }
+
+    strong { color: var(--text); font-weight: 520; }
+    a { color: var(--green-2); text-decoration: underline; text-underline-offset: 3px; }
+
+    /* Architecture diagram */
+    .arch-diagram {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 32px 0;
+    }
+
+    .arch-step {
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,0.3);
+      padding: 22px 18px;
+      position: relative;
+      cursor: default;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .arch-step:hover {
+      border-color: var(--green);
+      box-shadow: 0 0 28px rgba(0,255,132,0.12);
+    }
+
+    .arch-step-num {
+      color: var(--green);
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 11px;
+      margin-bottom: 12px;
+    }
+
+    .arch-step h3 {
+      font-size: 18px;
+      font-weight: 420;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .arch-step p {
+      font-size: 13px;
+      margin: 0;
+    }
+
+    .arch-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 4px;
+    }
+
+    /* Flow diagram - horizontal */
+    .flow-diagram {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin: 32px 0;
+      overflow-x: auto;
+      padding-bottom: 8px;
+    }
+
+    .flow-node {
+      flex-shrink: 0;
+      border: 1px solid var(--line);
+      background: rgba(0,255,132,0.04);
+      padding: 12px 16px;
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 12px;
+      color: var(--green-2);
+      white-space: nowrap;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .flow-node:hover {
+      background: rgba(0,255,132,0.1);
+      border-color: var(--green);
+    }
+
+    .flow-arrow {
+      flex-shrink: 0;
+      width: 32px;
+      text-align: center;
+      color: var(--dim);
+      font-size: 16px;
+    }
+
+    /* Code block */
+    .code-block {
+      position: relative;
+      margin: 24px 0;
+      border: 1px solid var(--line-soft);
+      background: rgba(0,0,0,0.42);
+    }
+
+    .code-block-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--line-soft);
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 11px;
+      color: var(--dim);
+    }
+
+    .copy-btn {
+      background: none;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font: inherit;
+      font-size: 11px;
+      padding: 4px 10px;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .copy-btn:hover { color: var(--green); border-color: var(--green); }
+    .copy-btn.copied { color: var(--green); }
+
+    pre.code {
+      margin: 0;
+      padding: 20px;
+      overflow-x: auto;
+      font: 13px/1.7 "SFMono-Regular", Consolas, monospace;
+      color: var(--green-2);
+    }
+
+    .k { color: #97ffd0; }
+    .s { color: #c8ff4d; }
+    .c { color: var(--dim); font-style: italic; }
+    .n { color: var(--text); }
+    .p { color: var(--muted); }
+
+    /* Rule cards */
+    .rule-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 10px;
+      margin: 24px 0;
+    }
+
+    .rule-card {
+      border: 1px solid var(--line-soft);
+      background: rgba(0,255,132,0.03);
+      padding: 16px;
+      cursor: default;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .rule-card:hover {
+      border-color: var(--line);
+      background: rgba(0,255,132,0.07);
+    }
+
+    .rule-card-kind {
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .rule-card-kind.medium { color: var(--amber); }
+    .rule-card-kind.high { color: var(--red); }
+    .rule-card-kind.critical { color: #ff8888; }
+
+    .rule-card h4 {
+      font-size: 14px;
+      font-weight: 480;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    .rule-card p {
+      font-size: 12px;
+      margin: 0;
+      color: var(--dim);
+    }
+
+    /* Severity bar */
+    .severity-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 24px 0;
+      font-size: 14px;
+    }
+
+    .severity-table th {
+      text-align: left;
+      padding: 10px 14px;
+      color: var(--green);
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .severity-table td {
+      padding: 12px 14px;
+      color: var(--muted);
+      border-bottom: 1px solid var(--line-soft);
+      vertical-align: top;
+    }
+
+    .severity-table tr:hover td { background: rgba(0,255,132,0.03); }
+
+    .sev-pill {
+      display: inline-block;
+      padding: 2px 10px;
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 11px;
+      border: 1px solid;
+    }
+
+    .sev-pill.low    { color: var(--green-2);  border-color: var(--green); }
+    .sev-pill.medium { color: var(--amber);    border-color: var(--amber); }
+    .sev-pill.high   { color: var(--red);      border-color: var(--red); }
+    .sev-pill.critical { color: #ff8888;       border-color: #ff8888; }
+
+    /* Score visualiser */
+    .score-demo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 24px 0;
+    }
+
+    .score-demo-card {
+      border: 1px solid var(--line-soft);
+      background: rgba(0,0,0,0.3);
+      padding: 20px;
+    }
+
+    .score-demo-card .label {
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 11px;
+      color: var(--green);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+    }
+
+    .score-demo-card .decision {
+      font-size: 22px;
+      font-weight: 500;
+      font-family: "SFMono-Regular", Consolas, monospace;
+      margin-bottom: 8px;
+    }
+
+    .decision.safe { color: var(--green); }
+    .decision.redact { color: var(--green-2); }
+    .decision.review { color: var(--amber); }
+    .decision.block  { color: var(--red); }
+
+    .score-bar-wrap {
+      height: 6px;
+      background: rgba(255,255,255,0.07);
+      margin: 12px 0 6px;
+    }
+
+    .score-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--green), var(--amber));
+      transition: width 1.2s ease;
+      width: 0%;
+    }
+
+    .score-bar.high { background: linear-gradient(90deg, var(--amber), var(--red)); }
+    .score-bar.critical { background: var(--red); }
+
+    .score-num {
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* Tech stack pills */
+    .stack-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 10px;
+      margin: 24px 0;
+    }
+
+    .stack-item {
+      border: 1px solid var(--line);
+      background: rgba(0,255,132,0.03);
+      padding: 16px;
+    }
+
+    .stack-item .tech-name {
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 13px;
+      color: var(--green-2);
+      margin-bottom: 4px;
+    }
+
+    .stack-item .tech-role {
+      font-size: 12px;
+      color: var(--dim);
+    }
+
+    /* Callout box */
+    .callout {
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--green);
+      background: rgba(0,255,132,0.04);
+      padding: 18px 22px;
+      margin: 24px 0;
+    }
+
+    .callout p { margin: 0; font-size: 14px; }
+    .callout .callout-icon { color: var(--green); font-size: 11px; font-family: "SFMono-Regular", Consolas, monospace; text-transform: uppercase; letter-spacing: 0.08em; display: block; margin-bottom: 8px; }
+
+    /* Footer */
+    footer.paper-footer {
+      padding: 40px 0 24px;
+      border-top: 1px solid var(--line-soft);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      font-size: 13px;
+      color: var(--dim);
+    }
+
+    footer.paper-footer a { color: var(--green-2); text-decoration: none; }
+
+    /* TOC sidebar - optional on large screens */
+    @media (min-width: 1280px) {
+      .page-outer {
+        display: grid;
+        grid-template-columns: 1fr 200px;
+        gap: 0;
+        width: min(1100px, 100vw - 40px);
+        margin: 0 auto;
+      }
+
+      .toc-sidebar {
+        padding: 64px 0 120px 40px;
+        position: sticky;
+        top: 70px;
+        align-self: start;
+        max-height: calc(100vh - 80px);
+        overflow-y: auto;
+      }
+
+      .toc-sidebar h4 {
+        font-family: "SFMono-Regular", Consolas, monospace;
+        font-size: 10px;
+        color: var(--green);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 14px;
+      }
+
+      .toc-sidebar a {
+        display: block;
+        font-size: 12px;
+        color: var(--dim);
+        text-decoration: none;
+        padding: 5px 0;
+        border-left: 2px solid transparent;
+        padding-left: 12px;
+        transition: color 0.15s, border-color 0.15s;
+      }
+
+      .toc-sidebar a:hover,
+      .toc-sidebar a.active {
+        color: var(--green-2);
+        border-left-color: var(--green);
+      }
+
+      .page-wrap { width: auto; padding-right: 0; }
+    }
+
+    @media (max-width: 640px) {
+      .arch-diagram { grid-template-columns: 1fr; }
+      .score-demo { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<header class="topbar">
+  <a class="brand" href="index.html">
+    <span class="brand-mark" aria-hidden="true">
+      <span></span><span></span><span></span><span></span>
+    </span>
+    <span>VoiceSafeKit</span>
+  </a>
+  <nav>
+    <a href="index.html#demo">Try the app</a>
+    <a href="https://github.com/MohamadKanso/VoiceSafeKit">GitHub</a>
+    <a href="index.html" class="back-link">&#8592; Back</a>
+  </nav>
+</header>
+
+<div class="page-outer">
+  <div class="page-wrap">
+
+    <!-- Paper header -->
+    <div class="paper-header">
+      <p class="paper-label">Technical paper</p>
+      <h1 class="paper-title">How <em>VoiceSafeKit</em> was built</h1>
+      <p style="color: var(--muted); font-size: 15px; margin-top: 14px;">
+        A walkthrough of the design, the reasoning, and every technical decision behind a browser-based privacy filter for voice assistant transcripts.
+      </p>
+      <div class="paper-meta">
+        <span><span class="meta-dot"></span>Mohamad Kanso</span>
+        <span><span class="meta-dot"></span>2025</span>
+        <span><span class="meta-dot"></span>Client-side AI, Privacy, Voice Assistants</span>
+      </div>
+    </div>
+
+    <!-- Abstract -->
+    <div class="abstract-box section" id="abstract">
+      <span class="abstract-label">Abstract</span>
+      <p>
+        VoiceSafeKit is a privacy filter that sits between a voice assistant and a large language model. It records audio in the browser, transcribes it using a Whisper speech model running entirely on the user's device, then scans the resulting text for sensitive information before it can be forwarded to an AI. The project was built as a zero-dependency, static web application with a mirrored Python package for server-side use. This paper explains the problem it solves, how it was designed, what it detects, and the reasoning behind each decision.
+      </p>
+    </div>
+
+    <!-- Section 1: The problem -->
+    <div class="section" id="s1">
+      <p class="section-num">01 - The Problem</p>
+      <h2 class="section-title">Voice assistants and the data they leak</h2>
+      <p>
+        Voice assistants are becoming more capable because they can now pass what a user says directly to a large language model. That creates a real risk. When someone speaks to an assistant, they often include private details without thinking: an email address, a phone number, a password reset flow, a medical question. The assistant records all of it and sends it upstream.
+      </p>
+      <p>
+        There is usually nothing in between. The raw transcript goes to a cloud model, often unfiltered. Most developers building voice assistants focus on intent detection and response quality. Privacy filtering at the speech input layer is rarely a priority, and off-the-shelf solutions for it are almost non-existent.
+      </p>
+      <p>
+        VoiceSafeKit addresses that gap. It is a safety layer that checks what was said before it leaves the device.
+      </p>
+
+      <div class="callout">
+        <span class="callout-icon">Example</span>
+        <p>
+          A user says: <strong style="color: var(--green-2); font-family: monospace; font-size: 13px;">"My email is john@example.com and my password is BlueFalcon2026. Help me reset my account."</strong>
+          Without filtering, that entire string goes to the model. VoiceSafeKit flags the email and password, produces a redacted version, and advises the assistant not to echo the credentials back.
+        </p>
+      </div>
+    </div>
+
+    <!-- Section 2: Architecture -->
+    <div class="section" id="s2">
+      <p class="section-num">02 - Architecture</p>
+      <h2 class="section-title">Three stages: Capture, Check, Protect</h2>
+      <p>
+        The system is split into three clearly separated stages. Each one has a single responsibility.
+      </p>
+
+      <div class="arch-diagram">
+        <div class="arch-step">
+          <p class="arch-step-num">STAGE 01</p>
+          <h3>Capture</h3>
+          <p>Record audio via the browser microphone, transcribe it locally using Whisper, or accept pasted text.</p>
+        </div>
+        <div class="arch-step">
+          <p class="arch-step-num">STAGE 02</p>
+          <h3>Check</h3>
+          <p>Run the transcript through a set of pattern rules. Score the result. Assign a decision label.</p>
+        </div>
+        <div class="arch-step">
+          <p class="arch-step-num">STAGE 03</p>
+          <h3>Protect</h3>
+          <p>Produce a redacted transcript and plain-English guidance for the assistant to follow.</p>
+        </div>
+      </div>
+
+      <p>The data flow within Stage 1 is worth showing explicitly:</p>
+
+      <div class="flow-diagram">
+        <div class="flow-node">Microphone</div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-node">MediaRecorder</div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-node">Audio Blob</div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-node">AudioContext (16kHz)</div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-node">Float32Array</div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-node">Whisper model</div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-node">Transcript text</div>
+      </div>
+
+      <p>
+        Nothing in that chain touches a server. The audio is captured in the browser, decoded in the browser, and transcribed in the browser. The only thing that ever leaves the device is the cleaned transcript, and only if the user chooses to forward it.
+      </p>
+    </div>
+
+    <!-- Section 3: Whisper -->
+    <div class="section" id="s3">
+      <p class="section-num">03 - In-Browser Speech Recognition</p>
+      <h2 class="section-title">Why Whisper, and how it runs in a browser</h2>
+      <p>
+        The first version of VoiceSafeKit used the browser's built-in <strong>Web Speech API</strong>. It was unreliable. The API stops recognising speech after a short pause, varies widely between browsers, and in some Chrome versions silently fails unless a separate microphone permission call has already been made. It is also inherently online: Chrome's implementation sends audio to Google's servers.
+      </p>
+      <p>
+        The replacement is <strong>Whisper</strong>, a speech recognition model published by OpenAI in 2022 and widely regarded as one of the most accurate open speech models available. The variant used here is <code style="color: var(--green-2); font-size: 13px;">whisper-tiny.en</code>, an English-only model around 75 MB in size.
+      </p>
+
+      <div class="callout">
+        <span class="callout-icon">How it runs in the browser</span>
+        <p>
+          Transformers.js (by Hugging Face) compiles the model to ONNX format and runs it via WebAssembly. No GPU is needed. The model downloads once and is then stored permanently in the browser's IndexedDB cache. Every subsequent run is instant.
+        </p>
+      </div>
+
+      <p>The transcription pipeline, simplified:</p>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>app.js - transcription</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre class="code"><span class="c">// Decode the audio blob to 16kHz mono - Whisper's required format</span>
+<span class="k">const</span> <span class="n">audioCtx</span> <span class="p">=</span> <span class="k">new</span> <span class="n">AudioContext</span><span class="p">({</span> <span class="n">sampleRate</span><span class="p">:</span> <span class="s">16000</span> <span class="p">});</span>
+<span class="k">const</span> <span class="n">decoded</span>  <span class="p">=</span> <span class="k">await</span> <span class="n">audioCtx</span><span class="p">.</span><span class="n">decodeAudioData</span><span class="p">(</span><span class="n">arrayBuffer</span><span class="p">);</span>
+<span class="k">const</span> <span class="n">float32</span>  <span class="p">=</span> <span class="n">decoded</span><span class="p">.</span><span class="n">getChannelData</span><span class="p">(</span><span class="s">0</span><span class="p">);</span>
+
+<span class="c">// Run Whisper</span>
+<span class="k">const</span> <span class="n">model</span>  <span class="p">=</span> <span class="k">await</span> <span class="n">pipeline</span><span class="p">(</span><span class="s">"automatic-speech-recognition"</span><span class="p">,</span>
+                              <span class="s">"Xenova/whisper-tiny.en"</span><span class="p">);</span>
+<span class="k">const</span> <span class="n">result</span> <span class="p">=</span> <span class="k">await</span> <span class="n">model</span><span class="p">(</span><span class="n">float32</span><span class="p">,</span> <span class="p">{</span> <span class="n">sampling_rate</span><span class="p">:</span> <span class="s">16000</span> <span class="p">});</span>
+<span class="k">const</span> <span class="n">text</span>   <span class="p">=</span> <span class="n">result</span><span class="p">.</span><span class="n">text</span><span class="p">.</span><span class="n">trim</span><span class="p">();</span></pre>
+      </div>
+
+      <p>
+        The model is loaded lazily: it starts downloading as soon as the user presses Record, so by the time they finish speaking, it is usually ready. On repeat visits, the cached version loads in under a second.
+      </p>
+
+      <p style="color: var(--muted); font-size: 14px;">
+        <strong>Why tiny over base?</strong> The tiny model (75MB) completes transcription in roughly 2-4 seconds on a typical laptop. The base model (145MB) is more accurate but takes longer to load and process. For a tool where speed matters for usability, tiny is the right trade-off.
+      </p>
+    </div>
+
+    <!-- Section 4: Detection engine -->
+    <div class="section" id="s4">
+      <p class="section-num">04 - The Detection Engine</p>
+      <h2 class="section-title">What it looks for and how it decides</h2>
+      <p>
+        Once the transcript exists as plain text, VoiceSafeKit runs it through a set of detection rules. Each rule has a pattern (a regular expression), a severity level, a human-readable explanation, and a replacement string for the redacted output.
+      </p>
+
+      <div class="rule-grid">
+        <div class="rule-card">
+          <p class="rule-card-kind medium">Medium</p>
+          <h4>Email address</h4>
+          <p>Standard RFC-compliant email pattern.</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind medium">Medium</p>
+          <h4>Phone number</h4>
+          <p>International and local formats. Rejects 13+ digit sequences to avoid clashing with card numbers.</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind high">High</p>
+          <h4>Payment card</h4>
+          <p>13-19 digit groups with optional spaces or dashes.</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind high">High</p>
+          <h4>Password / secret</h4>
+          <p>Keyword-triggered: "password is", "token:", "api key =".</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind medium">Medium</p>
+          <h4>Street address</h4>
+          <p>Number followed by street name suffix.</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind high">High</p>
+          <h4>Medical question</h4>
+          <p>Keywords: chest pain, medication, dose, blood pressure.</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind high">High</p>
+          <h4>Legal question</h4>
+          <p>Keywords: lawsuit, eviction, immigration, legal advice.</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind high">High</p>
+          <h4>Financial question</h4>
+          <p>Keywords: crypto, credit score, loan application, mortgage.</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind critical">Critical</p>
+          <h4>Emergency / harm</h4>
+          <p>Keywords: can't breathe, heart attack, overdose, hurt myself.</p>
+        </div>
+      </div>
+
+      <h3 style="font-size: 18px; font-weight: 420; margin: 32px 0 16px; color: var(--text);">Severity and scoring</h3>
+      <p>Every finding contributes to a risk score. The score is additive, capped at 100.</p>
+
+      <table class="severity-table">
+        <thead>
+          <tr>
+            <th>Level</th>
+            <th>Points</th>
+            <th>Examples</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="sev-pill low">LOW</span></td>
+            <td style="color: var(--text);">10</td>
+            <td>Reserved for future rules</td>
+          </tr>
+          <tr>
+            <td><span class="sev-pill medium">MEDIUM</span></td>
+            <td style="color: var(--text);">22</td>
+            <td>Email, phone number, street address</td>
+          </tr>
+          <tr>
+            <td><span class="sev-pill high">HIGH</span></td>
+            <td style="color: var(--text);">36</td>
+            <td>Password, card number, medical / legal / financial intent</td>
+          </tr>
+          <tr>
+            <td><span class="sev-pill critical">CRITICAL</span></td>
+            <td style="color: var(--text);">55</td>
+            <td>Emergency language, immediate harm</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3 style="font-size: 18px; font-weight: 420; margin: 32px 0 16px; color: var(--text);">Decision labels</h3>
+
+      <div class="score-demo">
+        <div class="score-demo-card">
+          <p class="label">SAFE</p>
+          <p class="decision safe">SAFE</p>
+          <div class="score-bar-wrap"><div class="score-bar" data-width="12"></div></div>
+          <p class="score-num">Score: 0-21</p>
+          <p style="font-size: 13px; margin-top: 10px;">No concerning content found. The assistant can proceed normally.</p>
+        </div>
+        <div class="score-demo-card">
+          <p class="label">REDACT</p>
+          <p class="decision redact">REDACT</p>
+          <div class="score-bar-wrap"><div class="score-bar" data-width="35"></div></div>
+          <p class="score-num">Score: 22-54</p>
+          <p style="font-size: 13px; margin-top: 10px;">Low-risk personal data found. Use the cleaned version instead.</p>
+        </div>
+        <div class="score-demo-card">
+          <p class="label">REVIEW</p>
+          <p class="decision review">REVIEW</p>
+          <div class="score-bar-wrap"><div class="score-bar high" data-width="70"></div></div>
+          <p class="score-num">Score: 55+ or any HIGH</p>
+          <p style="font-size: 13px; margin-top: 10px;">Sensitive content found. A human or policy check is advised before forwarding.</p>
+        </div>
+        <div class="score-demo-card">
+          <p class="label">BLOCK</p>
+          <p class="decision block">BLOCK</p>
+          <div class="score-bar-wrap"><div class="score-bar critical" data-width="98"></div></div>
+          <p class="score-num">Any CRITICAL finding</p>
+          <p style="font-size: 13px; margin-top: 10px;">Emergency or immediate harm detected. Do not forward. Route to emergency help.</p>
+        </div>
+      </div>
+
+      <h3 style="font-size: 18px; font-weight: 420; margin: 32px 0 16px; color: var(--text);">Overlap resolution</h3>
+      <p>
+        When two rules match overlapping text (for example, a 16-digit number that could be both a phone and a card), the higher-severity rule wins. The overlapping lower-severity finding is discarded. This prevents double-counting and ensures the more serious label is shown.
+      </p>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>app.js - overlap resolution</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre class="code"><span class="k">function</span> <span class="n">removeOverlaps</span><span class="p">(</span><span class="n">findings</span><span class="p">) {</span>
+  <span class="k">const</span> <span class="n">accepted</span> <span class="p">= [];</span>
+  <span class="n">findings</span><span class="p">.</span><span class="n">sort</span><span class="p">((</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">) =></span>
+    <span class="n">severityRank</span><span class="p">[</span><span class="n">b</span><span class="p">.</span><span class="n">severity</span><span class="p">] -</span> <span class="n">severityRank</span><span class="p">[</span><span class="n">a</span><span class="p">.</span><span class="n">severity</span><span class="p">]</span>
+  <span class="p">);</span>
+  <span class="k">for</span> <span class="p">(</span><span class="k">const</span> <span class="n">f</span> <span class="k">of</span> <span class="n">findings</span><span class="p">) {</span>
+    <span class="k">if</span> <span class="p">(!</span><span class="n">accepted</span><span class="p">.</span><span class="n">some</span><span class="p">(</span><span class="n">x</span> <span class="p">=></span> <span class="n">f</span><span class="p">.</span><span class="n">start</span> <span class="p">&lt;</span> <span class="n">x</span><span class="p">.</span><span class="n">end</span> <span class="p">&amp;&amp;</span> <span class="n">x</span><span class="p">.</span><span class="n">start</span> <span class="p">&lt;</span> <span class="n">f</span><span class="p">.</span><span class="n">end</span><span class="p">))</span>
+      <span class="n">accepted</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">f</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="n">accepted</span><span class="p">;</span>
+<span class="p">}</span></pre>
+      </div>
+    </div>
+
+    <!-- Section 5: Tech stack -->
+    <div class="section" id="s5">
+      <p class="section-num">05 - Technical Stack</p>
+      <h2 class="section-title">What was used and why</h2>
+
+      <div class="stack-grid">
+        <div class="stack-item">
+          <p class="tech-name">HTML / CSS / JS</p>
+          <p class="tech-role">Zero framework, zero build step. Runs as static files on GitHub Pages.</p>
+        </div>
+        <div class="stack-item">
+          <p class="tech-name">@xenova/transformers</p>
+          <p class="tech-role">Runs Whisper in the browser via ONNX + WebAssembly.</p>
+        </div>
+        <div class="stack-item">
+          <p class="tech-name">MediaRecorder API</p>
+          <p class="tech-role">Browser-native audio recording. No extra library needed.</p>
+        </div>
+        <div class="stack-item">
+          <p class="tech-name">AudioContext API</p>
+          <p class="tech-role">Decodes the audio blob to 16kHz mono PCM for Whisper.</p>
+        </div>
+        <div class="stack-item">
+          <p class="tech-name">GitHub Pages</p>
+          <p class="tech-role">HTTPS static hosting. Required for microphone access permissions.</p>
+        </div>
+        <div class="stack-item">
+          <p class="tech-name">Python package</p>
+          <p class="tech-role">The same detection rules mirrored in Python for server-side or CLI use.</p>
+        </div>
+        <div class="stack-item">
+          <p class="tech-name">pytest</p>
+          <p class="tech-role">Unit tests for the Python detection engine.</p>
+        </div>
+        <div class="stack-item">
+          <p class="tech-name">ruff</p>
+          <p class="tech-role">Python linter. Enforced in CI.</p>
+        </div>
+      </div>
+
+      <div class="callout" style="margin-top: 28px;">
+        <span class="callout-icon">Why no framework?</span>
+        <p>
+          Using React, Vue, or any other framework would require a build step, a <code>node_modules</code> folder, and a bundler. The entire point of this project is that it should run as a static file on any HTTPS host with no server, no backend, and no deployment complexity. Vanilla HTML/JS achieves that with far less overhead.
+        </p>
+      </div>
+    </div>
+
+    <!-- Section 6: Design decisions -->
+    <div class="section" id="s6">
+      <p class="section-num">06 - Design Decisions</p>
+      <h2 class="section-title">The reasoning behind key choices</h2>
+
+      <p><strong>Why no API key for transcription?</strong> Any API key embedded in a public GitHub repository is public. Anyone can read your source, extract the key, and use it. Running the model entirely in the browser avoids this problem entirely. It also means the audio never touches a third-party server, which is directly relevant to the privacy use case.</p>
+
+      <p><strong>Why not use the Luhn algorithm to validate card numbers?</strong> The Luhn checksum is used by card issuers to catch typos. It does not distinguish real cards from made-up ones that happen to pass. More importantly, a user dictating a card number to a voice assistant may speak the digits in a way that produces a transcript with a typo. The card would fail Luhn but should still be flagged. A safety tool should err on the side of flagging too much, not too little.</p>
+
+      <p><strong>Why flag intent (medical, legal, financial) separately from data?</strong> A transcript might not contain any personally identifiable information but still be problematic. Someone asking an AI for a medication dose change or investment advice needs different handling to someone asking for a restaurant recommendation. Intent rules capture that distinction.</p>
+
+      <p><strong>Why client-side everything?</strong> The thesis of the project is that sensitive voice data should not leave the device unless it has been checked and cleaned. If the checking itself required sending data to a server, the whole premise would collapse. Everything runs locally by design.</p>
+    </div>
+
+    <!-- Section 7: Limitations -->
+    <div class="section" id="s7">
+      <p class="section-num">07 - Limitations</p>
+      <h2 class="section-title">What it does not do well</h2>
+
+      <p>
+        <strong>Accent and noise sensitivity.</strong> Whisper tiny is accurate for clear English speech in a quiet environment. Heavy accents, background noise, or fast speech can produce transcription errors. Those errors may cause sensitive content to be missed. The base model would improve accuracy but at the cost of speed.
+      </p>
+
+      <p>
+        <strong>Keyword rules miss novel phrasing.</strong> The detection rules use fixed patterns and keywords. Someone saying "give me a new dose" rather than "change my medication" would not trigger the medical rule. A neural classifier trained on intent would handle this better.
+      </p>
+
+      <p>
+        <strong>No streaming transcription.</strong> The current design records a full clip and then transcribes it. Real-time word-by-word transcription is possible with a sliding-window approach to Whisper, but it was not implemented here.
+      </p>
+
+      <p>
+        <strong>Not a security product.</strong> VoiceSafeKit is a demonstration of the concept. It should not be used as the sole privacy control in a production voice assistant. It is a starting point and a reference implementation.
+      </p>
+    </div>
+
+    <!-- Section 8: Future work -->
+    <div class="section" id="s8">
+      <p class="section-num">08 - Future Work</p>
+      <h2 class="section-title">Where this goes next</h2>
+
+      <p>
+        The most natural next step is integration with real open-source voice assistant frameworks. Two candidates are already referenced in the project:
+      </p>
+
+      <p>
+        <strong>OpenVoiceOS</strong> is an open-source voice operating system built on the Mycroft platform. A VoiceSafeKit adapter would intercept the STT output before it is passed to the intent parser, giving privacy filtering at the right layer of the pipeline.
+      </p>
+
+      <p>
+        <strong>Wyoming protocol</strong> is a lightweight protocol used by Home Assistant for communicating between voice satellite devices and processing servers. A Wyoming microservice wrapping the VoiceSafeKit detection engine would allow any Wyoming-compatible assistant to use it as a filter stage.
+      </p>
+
+      <p>
+        Other areas worth exploring include streaming transcription, neural intent classification to replace keyword rules, and a dashboard for assistant developers to tune sensitivity thresholds per deployment context.
+      </p>
+    </div>
+
+    <!-- Closing -->
+    <div class="section" id="s9">
+      <p class="section-num">09 - Closing</p>
+      <h2 class="section-title">What this project is really about</h2>
+      <p>
+        Voice assistants are getting smarter quickly. The gap between what someone says and what an AI model is allowed to act on needs careful thought. Most of the safety work in this space focuses on model outputs (preventing harmful responses) rather than model inputs (preventing harmful data going in).
+      </p>
+      <p>
+        VoiceSafeKit is an argument that input filtering matters too, and that it can be done locally, in a browser, with no infrastructure, and with a good user experience. The code is open-source. The approach is intentionally simple so that it can be understood, copied, and improved.
+      </p>
+
+      <div class="callout" style="margin-top: 28px;">
+        <span class="callout-icon">Try it</span>
+        <p>The live application is at <a href="https://mohamadkanso.github.io/VoiceSafeKit/" target="_blank">mohamadkanso.github.io/VoiceSafeKit</a> and the full source is on <a href="https://github.com/MohamadKanso/VoiceSafeKit" target="_blank">GitHub</a>.</p>
+      </div>
+    </div>
+
+    <footer class="paper-footer">
+      <span>VoiceSafeKit - Mohamad Kanso - 2025</span>
+      <div style="display:flex; gap: 20px;">
+        <a href="https://github.com/MohamadKanso/VoiceSafeKit">GitHub</a>
+        <a href="index.html#demo">Live app</a>
+        <a href="index.html">Back to home</a>
+      </div>
+    </footer>
+
+  </div><!-- end page-wrap -->
+
+  <aside class="toc-sidebar" aria-label="Table of contents">
+    <h4>Contents</h4>
+    <a href="#abstract">Abstract</a>
+    <a href="#s1">01 - The Problem</a>
+    <a href="#s2">02 - Architecture</a>
+    <a href="#s3">03 - Speech Recognition</a>
+    <a href="#s4">04 - Detection Engine</a>
+    <a href="#s5">05 - Tech Stack</a>
+    <a href="#s6">06 - Design Decisions</a>
+    <a href="#s7">07 - Limitations</a>
+    <a href="#s8">08 - Future Work</a>
+    <a href="#s9">09 - Closing</a>
+  </aside>
+
+</div><!-- end page-outer -->
+
+<script>
+  // Scroll progress bar
+  window.addEventListener("scroll", () => {
+    const total = document.documentElement.scrollHeight - window.innerHeight;
+    document.getElementById("progress-bar").style.width =
+      Math.round((window.scrollY / total) * 100) + "%";
+  });
+
+  // Animate sections in on scroll
+  const sections = document.querySelectorAll(".section");
+  const observer = new IntersectionObserver(
+    (entries) => entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add("visible"); }),
+    { threshold: 0.08 }
+  );
+  sections.forEach((s) => observer.observe(s));
+
+  // Animate score bars when they come into view
+  const barObserver = new IntersectionObserver(
+    (entries) => entries.forEach((e) => {
+      if (e.isIntersecting) {
+        const bar = e.target.querySelector(".score-bar");
+        if (bar) bar.style.width = bar.dataset.width + "%";
+        barObserver.unobserve(e.target);
+      }
+    }),
+    { threshold: 0.5 }
+  );
+  document.querySelectorAll(".score-demo-card").forEach((c) => barObserver.observe(c));
+
+  // TOC active link tracking
+  const tocLinks = document.querySelectorAll(".toc-sidebar a");
+  window.addEventListener("scroll", () => {
+    let current = "";
+    document.querySelectorAll(".section[id], .abstract-box[id]").forEach((sec) => {
+      if (window.scrollY >= sec.offsetTop - 120) current = sec.id;
+    });
+    tocLinks.forEach((a) => {
+      a.classList.toggle("active", a.getAttribute("href") === "#" + current);
+    });
+  });
+
+  // Copy button
+  function copyCode(btn) {
+    const code = btn.closest(".code-block").querySelector("pre.code").textContent;
+    navigator.clipboard.writeText(code).then(() => {
+      btn.textContent = "Copied";
+      btn.classList.add("copied");
+      setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("copied"); }, 1800);
+    });
+  }
+</script>
+
+</body>
+</html>

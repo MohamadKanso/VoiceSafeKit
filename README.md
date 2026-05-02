@@ -5,6 +5,8 @@
 <p align="center">
   <a href="https://mohamadkanso.github.io/VoiceSafeKit/"><strong>Open the live app</strong></a>
   ·
+  <a href="https://mohamadkanso.github.io/VoiceSafeKit/paper.html"><strong>How it was built</strong></a>
+  ·
   <a href="#screenshots">Screenshots</a>
   ·
   <a href="#run-it-locally">Run locally</a>

@@ -25,6 +25,7 @@
     <nav aria-label="Primary navigation">
       <a href="#workflow">Workflow</a>
       <a href="#demo">Try Demo</a>
+      <a href="paper.html">Paper</a>
       <a href="https://github.com/MohamadKanso/VoiceSafeKit">GitHub</a>
     </nav>
   </header>
@@ -114,6 +115,10 @@
             <div>
               <span class="small-label">Voice to text</span>
               <p id="recordingStatus">Press the circle to start. Your words will appear in the transcript below.</p>
+              <div class="waveform" aria-hidden="true">
+                <span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span><span></span>
+              </div>
             </div>
             <div class="recorder-actions">
               <button class="icon-button" id="startRecording" title="Start recording">
@@ -169,6 +174,7 @@
 
   <footer>
     <span>VoiceSafeKit is a demo safety layer, not legal, medical, or security advice.</span>
+    <a href="paper.html">How it was built</a>
     <a href="https://github.com/OpenVoiceOS/ovos-core">OpenVoiceOS</a>
     <a href="https://github.com/OHF-Voice/wyoming">Wyoming protocol</a>
   </footer>

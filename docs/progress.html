@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VoiceSafeKit Progress</title>
+  <meta name="description" content="A transparent progress log showing what broke, what was fixed, and what VoiceSafeKit is solving next.">
+  <link
+    rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23030504'/%3E%3Cpath d='M7 8h18v16H7z' fill='none' stroke='%2300ff84' stroke-width='2'/%3E%3Cpath d='M11 18c3 3 7 3 10 0' fill='none' stroke='%23f6fff9' stroke-width='2' stroke-linecap='square'/%3E%3C/svg%3E"
+  >
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="VoiceSafeKit home">
+      <span class="brand-mark" aria-hidden="true">
+        <span></span><span></span><span></span><span></span>
+      </span>
+      <span>VoiceSafeKit</span>
+    </a>
+    <nav aria-label="Primary navigation">
+      <a href="index.html#workflow">Workflow</a>
+      <a href="index.html#demo">Try Demo</a>
+      <a href="paper.html">Paper</a>
+      <a href="progress.html" aria-current="page">Progress</a>
+      <a href="https://github.com/MohamadKanso/VoiceSafeKit">GitHub</a>
+    </nav>
+  </header>
+
+  <main class="progress-page">
+    <section class="progress-hero">
+      <p class="eyebrow">Project progression</p>
+      <h1>What broke, what changed, and what is now resolved.</h1>
+      <p>
+        VoiceSafeKit has been improved through real testing. This page keeps the
+        project history visible so the work reads like an evolving open-source
+        tool, not a single polished snapshot.
+      </p>
+    </section>
+
+    <section class="progress-summary-grid" aria-label="Current progress summary">
+      <article>
+        <span class="small-label">Current phase</span>
+        <strong>Phase 0.2</strong>
+        <p>Integration examples and detector quality improvements.</p>
+      </article>
+      <article>
+        <span class="small-label">Latest fix</span>
+        <strong>Grouped findings</strong>
+        <p>Repeated emails now show as one grouped result, such as 2 email addresses.</p>
+      </article>
+      <article>
+        <span class="small-label">Open work</span>
+        <strong>Issue #3</strong>
+        <p>Date-of-birth and location detectors are assigned to an external contributor.</p>
+      </article>
+    </section>
+
+    <section class="progress-section">
+      <div class="section-heading">
+        <p class="eyebrow">Resolved history</p>
+        <h2>Fix log</h2>
+      </div>
+
+      <div class="progress-timeline">
+        <article class="progress-item resolved">
+          <div class="progress-marker">01</div>
+          <div>
+            <span class="status-chip">Resolved</span>
+            <h3>Recording saved audio but did not create a transcript.</h3>
+            <p>
+              The first recorder version captured audio but did not reliably turn
+              speech into text. That made the demo look broken because users had
+              to type the transcript manually after recording.
+            </p>
+            <p>
+              Fixed by adding browser-based Whisper transcription with
+              <code>Xenova/whisper-tiny.en</code>. The browser now records the
+              clip, transcribes it after stop, and places the words into the
+              transcript box.
+            </p>
+          </div>
+        </article>
+
+        <article class="progress-item resolved">
+          <div class="progress-marker">02</div>
+          <div>
+            <span class="status-chip">Resolved</span>
+            <h3>Card numbers were sometimes treated like phone numbers.</h3>
+            <p>
+              Long digit sequences overlapped with the phone detector, so a card
+              number test could be reported as a phone number.
+            </p>
+            <p>
+              Fixed by adding card-shaped number checks, card context words such
+              as card, debit, credit, payment, and overlap priority so payment
+              card results win over phone results.
+            </p>
+          </div>
+        </article>
+
+        <article class="progress-item resolved">
+          <div class="progress-marker">03</div>
+          <div>
+            <span class="status-chip">Resolved</span>
+            <h3>The interface looked messy and hard to scan.</h3>
+            <p>
+              Early UI versions made the tool harder to understand than the logic
+              itself. Capture, Check, and Protect were not clear enough as a
+              workflow.
+            </p>
+            <p>
+              Fixed by rebuilding the interface around sharp neon green panels,
+              thin typography, clear step numbers, and a cleaner two-column demo
+              with the protected transcript below.
+            </p>
+          </div>
+        </article>
+
+        <article class="progress-item resolved">
+          <div class="progress-marker">04</div>
+          <div>
+            <span class="status-chip">Resolved</span>
+            <h3>The project needed visible phase history.</h3>
+            <p>
+              Because the repo was worked on repeatedly, it needed a way to show
+              how each improvement built on the last instead of replacing the
+              story.
+            </p>
+            <p>
+              Fixed by adding <code>CHANGELOG.md</code>, phase labels, and this
+              Progress page.
+            </p>
+          </div>
+        </article>
+
+        <article class="progress-item resolved current">
+          <div class="progress-marker">05</div>
+          <div>
+            <span class="status-chip">Resolved now</span>
+            <h3>Repeated emails produced duplicate warning cards.</h3>
+            <p>
+              A realistic account recovery transcript contained two email
+              addresses. The engine correctly found both, but the UI repeated the
+              same email warning twice, which made the result noisy.
+            </p>
+            <p>
+              Fixed by grouping repeated finding types. The UI now says
+              <strong>2 email addresses</strong> once, while the safe transcript
+              still redacts both addresses individually.
+            </p>
+          </div>
+        </article>
+
+        <article class="progress-item resolved current">
+          <div class="progress-marker">06</div>
+          <div>
+            <span class="status-chip">Resolved now</span>
+            <h3>Natural password speech was not always flagged.</h3>
+            <p>
+              A phrase like “my password was something like WinterSecure!2026”
+              sounded natural, but the original rule was too narrow and could
+              miss partial password mentions.
+            </p>
+            <p>
+              Fixed by expanding credential detection for phrases like was,
+              might be, could be, maybe, possibly, and something like. The result
+              is now shown as <strong>Password or secret / high</strong>.
+            </p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="progress-section">
+      <div class="section-heading">
+        <p class="eyebrow">Latest transcript test</p>
+        <h2>What the tool should show now</h2>
+      </div>
+
+      <div class="progress-test-card">
+        <div>
+          <span class="small-label">Expected summary</span>
+          <p class="progress-output">Review before sending. Found: 2 email addresses, Password or secret, Phone number.</p>
+        </div>
+        <div>
+          <span class="small-label">Expected finding cards</span>
+          <ul>
+            <li>Password or secret / high</li>
+            <li>2 email addresses / medium</li>
+            <li>Phone number / medium</li>
+          </ul>
+        </div>
+        <div>
+          <span class="small-label">Expected redaction</span>
+          <p>
+            Both emails, the phone number, and the password-like phrase should be
+            masked. The 4-digit card ending is not treated as a full payment card
+            number because it is only a partial card reference.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="progress-section">
+      <div class="section-heading">
+        <p class="eyebrow">Still open</p>
+        <h2>What remains</h2>
+      </div>
+
+      <div class="progress-summary-grid">
+        <article>
+          <span class="small-label">Issue #2</span>
+          <strong>Wyoming middleware</strong>
+          <p>Add a small middleware-style example before a transcript is sent to an assistant service.</p>
+        </article>
+        <article>
+          <span class="small-label">Issue #3</span>
+          <strong>Contributor task</strong>
+          <p>Date-of-birth and location detectors are assigned to 0nullfox and intentionally left open.</p>
+        </article>
+        <article>
+          <span class="small-label">Future</span>
+          <strong>Better scoring</strong>
+          <p>Refine the risk score so repeated medium findings and high-risk credentials feel easier to understand.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>VoiceSafeKit is a demo safety layer, not legal, medical, or security advice.</span>
+    <a href="index.html">Home</a>
+    <a href="paper.html">Paper</a>
+    <a href="progress.html">Progress</a>
+    <a href="https://github.com/MohamadKanso/VoiceSafeKit">GitHub</a>
+  </footer>
+</body>
+</html>

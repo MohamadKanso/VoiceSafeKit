@@ -7,6 +7,8 @@
   ·
   <a href="https://mohamadkanso.github.io/VoiceSafeKit/paper.html"><strong>How it was built</strong></a>
   ·
+  <a href="https://mohamadkanso.github.io/VoiceSafeKit/progress.html"><strong>Progress</strong></a>
+  ·
   <a href="CHANGELOG.md">Changelog</a>
   ·
   <a href="#screenshots">Screenshots</a>
@@ -77,6 +79,10 @@ This project is designed to fit beside open-source voice ecosystems such as
 Live app:
 
 [https://mohamadkanso.github.io/VoiceSafeKit/](https://mohamadkanso.github.io/VoiceSafeKit/)
+
+Progress page:
+
+[https://mohamadkanso.github.io/VoiceSafeKit/progress.html](https://mohamadkanso.github.io/VoiceSafeKit/progress.html)
 
 The app runs in the browser. It does not need an account or an API key.
 

@@ -10,6 +10,7 @@ easy to follow.
 - Added tests for safe transcript output and emergency blocking.
 - Grouped repeated finding types in summaries and the live demo.
 - Improved credential detection for natural speech such as partial password phrases.
+- Added a public Progress page that documents what went wrong and what was fixed.
 
 ## Phase 0.1.2 - Browser Transcription And Detector Fixes
 

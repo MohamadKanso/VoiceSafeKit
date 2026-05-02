@@ -682,6 +682,140 @@ footer a {
   text-decoration: none;
 }
 
+/* ─── progress page ─────────────────────────────────────────────────────── */
+
+.progress-page {
+  max-width: 1100px;
+}
+
+.progress-hero {
+  padding: 88px 0 52px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.progress-hero h1 {
+  max-width: 840px;
+  margin: 0;
+  font-size: clamp(38px, 6vw, 70px);
+  font-weight: 290;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.progress-hero p:not(.eyebrow) {
+  max-width: 700px;
+  margin-top: 24px;
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.75;
+}
+
+.progress-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 28px 0 72px;
+}
+
+.progress-summary-grid article,
+.progress-item,
+.progress-test-card {
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.progress-summary-grid article {
+  padding: 24px;
+}
+
+.progress-summary-grid strong {
+  display: block;
+  margin: 10px 0;
+  font-size: 24px;
+  font-weight: 360;
+}
+
+.progress-summary-grid p,
+.progress-item p,
+.progress-test-card p,
+.progress-test-card li {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.progress-section {
+  padding: 32px 0 54px;
+}
+
+.progress-timeline {
+  display: grid;
+  gap: 16px;
+}
+
+.progress-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 22px;
+  padding: 24px;
+  border-color: var(--line-soft);
+}
+
+.progress-item.current {
+  border-color: var(--green);
+}
+
+.progress-marker,
+.status-chip {
+  color: var(--green);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.progress-marker {
+  min-width: 40px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+}
+
+.status-chip {
+  display: inline-block;
+  margin-bottom: 12px;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  text-transform: uppercase;
+}
+
+.progress-item h3 {
+  margin: 0 0 14px;
+  font-size: 24px;
+  font-weight: 360;
+}
+
+.progress-item code {
+  color: var(--green-2);
+}
+
+.progress-test-card {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  gap: 18px;
+  padding: 24px;
+}
+
+.progress-output {
+  color: var(--text) !important;
+  font-family: "SFMono-Regular", Consolas, monospace;
+}
+
+.progress-test-card ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
 /* ─── responsive ─────────────────────────────────────────────────────────── */
 
 @media (max-width: 700px) {
@@ -692,7 +826,9 @@ footer a {
 
 @media (max-width: 900px) {
   .hero,
-  .steps {
+  .steps,
+  .progress-summary-grid,
+  .progress-test-card {
     grid-template-columns: 1fr;
   }
 
@@ -743,6 +879,10 @@ footer a {
 
   .score-row,
   .recorder-card {
+    grid-template-columns: 1fr;
+  }
+
+  .progress-item {
     grid-template-columns: 1fr;
   }
 }

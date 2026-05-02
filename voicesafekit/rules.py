@@ -47,10 +47,17 @@ PATTERN_RULES: tuple[PatternRule, ...] = (
         kind="secret",
         label="Password or secret",
         severity="high",
-        explanation="The transcript appears to contain a password, token, or secret.",
+        explanation=(
+            "Passwords, partial passwords, tokens, and secrets are highly sensitive. "
+            "Never include them in text sent to a model."
+        ),
         replacement="[secret removed]",
         pattern=re.compile(
-            r"\b(?:password|passcode|api key|token|secret)\s*(?:is|=|:)?\s*[^\s,.;]{4,}",
+            r"\b(?:"
+            r"(?:password|passcode)\s*(?:is|was|might be|may be|could be|=|:)?"
+            r"\s*(?:something like|around|maybe|possibly)?\s*[^\s,.;]{4,}|"
+            r"(?:api key|token|secret)\s*(?:is|was|=|:)?\s*[^\s,.;]{4,}"
+            r")",
             re.IGNORECASE,
         ),
     ),

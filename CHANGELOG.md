@@ -8,6 +8,8 @@ easy to follow.
 - Added an OpenVoiceOS-style adapter helper.
 - Added a runnable OpenVoiceOS pipeline example.
 - Added tests for safe transcript output and emergency blocking.
+- Grouped repeated finding types in summaries and the live demo.
+- Improved credential detection for natural speech such as partial password phrases.
 
 ## Phase 0.1.2 - Browser Transcription And Detector Fixes
 
@@ -27,4 +29,3 @@ easy to follow.
 - Added the command-line interface.
 - Added the first privacy and safety detectors.
 - Added tests, example transcripts, README, and GitHub Pages demo.
-

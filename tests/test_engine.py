@@ -46,3 +46,25 @@ def test_card_context_prevents_phone_false_positive() -> None:
     assert "[payment number removed]" in result.safe_transcript
     assert "[phone removed]" not in result.safe_transcript
     assert [finding.kind for finding in result.findings] == ["payment_card"]
+
+
+def test_summary_groups_repeated_email_findings() -> None:
+    result = analyze_transcript(
+        "My email is daniel.hughes@companymail.com and my backup email is "
+        "dan.hughes92@gmail.com. My phone is +44 7911 234567."
+    )
+
+    assert result.decision == "REVIEW"
+    assert "2 email addresses" in result.summary
+    assert result.summary.count("Email address") == 0
+    assert result.safe_transcript.count("[email removed]") == 2
+
+
+def test_detects_partial_password_phrase() -> None:
+    result = analyze_transcript(
+        "I think my password was something like WinterSecure!2026 but I am not sure."
+    )
+
+    assert result.decision == "REVIEW"
+    assert "[secret removed]" in result.safe_transcript
+    assert any(finding.kind == "secret" for finding in result.findings)

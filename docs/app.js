@@ -46,9 +46,11 @@ const rules = [
     kind: "secret",
     label: "Password or secret",
     severity: "high",
-    explanation: "The transcript appears to contain a password, token, or secret.",
+    explanation:
+      "Passwords, partial passwords, tokens, and secrets are highly sensitive. Never include them in text sent to a model.",
     replacement: "[secret removed]",
-    pattern: /\b(?:password|passcode|api key|token|secret)\s*(?:is|=|:)?\s*[^\s,.;]{4,}/gi
+    pattern:
+      /\b(?:(?:password|passcode)\s*(?:is|was|might be|may be|could be|=|:)?\s*(?:something like|around|maybe|possibly)?\s*[^\s,.;]{4,}|(?:api key|token|secret)\s*(?:is|was|=|:)?\s*[^\s,.;]{4,})/gi
   },
   {
     kind: "address",
@@ -284,7 +286,10 @@ function redact(text, findings) {
 
 function summarize(decision, findings) {
   if (!findings.length) return "No obvious privacy or safety risks were found.";
-  const labels = [...new Set(findings.map((finding) => finding.label))].sort().join(", ");
+  const labels = groupedFindings(findings)
+    .map((group) => group.displayLabel)
+    .sort()
+    .join(", ");
   if (decision === "BLOCK") return `Do not send this directly to an LLM. Found: ${labels}.`;
   if (decision === "REVIEW") return `Review before sending. Found: ${labels}.`;
   return `Redact the sensitive parts first. Found: ${labels}.`;
@@ -320,13 +325,14 @@ function render(result) {
   summaryEl.textContent = result.summary;
   heroSummary.textContent = result.summary;
   safeTranscriptEl.textContent = result.safeTranscript || "No transcript yet.";
-  findingsEl.innerHTML = result.findings.length
-    ? result.findings
+  const groups = groupedFindings(result.findings);
+  findingsEl.innerHTML = groups.length
+    ? groups
         .map(
-          (finding) => `
-            <article class="finding ${finding.severity}">
-              <strong>${finding.label} / ${finding.severity}</strong>
-              <p>${finding.explanation}</p>
+          (group) => `
+            <article class="finding ${group.severity}">
+              <strong>${group.displayLabel} / ${group.severity}</strong>
+              <p>${group.explanation}</p>
             </article>
           `
         )
@@ -341,6 +347,47 @@ function refresh() {
 
 function setStatus(message) {
   recordingStatus.textContent = message;
+}
+
+function groupedFindings(findings) {
+  const groups = new Map();
+  findings.forEach((finding) => {
+    if (!groups.has(finding.kind)) {
+      groups.set(finding.kind, { ...finding, count: 0 });
+    }
+    const group = groups.get(finding.kind);
+    group.count += 1;
+    if (severityRank[finding.severity] > severityRank[group.severity]) {
+      group.severity = finding.severity;
+      group.explanation = finding.explanation;
+    }
+  });
+  return [...groups.values()]
+    .map((group) => ({
+      ...group,
+      displayLabel: group.count > 1 ? `${group.count} ${pluralLabel(group.label)}` : group.label
+    }))
+    .sort(
+      (a, b) =>
+        severityRank[b.severity] - severityRank[a.severity] ||
+        a.displayLabel.localeCompare(b.displayLabel)
+    );
+}
+
+function pluralLabel(label) {
+  return (
+    {
+      "Email address": "email addresses",
+      "Phone number": "phone numbers",
+      "Payment card number": "payment card numbers",
+      "Password or secret": "password or secret mentions",
+      "Street address": "street addresses",
+      "Medical advice request": "medical advice requests",
+      "Legal advice request": "legal advice requests",
+      "Financial advice request": "financial advice requests",
+      "Emergency or immediate harm": "emergency or immediate harm phrases"
+    }[label] || `${label.toLowerCase()} findings`
+  );
 }
 
 function setSample(name) {

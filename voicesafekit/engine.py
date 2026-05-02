@@ -122,7 +122,7 @@ def _decision(score: int, findings: list[Finding]) -> str:
 def _summary(decision: str, findings: list[Finding]) -> str:
     if not findings:
         return "No obvious privacy or safety risks were found."
-    labels = sorted({finding.label for finding in findings})
+    labels = [_group_label(label, count) for label, count in _group_counts(findings).items()]
     joined = ", ".join(labels)
     if decision == "BLOCK":
         return f"Do not send this directly to an LLM. Found: {joined}."
@@ -150,6 +150,30 @@ def _guidance(findings: list[Finding]) -> list[str]:
     if {"payment_card", "secret"} & kinds:
         guidance.append("Never echo passwords, tokens, or payment details back to the user.")
     return guidance
+
+
+def _group_counts(findings: list[Finding]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for finding in sorted(findings, key=lambda item: item.label):
+        counts[finding.label] = counts.get(finding.label, 0) + 1
+    return counts
+
+
+def _group_label(label: str, count: int) -> str:
+    if count == 1:
+        return label
+    plural_labels = {
+        "Email address": "email addresses",
+        "Phone number": "phone numbers",
+        "Payment card-like number": "payment card-like numbers",
+        "Password or secret": "password or secret mentions",
+        "Street address": "street addresses",
+        "Medical advice request": "medical advice requests",
+        "Legal advice request": "legal advice requests",
+        "Financial advice request": "financial advice requests",
+        "Emergency or immediate harm": "emergency or immediate harm phrases",
+    }
+    return f"{count} {plural_labels.get(label, label.lower() + ' findings')}"
 
 
 def _looks_like_payment_card(value: str, transcript: str, start: int, end: int) -> bool:

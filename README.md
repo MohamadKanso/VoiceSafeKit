@@ -7,6 +7,8 @@
   ·
   <a href="https://mohamadkanso.github.io/VoiceSafeKit/paper.html"><strong>How it was built</strong></a>
   ·
+  <a href="CHANGELOG.md">Changelog</a>
+  ·
   <a href="#screenshots">Screenshots</a>
   ·
   <a href="#run-it-locally">Run locally</a>
@@ -45,9 +47,8 @@ It then returns:
 The website also includes:
 
 - browser audio recording through `MediaRecorder`
-- live speech-to-text when the browser supports Speech Recognition
+- automatic browser transcription with a small Whisper model
 - text transcript upload
-- audio file upload and playback preview
 - paste/manual edit mode
 
 ## Why This Is Useful
@@ -79,9 +80,9 @@ Live app:
 
 The app runs in the browser. It does not need an account or an API key.
 
-Recording works best on Chrome or Edge because those browsers support the
-browser recording and speech recognition APIs most reliably. If speech-to-text is
-not available, the app still records audio and lets you type or paste the transcript.
+Recording works best on Chrome or Edge because those browsers support microphone
+recording and browser machine-learning workloads most reliably. The first
+recording may take longer while the small speech model downloads and caches.
 
 ## Screenshots
 
@@ -107,11 +108,10 @@ VoiceSafeKit can capture or load content in four ways:
 
 - record audio in the browser
 - upload a text transcript
-- upload an audio file for playback
 - type or paste the transcript manually
 
-If the browser supports speech recognition, spoken words can appear in the text box
-while recording. If not, the audio is still recorded and can be played back.
+When recording stops, the browser transcribes the saved audio and places the
+words into the transcript box automatically.
 
 ### 2. Check
 
@@ -135,6 +135,22 @@ It creates:
 - a clear decision
 - a short explanation
 - guidance for the assistant
+
+## Integration Example
+
+VoiceSafeKit now includes a small OpenVoiceOS-style adapter example.
+
+It shows the idea in plain language:
+
+1. A voice assistant receives a transcript.
+2. VoiceSafeKit checks it first.
+3. The assistant receives the safer transcript and guidance.
+
+Run the example:
+
+```bash
+python3 examples/integrations/openvoiceos_adapter.py
+```
 
 ## Example Output
 
@@ -194,7 +210,6 @@ It should not be used as a replacement for:
 
 ## Roadmap
 
-- Add a small OpenVoiceOS adapter example
 - Add a Wyoming protocol middleware example
 - Add more privacy detectors
 - Add multilingual rules

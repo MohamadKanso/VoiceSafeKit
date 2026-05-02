@@ -35,4 +35,14 @@ def test_card_number_uses_luhn_check() -> None:
 
     assert result.decision == "REVIEW"
     assert "[payment number removed]" in result.safe_transcript
+    assert "[phone removed]" not in result.safe_transcript
+    assert [finding.kind for finding in result.findings] == ["payment_card"]
 
+
+def test_card_context_prevents_phone_false_positive() -> None:
+    result = analyze_transcript("My card number is 1234 5678 1234 5678.")
+
+    assert result.decision == "REVIEW"
+    assert "[payment number removed]" in result.safe_transcript
+    assert "[phone removed]" not in result.safe_transcript
+    assert [finding.kind for finding in result.findings] == ["payment_card"]

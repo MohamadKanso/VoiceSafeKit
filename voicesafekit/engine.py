@@ -42,7 +42,19 @@ def _matches_for_rule(transcript: str, rule: PatternRule) -> list[Finding]:
     matches: list[Finding] = []
     for match in rule.pattern.finditer(transcript):
         matched_text = match.group(0).strip()
-        if rule.kind == "payment_card" and not _looks_like_card(matched_text):
+        if rule.kind == "phone" and _looks_like_card_shaped_number(
+            matched_text,
+            transcript,
+            match.start(),
+            match.end(),
+        ):
+            continue
+        if rule.kind == "payment_card" and not _looks_like_payment_card(
+            matched_text,
+            transcript,
+            match.start(),
+            match.end(),
+        ):
             continue
         matches.append(
             Finding(
@@ -140,7 +152,36 @@ def _guidance(findings: list[Finding]) -> list[str]:
     return guidance
 
 
-def _looks_like_card(value: str) -> bool:
+def _looks_like_payment_card(value: str, transcript: str, start: int, end: int) -> bool:
+    digits = [char for char in value if char.isdigit()]
+    if not 13 <= len(digits) <= 19:
+        return False
+    return _passes_luhn(value) or _has_card_context(transcript, start, end)
+
+
+def _looks_like_card_shaped_number(value: str, transcript: str, start: int, end: int) -> bool:
+    digits = [char for char in value if char.isdigit()]
+    if len(digits) < 13 or value.strip().startswith("+"):
+        return False
+    return len(digits) <= 19 or _has_card_context(transcript, start, end)
+
+
+def _has_card_context(transcript: str, start: int, end: int) -> bool:
+    window = transcript[max(0, start - 32) : min(len(transcript), end + 32)].lower()
+    return any(
+        phrase in window
+        for phrase in (
+            "card",
+            "credit",
+            "debit",
+            "visa",
+            "mastercard",
+            "payment",
+        )
+    )
+
+
+def _passes_luhn(value: str) -> bool:
     digits = [int(char) for char in value if char.isdigit()]
     if len(digits) < 13:
         return False

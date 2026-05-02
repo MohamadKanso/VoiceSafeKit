@@ -336,7 +336,6 @@ h2 {
 .sample-buttons {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
   gap: 8px;
 }
 
@@ -351,47 +350,60 @@ h2 {
 }
 
 .app-grid {
-  grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: start;
 }
 
 .panel {
   padding: 22px;
-}
-
-.capture-panel {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-}
-
-.protected-panel {
-  grid-column: 2;
+  gap: 14px;
 }
 
 .panel-title {
   display: flex;
-  justify-content: space-between;
-  gap: 16px;
+  align-items: center;
+  gap: 12px;
 }
 
 .panel-title strong {
-  font-weight: 420;
+  font-size: 15px;
+  font-weight: 480;
+}
+
+.step-badge {
+  color: var(--green);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+.panel-desc {
+  color: var(--dim);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
 }
 
 .recorder-card {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 14px;
-  align-items: center;
-  padding: 16px;
+  gap: 12px;
+  align-items: start;
+  padding: 14px;
   border: 1px solid var(--line-soft);
   background: var(--glass);
 }
 
-.recorder-card p {
-  margin: 6px 0 0;
+.recorder-info p {
+  margin: 5px 0 0;
   color: var(--muted);
+  font-size: 13px;
   line-height: 1.45;
 }
 
@@ -502,7 +514,7 @@ audio {
 
 textarea {
   width: 100%;
-  min-height: 210px;
+  min-height: 150px;
   resize: vertical;
   border: 1px solid var(--line-soft);
   border-radius: 0;
@@ -522,11 +534,10 @@ button:focus-visible,
 .score-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 18px;
+  gap: 10px;
 }
 
-.score-row div,
+.score-cell,
 .finding,
 .guidance p,
 pre {
@@ -534,22 +545,24 @@ pre {
   background: rgba(0, 255, 132, 0.055);
 }
 
-.score-row div {
-  padding: 18px;
+.score-cell {
+  padding: 14px;
 }
 
-.score-row strong {
+.score-cell strong {
   display: block;
-  margin-top: 8px;
+  margin-top: 6px;
   color: var(--text);
   font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 34px;
+  font-size: 26px;
   font-weight: 500;
 }
 
-.summary {
+.summary-text {
   color: var(--muted);
-  line-height: 1.58;
+  font-size: 14px;
+  line-height: 1.55;
+  margin: 0;
 }
 
 .findings {
@@ -619,13 +632,30 @@ footer a {
   color: var(--green-2);
 }
 
+@media (max-width: 1080px) {
+  .app-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .protect-panel {
+    grid-column: 1 / -1;
+  }
+}
+
 @media (max-width: 900px) {
   .hero,
   .steps,
-  .app-grid,
   .section-heading,
   .demo-header {
     grid-template-columns: 1fr;
+  }
+
+  .app-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .protect-panel {
+    grid-column: auto;
   }
 
   .hero {
@@ -638,10 +668,6 @@ footer a {
 
   h2 {
     font-size: 34px;
-  }
-
-  .protected-panel {
-    grid-column: auto;
   }
 }
 

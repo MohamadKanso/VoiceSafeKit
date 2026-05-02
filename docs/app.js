@@ -103,7 +103,6 @@ const severityRank   = { low: 1,  medium: 2,  high: 3,  critical: 4  };
 // ─── DOM refs ────────────────────────────────────────────────────────────────
 
 const transcriptInput     = document.querySelector("#transcriptInput");
-const analyzeButton       = document.querySelector("#analyzeButton");
 const startRecordingButton = document.querySelector("#startRecording");
 const stopRecordingButton  = document.querySelector("#stopRecording");
 const clearButton         = document.querySelector("#clearButton");
@@ -344,7 +343,6 @@ startRecordingButton.addEventListener("click", startRecording);
 stopRecordingButton.addEventListener("click", stopRecording);
 clearButton.addEventListener("click", clearAll);
 fileInput.addEventListener("change", handleFileUpload);
-analyzeButton.addEventListener("click", refresh);
 transcriptInput.addEventListener("input", refresh);
 sampleButtons.forEach((b) => b.addEventListener("click", () => setSample(b.dataset.sample)));
 

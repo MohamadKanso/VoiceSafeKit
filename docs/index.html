@@ -4,10 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>VoiceSafeKit</title>
-  <meta
-    name="description"
-    content="A privacy and safety checker for local voice assistant transcripts."
-  >
+  <meta name="description" content="A privacy and safety checker for local voice assistant transcripts.">
   <link
     rel="icon"
     href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23030504'/%3E%3Cpath d='M7 8h18v16H7z' fill='none' stroke='%2300ff84' stroke-width='2'/%3E%3Cpath d='M11 18c3 3 7 3 10 0' fill='none' stroke='%23f6fff9' stroke-width='2' stroke-linecap='square'/%3E%3C/svg%3E"
@@ -31,19 +28,19 @@
   </header>
 
   <main id="top">
+
+    <!-- Hero -->
     <section class="hero">
       <div class="hero-copy">
         <p class="eyebrow">Local voice safety layer</p>
         <h1>Record, check, and clean a voice transcript before an LLM sees it.</h1>
         <p>
-          VoiceSafeKit records audio in the browser, accepts transcript files, finds
-          obvious privacy risks, and gives a safer version of the text to send forward.
+          VoiceSafeKit records audio in the browser, finds obvious privacy risks,
+          and gives a safer version of the text to send forward.
         </p>
         <div class="hero-actions">
           <a class="button primary" href="#demo">Try the live checker</a>
-          <a class="button secondary" href="https://github.com/MohamadKanso/VoiceSafeKit">
-            View GitHub
-          </a>
+          <a class="button secondary" href="paper.html">How it was built</a>
         </div>
       </div>
 
@@ -67,6 +64,7 @@
       </div>
     </section>
 
+    <!-- Workflow steps -->
     <section id="workflow" class="workflow">
       <div class="section-heading">
         <p class="eyebrow">Simple workflow</p>
@@ -76,45 +74,54 @@
         <article>
           <span>01</span>
           <h3>Capture</h3>
-          <p>Record in the browser, upload a transcript file, or paste text manually.</p>
+          <p>Record your voice, upload a transcript file, or paste text directly.</p>
         </article>
         <article>
           <span>02</span>
           <h3>Check</h3>
-          <p>Find private data, high-risk requests, and emergency language.</p>
+          <p>Find private data, high-risk requests, and emergency language automatically.</p>
         </article>
         <article>
           <span>03</span>
           <h3>Protect</h3>
-          <p>Create a safer transcript and clear guidance for the assistant.</p>
+          <p>Get a safer version of the transcript and clear guidance for the assistant.</p>
         </article>
       </div>
     </section>
 
+    <!-- Live demo -->
     <section id="demo" class="demo-shell">
       <div class="demo-header">
         <div>
           <p class="eyebrow">Live app</p>
-          <h2>Choose a sample, record audio, upload a file, or type.</h2>
-        </div>
-        <div class="sample-buttons" aria-label="Transcript samples">
-          <button data-sample="password">Password reset</button>
-          <button data-sample="medical">Medical question</button>
-          <button data-sample="safe">Safe reminder</button>
+          <h2>Try it now</h2>
         </div>
       </div>
 
+      <!-- Three-column pipeline -->
       <div class="app-grid">
+
+        <!-- Column 1: Capture -->
         <section class="panel capture-panel">
           <div class="panel-title">
-            <span>Capture</span>
-            <strong>Input</strong>
+            <span class="step-badge">01</span>
+            <strong>Capture</strong>
           </div>
 
+          <p class="panel-desc">Record your voice or load a sample to get started.</p>
+
+          <!-- Sample buttons live here, close to the input -->
+          <div class="sample-buttons" aria-label="Load a sample transcript">
+            <button data-sample="password">Password reset</button>
+            <button data-sample="medical">Medical question</button>
+            <button data-sample="safe">Safe reminder</button>
+          </div>
+
+          <!-- Recorder -->
           <div class="recorder-card">
-            <div>
+            <div class="recorder-info">
               <span class="small-label">Voice to text</span>
-              <p id="recordingStatus">Press the circle to start. Your words will appear in the transcript below.</p>
+              <p id="recordingStatus">Press record, speak, then press stop. Your words appear below.</p>
               <div class="waveform" aria-hidden="true">
                 <span></span><span></span><span></span><span></span><span></span>
                 <span></span><span></span><span></span><span></span><span></span>
@@ -130,44 +137,59 @@
             </div>
           </div>
 
+          <!-- Upload -->
           <div class="upload-row">
-            <label class="upload-button" for="fileInput">Upload transcript</label>
+            <label class="upload-button" for="fileInput">Upload .txt file</label>
             <input id="fileInput" type="file" accept=".txt,.md,.json,text/plain">
             <button class="ghost-button" id="clearButton">Clear</button>
           </div>
 
+          <!-- Transcript box -->
           <label class="text-label" for="transcriptInput">Transcript</label>
-          <textarea id="transcriptInput" spellcheck="true"></textarea>
-          <button class="button primary full" id="analyzeButton">Check transcript</button>
+          <textarea id="transcriptInput" spellcheck="true" placeholder="Type or paste a transcript here, or record your voice above."></textarea>
         </section>
 
+        <!-- Column 2: Check -->
         <section class="panel result-panel">
           <div class="panel-title">
-            <span>Check</span>
-            <strong>Safety result</strong>
+            <span class="step-badge">02</span>
+            <strong>Check</strong>
           </div>
+
+          <p class="panel-desc">What was found in the transcript.</p>
+
           <div class="score-row">
-            <div>
+            <div class="score-cell">
               <span class="small-label">Decision</span>
               <strong id="decision">REVIEW</strong>
             </div>
-            <div>
-              <span class="small-label">Risk</span>
+            <div class="score-cell">
+              <span class="small-label">Risk score</span>
               <strong id="score">80/100</strong>
             </div>
           </div>
-          <p id="summary" class="summary"></p>
+
+          <p id="summary" class="summary-text"></p>
+
           <div id="findings" class="findings"></div>
         </section>
 
-        <section class="panel protected-panel">
+        <!-- Column 3: Protect -->
+        <section class="panel protect-panel">
           <div class="panel-title">
-            <span>Protect</span>
-            <strong>Safe version</strong>
+            <span class="step-badge">03</span>
+            <strong>Protect</strong>
           </div>
+
+          <p class="panel-desc">A cleaned version with sensitive parts removed.</p>
+
+          <label class="text-label" style="margin-top: 4px;">Safe transcript</label>
           <pre id="safeTranscript"></pre>
+
+          <label class="text-label" style="margin-top: 16px;">What to do next</label>
           <div id="guidance" class="guidance"></div>
         </section>
+
       </div>
     </section>
   </main>

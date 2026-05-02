@@ -11,6 +11,8 @@ easy to follow.
 - Grouped repeated finding types in summaries and the live demo.
 - Improved credential detection for natural speech such as partial password phrases.
 - Added a public Progress page that documents what went wrong and what was fixed.
+- Added partial card reference detection for phrases such as "card ends in 4821".
+- Added compact finding totals and a scrollable warning list in the Check panel.
 
 ## Phase 0.1.2 - Browser Transcription And Detector Fixes
 

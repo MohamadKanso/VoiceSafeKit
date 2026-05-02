@@ -170,6 +170,41 @@
             </p>
           </div>
         </article>
+
+        <article class="progress-item resolved current">
+          <div class="progress-marker">07</div>
+          <div>
+            <span class="status-chip">Resolved now</span>
+            <h3>Partial card references were not flagged.</h3>
+            <p>
+              The account recovery transcript included “my card ends in 4821”.
+              The old detector only looked for full 13-19 digit card-like
+              numbers, so partial card details were missed.
+            </p>
+            <p>
+              Fixed by adding a partial card reference detector for phrases such
+              as card ends in, card ending with, and last four digits. The UI now
+              includes this as a separate warning type.
+            </p>
+          </div>
+        </article>
+
+        <article class="progress-item resolved current">
+          <div class="progress-marker">08</div>
+          <div>
+            <span class="status-chip">Resolved now</span>
+            <h3>Long transcripts needed a denser warning panel.</h3>
+            <p>
+              As more detectors were added, the Check panel could become too tall
+              and hard to scan.
+            </p>
+            <p>
+              Fixed by adding compact totals for flags, grouped warning types,
+              and high-risk groups, plus a scrollable warning list for longer
+              transcripts.
+            </p>
+          </div>
+        </article>
       </div>
     </section>
 
@@ -182,7 +217,7 @@
       <div class="progress-test-card">
         <div>
           <span class="small-label">Expected summary</span>
-          <p class="progress-output">Review before sending. Found: 2 email addresses, Password or secret, Phone number.</p>
+          <p class="progress-output">Review before sending. Found: 2 email addresses, Partial card reference, Password or secret, Phone number.</p>
         </div>
         <div>
           <span class="small-label">Expected finding cards</span>
@@ -190,14 +225,15 @@
             <li>Password or secret / high</li>
             <li>2 email addresses / medium</li>
             <li>Phone number / medium</li>
+            <li>Partial card reference / medium</li>
           </ul>
         </div>
         <div>
           <span class="small-label">Expected redaction</span>
           <p>
             Both emails, the phone number, and the password-like phrase should be
-            masked. The 4-digit card ending is not treated as a full payment card
-            number because it is only a partial card reference.
+            masked. The 4-digit card ending should also be flagged and replaced
+            as a partial card reference.
           </p>
         </div>
       </div>

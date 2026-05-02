@@ -68,3 +68,31 @@ def test_detects_partial_password_phrase() -> None:
     assert result.decision == "REVIEW"
     assert "[secret removed]" in result.safe_transcript
     assert any(finding.kind == "secret" for finding in result.findings)
+
+
+def test_detects_partial_card_reference() -> None:
+    result = analyze_transcript("My card ends in 4821 if that helps confirm it is me.")
+
+    assert result.decision == "REDACT"
+    assert "[partial card reference removed]" in result.safe_transcript
+    assert any(finding.kind == "payment_card_partial" for finding in result.findings)
+
+
+def test_long_account_recovery_transcript_flags_all_relevant_groups() -> None:
+    transcript = (
+        "Hi, I need help urgently. I am locked out of my work account. "
+        "My email is daniel.hughes@companymail.com and my backup email is "
+        "dan.hughes92@gmail.com. My phone number is +44 7911 234567. "
+        "I also think my password was something like WinterSecure!2026 but I am not sure. "
+        "I might have used the same password on my banking app. "
+        "My card ends in 4821 if that helps confirm it is me."
+    )
+
+    result = analyze_transcript(transcript)
+    kinds = {finding.kind for finding in result.findings}
+
+    assert result.decision == "REVIEW"
+    assert {"email", "phone", "secret", "payment_card_partial"} <= kinds
+    assert "2 email addresses" in result.summary
+    assert "Partial card reference" in result.summary
+    assert "[partial card reference removed]" in result.safe_transcript

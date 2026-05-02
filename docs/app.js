@@ -34,6 +34,16 @@ const rules = [
     validator: looksLikePaymentCard
   },
   {
+    kind: "payment_card_partial",
+    label: "Partial card reference",
+    severity: "medium",
+    explanation:
+      "Partial card details can still be used for identity checks. Remove them before sending text to a model.",
+    replacement: "[partial card reference removed]",
+    pattern:
+      /\b(?:card|credit card|debit card)\s+(?:(?:ends?|ending)\s+(?:in|with)|last\s+(?:4|four)(?:\s+digits)?(?:\s+(?:are|is))?)\s+\d{4}\b/gi
+  },
+  {
     kind: "phone",
     label: "Phone number",
     severity: "medium",
@@ -115,6 +125,7 @@ const decisionEl = document.querySelector("#decision");
 const scoreEl = document.querySelector("#score");
 const summaryEl = document.querySelector("#summary");
 const findingsEl = document.querySelector("#findings");
+const findingStatsEl = document.querySelector("#findingStats");
 const safeTranscriptEl = document.querySelector("#safeTranscript");
 const guidanceEl = document.querySelector("#guidance");
 const heroDecision = document.querySelector("#heroDecision");
@@ -319,19 +330,22 @@ function guidance(findings) {
 // ─── render ──────────────────────────────────────────────────────────────────
 
 function render(result) {
+  const groups = groupedFindings(result.findings);
+  const totalFlags = result.findings.length;
   decisionEl.textContent = result.decision;
   heroDecision.textContent = result.decision;
   scoreEl.textContent = `${result.score}/100`;
   summaryEl.textContent = result.summary;
   heroSummary.textContent = result.summary;
   safeTranscriptEl.textContent = result.safeTranscript || "No transcript yet.";
-  const groups = groupedFindings(result.findings);
+  findingStatsEl.innerHTML = renderFindingStats(totalFlags, groups);
   findingsEl.innerHTML = groups.length
     ? groups
         .map(
           (group) => `
             <article class="finding ${group.severity}">
               <strong>${group.displayLabel} / ${group.severity}</strong>
+              <span>${group.count} ${group.count === 1 ? "instance" : "instances"} detected</span>
               <p>${group.explanation}</p>
             </article>
           `
@@ -347,6 +361,36 @@ function refresh() {
 
 function setStatus(message) {
   recordingStatus.textContent = message;
+}
+
+function renderFindingStats(totalFlags, groups) {
+  if (!totalFlags) {
+    return `
+      <div class="finding-stat">
+        <span class="small-label">Flags</span>
+        <strong>0</strong>
+      </div>
+      <div class="finding-stat">
+        <span class="small-label">Types</span>
+        <strong>0</strong>
+      </div>
+    `;
+  }
+  const highPriority = groups.filter((group) => ["high", "critical"].includes(group.severity)).length;
+  return `
+    <div class="finding-stat">
+      <span class="small-label">Flags</span>
+      <strong>${totalFlags}</strong>
+    </div>
+    <div class="finding-stat">
+      <span class="small-label">Types</span>
+      <strong>${groups.length}</strong>
+    </div>
+    <div class="finding-stat">
+      <span class="small-label">High risk</span>
+      <strong>${highPriority}</strong>
+    </div>
+  `;
 }
 
 function groupedFindings(findings) {
@@ -380,6 +424,7 @@ function pluralLabel(label) {
       "Email address": "email addresses",
       "Phone number": "phone numbers",
       "Payment card number": "payment card numbers",
+      "Partial card reference": "partial card references",
       "Password or secret": "password or secret mentions",
       "Street address": "street addresses",
       "Medical advice request": "medical advice requests",

@@ -166,6 +166,7 @@ def _group_label(label: str, count: int) -> str:
         "Email address": "email addresses",
         "Phone number": "phone numbers",
         "Payment card-like number": "payment card-like numbers",
+        "Partial card reference": "partial card references",
         "Password or secret": "password or secret mentions",
         "Street address": "street addresses",
         "Medical advice request": "medical advice requests",

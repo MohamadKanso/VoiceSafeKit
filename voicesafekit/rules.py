@@ -44,6 +44,22 @@ PATTERN_RULES: tuple[PatternRule, ...] = (
         pattern=re.compile(r"\b(?:\d[ -]*?){13,19}\b"),
     ),
     PatternRule(
+        kind="payment_card_partial",
+        label="Partial card reference",
+        severity="medium",
+        explanation=(
+            "Partial card details can still be used for identity checks. "
+            "Remove them before sending text to a model."
+        ),
+        replacement="[partial card reference removed]",
+        pattern=re.compile(
+            r"\b(?:card|credit card|debit card)\s+"
+            r"(?:(?:ends?|ending)\s+(?:in|with)|last\s+(?:4|four)(?:\s+digits)?(?:\s+(?:are|is))?)"
+            r"\s+\d{4}\b",
+            re.IGNORECASE,
+        ),
+    ),
+    PatternRule(
         kind="secret",
         label="Password or secret",
         severity="high",

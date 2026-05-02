@@ -589,9 +589,35 @@ button:focus-visible,
   margin: 0;
 }
 
+.finding-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.finding-stat {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line-soft);
+  background: var(--surface-2);
+}
+
+.finding-stat strong {
+  display: block;
+  margin-top: 6px;
+  color: var(--text);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 22px;
+  font-weight: 480;
+}
+
 .findings {
   display: grid;
   gap: 10px;
+  max-height: 390px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-color: var(--green) transparent;
 }
 
 .finding {
@@ -615,6 +641,14 @@ button:focus-visible,
   margin-bottom: 6px;
   font-size: 13px;
   font-weight: 520;
+}
+
+.finding span {
+  display: inline-block;
+  margin-bottom: 8px;
+  color: var(--green-2);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 11px;
 }
 
 .finding p {
@@ -878,7 +912,8 @@ footer a {
   }
 
   .score-row,
-  .recorder-card {
+  .recorder-card,
+  .finding-stats {
     grid-template-columns: 1fr;
   }
 

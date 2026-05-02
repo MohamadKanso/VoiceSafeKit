@@ -363,9 +363,13 @@ h2 {
 
 .app-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: 1fr 1fr;
   gap: 20px;
   align-items: start;
+}
+
+.protect-panel {
+  grid-column: 1 / -1;
 }
 
 /* ─── panels ─────────────────────────────────────────────────────────────── */
@@ -622,6 +626,18 @@ button:focus-visible,
 
 /* ─── protect panel ──────────────────────────────────────────────────────── */
 
+.protect-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.protect-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 pre {
   margin: 0;
   padding: 20px;
@@ -668,13 +684,9 @@ footer a {
 
 /* ─── responsive ─────────────────────────────────────────────────────────── */
 
-@media (max-width: 1080px) {
-  .app-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .protect-panel {
-    grid-column: 1 / -1;
+@media (max-width: 700px) {
+  .protect-body {
+    grid-template-columns: 1fr;
   }
 }
 

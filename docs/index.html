@@ -174,20 +174,25 @@
           <div id="findings" class="findings"></div>
         </section>
 
-        <!-- Column 3: Protect -->
+        <!-- Row 2: Protect (full width) -->
         <section class="panel protect-panel">
           <div class="panel-title">
             <span class="step-badge">03</span>
             <strong>Protect</strong>
           </div>
 
-          <p class="panel-desc">A cleaned version with sensitive parts removed.</p>
+          <p class="panel-desc">A cleaned version of the transcript with sensitive parts removed, and guidance for the assistant.</p>
 
-          <label class="text-label" style="margin-top: 4px;">Safe transcript</label>
-          <pre id="safeTranscript"></pre>
-
-          <label class="text-label" style="margin-top: 16px;">What to do next</label>
-          <div id="guidance" class="guidance"></div>
+          <div class="protect-body">
+            <div class="protect-col">
+              <label class="text-label">Safe transcript</label>
+              <pre id="safeTranscript"></pre>
+            </div>
+            <div class="protect-col">
+              <label class="text-label">What to do next</label>
+              <div id="guidance" class="guidance"></div>
+            </div>
+          </div>
         </section>
 
       </div>

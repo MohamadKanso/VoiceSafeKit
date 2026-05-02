@@ -17,21 +17,27 @@ const rules = [
     pattern: /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g
   },
   {
+    kind: "payment_card",
+    label: "Payment card number",
+    severity: "high",
+    explanation: "This looks like a payment card number — 13 to 19 digits in a row. Do not send it to an LLM.",
+    replacement: "[payment number removed]",
+    // Matches 13–19 digits optionally separated by spaces or dashes (card format).
+    // No Luhn gate — a safety tool should flag anything that *looks* like a card,
+    // not silently ignore it because the digits fail a checksum.
+    pattern: /\b(?:\d[ -]*){12,18}\d\b/g,
+    validator: looksLikeCardFormat
+  },
+  {
     kind: "phone",
     label: "Phone number",
     severity: "medium",
     explanation: "Phone numbers are personal data and should usually be redacted.",
     replacement: "[phone removed]",
-    pattern: /(?<!\w)\+?\d[\d\s().-]{7,}\d\b/g
-  },
-  {
-    kind: "payment_card",
-    label: "Payment card-like number",
-    severity: "high",
-    explanation: "This looks like a payment card number. Do not send it to an LLM.",
-    replacement: "[payment number removed]",
-    pattern: /\b(?:\d[ -]*?){13,19}\b/g,
-    validator: looksLikeCard
+    pattern: /(?<!\w)\+?\d[\d\s().-]{6,}\d\b/g,
+    // Reject strings whose stripped digit count is 13 or more — those are card-length,
+    // not phone-length. The card rule above (higher severity) handles that range.
+    validator: (val) => val.replace(/\D/g, "").length < 13
   },
   {
     kind: "secret",
@@ -117,8 +123,11 @@ let mediaRecorder = null;
 let audioChunks = [];
 let activeStream = null;
 let recognition = null;
+let isRecordingActive = false;
 let recordingBaseText = "";
 let speechText = "";
+
+// ─── analysis ───────────────────────────────────────────────────────────────
 
 function analyzeTranscript(text) {
   const findings = [];
@@ -138,7 +147,7 @@ function analyzeTranscript(text) {
   const sorted = removeOverlaps(findings);
   const score = Math.min(
     100,
-    sorted.reduce((total, finding) => total + severityPoints[finding.severity], 0)
+    sorted.reduce((total, f) => total + severityPoints[f.severity], 0)
   );
   const decision = decide(score, sorted);
   return {
@@ -159,16 +168,16 @@ function removeOverlaps(findings) {
       a.start - b.start ||
       b.end - b.start - (a.end - a.start)
   );
-  for (const finding of prioritySorted) {
-    const overlaps = accepted.some((item) => finding.start < item.end && item.start < finding.end);
-    if (!overlaps) accepted.push(finding);
+  for (const f of prioritySorted) {
+    const overlaps = accepted.some((item) => f.start < item.end && item.start < f.end);
+    if (!overlaps) accepted.push(f);
   }
   return accepted.sort((a, b) => a.start - b.start);
 }
 
 function decide(score, findings) {
-  if (findings.some((finding) => finding.severity === "critical")) return "BLOCK";
-  if (score >= 55 || findings.some((finding) => finding.severity === "high")) return "REVIEW";
+  if (findings.some((f) => f.severity === "critical")) return "BLOCK";
+  if (score >= 55 || findings.some((f) => f.severity === "high")) return "REVIEW";
   if (score >= 22) return "REDACT";
   return "SAFE";
 }
@@ -177,10 +186,10 @@ function redact(text, findings) {
   if (!findings.length) return text.trim();
   let cursor = 0;
   let output = "";
-  for (const finding of findings) {
-    output += text.slice(cursor, finding.start);
-    output += finding.replacement;
-    cursor = finding.end;
+  for (const f of findings) {
+    output += text.slice(cursor, f.start);
+    output += f.replacement;
+    cursor = f.end;
   }
   output += text.slice(cursor);
   return output.replace(/\s+/g, " ").trim();
@@ -188,7 +197,7 @@ function redact(text, findings) {
 
 function summarize(decision, findings) {
   if (!findings.length) return "No obvious privacy or safety risks were found.";
-  const labels = [...new Set(findings.map((finding) => finding.label))].sort().join(", ");
+  const labels = [...new Set(findings.map((f) => f.label))].sort().join(", ");
   if (decision === "BLOCK") return `Do not send this directly to an LLM. Found: ${labels}.`;
   if (decision === "REVIEW") return `Review before sending. Found: ${labels}.`;
   return `Redact the sensitive parts first. Found: ${labels}.`;
@@ -198,7 +207,7 @@ function guidance(findings) {
   if (!findings.length) {
     return ["Proceed normally, but keep the user's data local whenever possible."];
   }
-  const kinds = new Set(findings.map((finding) => finding.kind));
+  const kinds = new Set(findings.map((f) => f.kind));
   const items = [
     "Remove or mask private details before sending the transcript to an LLM.",
     "Explain the limitation to the user in plain language."
@@ -206,14 +215,28 @@ function guidance(findings) {
   if (kinds.has("emergency")) {
     items.unshift("For urgent safety issues, guide the user to emergency help immediately.");
   }
-  if (["medical", "legal", "financial"].some((kind) => kinds.has(kind))) {
+  if (["medical", "legal", "financial"].some((k) => kinds.has(k))) {
     items.push("Give general information only and suggest a qualified professional.");
   }
-  if (["payment_card", "secret"].some((kind) => kinds.has(kind))) {
+  if (["payment_card", "secret"].some((k) => kinds.has(k))) {
     items.push("Never echo passwords, tokens, or payment details back to the user.");
   }
   return items;
 }
+
+// ─── validators ─────────────────────────────────────────────────────────────
+
+// Returns true for anything that looks structurally like a payment card:
+// 13–19 digits optionally separated by spaces or dashes.
+// We deliberately do NOT gate on the Luhn checksum — a safety tool should
+// flag anything that *looks* like a card, not silently miss it because the
+// user typed a digit wrong.
+function looksLikeCardFormat(value) {
+  const digits = value.replace(/\D/g, "");
+  return digits.length >= 13 && digits.length <= 19;
+}
+
+// ─── rendering ──────────────────────────────────────────────────────────────
 
 function render(result) {
   decisionEl.textContent = result.decision;
@@ -226,10 +249,10 @@ function render(result) {
   findingsEl.innerHTML = result.findings.length
     ? result.findings
         .map(
-          (finding) => `
-            <article class="finding ${finding.severity}">
-              <strong>${finding.label} / ${finding.severity}</strong>
-              <p>${finding.explanation}</p>
+          (f) => `
+            <article class="finding ${f.severity}">
+              <strong>${f.label} / ${f.severity}</strong>
+              <p>${f.explanation}</p>
             </article>
           `
         )
@@ -245,10 +268,12 @@ function refresh() {
 
 function setSample(name) {
   transcriptInput.value = samples[name];
-  sampleButtons.forEach((button) => button.classList.toggle("active", button.dataset.sample === name));
+  sampleButtons.forEach((btn) => btn.classList.toggle("active", btn.dataset.sample === name));
   recordingStatus.textContent = "Sample loaded. You can edit it or record over it.";
   refresh();
 }
+
+// ─── recording ──────────────────────────────────────────────────────────────
 
 async function startRecording() {
   if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
@@ -261,6 +286,7 @@ async function startRecording() {
   try {
     activeStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     audioChunks = [];
+    isRecordingActive = true;
     mediaRecorder = new MediaRecorder(activeStream);
     recordingBaseText = transcriptInput.value.trim();
     speechText = "";
@@ -269,11 +295,11 @@ async function startRecording() {
       if (event.data.size > 0) audioChunks.push(event.data);
     });
 
-    mediaRecorder.addEventListener("stop", (event) => {
-      const audioBlob = new Blob(audioChunks, { type: event.target?.mimeType || "audio/webm" });
+    mediaRecorder.addEventListener("stop", () => {
+      const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || "audio/webm" });
       audioPreview.src = URL.createObjectURL(audioBlob);
       audioPreview.hidden = false;
-      activeStream?.getTracks().forEach((track) => track.stop());
+      activeStream?.getTracks().forEach((t) => t.stop());
       activeStream = null;
       recorderCard.classList.remove("recording");
       startRecordingButton.disabled = false;
@@ -281,8 +307,8 @@ async function startRecording() {
       mediaRecorder = null;
       recordingStatus.textContent =
         speechText.trim().length > 0
-          ? "Recording saved and transcript updated."
-          : "Recording saved. If no transcript appeared, type or paste the words below.";
+          ? "Done. Transcript updated from your recording."
+          : "Recording saved. If no words appeared, your browser may not support live speech-to-text — paste the transcript manually.";
       refresh();
     });
 
@@ -292,11 +318,12 @@ async function startRecording() {
     startRecordingButton.disabled = true;
     stopRecordingButton.disabled = false;
     recordingStatus.textContent = SpeechRecognition
-      ? "Recording. Speak clearly; live transcript will appear below."
-      : "Recording audio. This browser does not expose live speech-to-text.";
+      ? "Listening — speak now. Words will appear automatically."
+      : "Recording audio. Live speech-to-text is not available in this browser.";
   } catch (error) {
-    recordingStatus.textContent = `Microphone permission failed: ${error.message}`;
-    activeStream?.getTracks().forEach((track) => track.stop());
+    isRecordingActive = false;
+    recordingStatus.textContent = `Microphone access failed: ${error.message}`;
+    activeStream?.getTracks().forEach((t) => t.stop());
     activeStream = null;
     if (mediaRecorder?.state === "recording") mediaRecorder.stop();
     recorderCard.classList.remove("recording");
@@ -306,65 +333,92 @@ async function startRecording() {
 }
 
 function stopRecording() {
-  if (recognition) {
-    recognition.onend = null;
-    recognition.stop();
-    recognition = null;
-  }
+  isRecordingActive = false;
+  stopSpeechRecognition();
   if (mediaRecorder?.state === "recording") {
     mediaRecorder.stop();
   }
 }
 
-function startSpeechRecognition() {
-  if (!SpeechRecognition) return;
-  try {
-    recognition = new SpeechRecognition();
-    recognition.lang = "en-GB";
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.onresult = (event) => {
-      let interim = "";
-      for (let index = event.resultIndex; index < event.results.length; index += 1) {
-        const transcript = event.results[index][0].transcript;
-        if (event.results[index].isFinal) {
-          speechText += `${transcript} `;
-        } else {
-          interim += transcript;
-        }
-      }
-      transcriptInput.value = [recordingBaseText, speechText, interim]
-        .filter((part) => part.trim().length > 0)
-        .join(" ")
-        .trim();
-      recordingStatus.textContent = interim
-        ? `Listening: ${interim}`
-        : "Recording. Live transcript is updating.";
-      refresh();
-    };
-    recognition.onerror = (event) => {
-      recordingStatus.textContent = `Speech-to-text stopped: ${event.error}. Audio is still recording.`;
-    };
-    recognition.start();
-  } catch (error) {
+function stopSpeechRecognition() {
+  if (recognition) {
+    recognition.onend = null;
+    try { recognition.stop(); } catch (_) {}
     recognition = null;
-    recordingStatus.textContent =
-      "Recording audio. Live speech-to-text could not start in this browser.";
   }
 }
+
+function startSpeechRecognition() {
+  if (!SpeechRecognition) return;
+
+  function createAndStart() {
+    if (!isRecordingActive) return;
+
+    try {
+      recognition = new SpeechRecognition();
+      recognition.lang = "en-GB";
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+
+      recognition.onresult = (event) => {
+        let interim = "";
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const t = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            speechText += `${t} `;
+          } else {
+            interim += t;
+          }
+        }
+        transcriptInput.value = [recordingBaseText, speechText, interim]
+          .filter((p) => p.trim().length > 0)
+          .join(" ")
+          .trim();
+        recordingStatus.textContent = interim
+          ? `Hearing: "${interim}"`
+          : "Recording. Transcript is updating.";
+        refresh();
+      };
+
+      recognition.onerror = (event) => {
+        // "no-speech" and "aborted" are normal — don't show them as errors
+        if (event.error !== "no-speech" && event.error !== "aborted") {
+          recordingStatus.textContent = `Speech recognition: ${event.error}. Audio still recording.`;
+        }
+      };
+
+      // The browser stops SpeechRecognition after a period of silence.
+      // Restart it automatically so the user never has to press anything again.
+      recognition.onend = () => {
+        if (isRecordingActive) {
+          setTimeout(createAndStart, 150);
+        }
+      };
+
+      recognition.start();
+    } catch (error) {
+      recognition = null;
+      recordingStatus.textContent =
+        "Recording audio. Live speech-to-text could not start in this browser.";
+    }
+  }
+
+  createAndStart();
+}
+
+// ─── file upload ─────────────────────────────────────────────────────────────
 
 async function handleFileUpload(event) {
   const file = event.target.files?.[0];
   if (!file) return;
 
-  const isText =
-    file.type.startsWith("text/") ||
-    /\.(txt|md|json)$/i.test(file.name);
+  const isText = file.type.startsWith("text/") || /\.(txt|md|json)$/i.test(file.name);
   const isAudio = file.type.startsWith("audio/");
 
   if (isText) {
     transcriptInput.value = await file.text();
-    recordingStatus.textContent = `Loaded transcript file: ${file.name}`;
+    recordingStatus.textContent = `Loaded: ${file.name}`;
     refresh();
     return;
   }
@@ -373,11 +427,11 @@ async function handleFileUpload(event) {
     audioPreview.src = URL.createObjectURL(file);
     audioPreview.hidden = false;
     recordingStatus.textContent =
-      `Loaded audio file: ${file.name}. Browser upload preview works; paste its transcript below to check it.`;
+      `Audio loaded: ${file.name}. Paste or type the transcript below to check it.`;
     return;
   }
 
-  recordingStatus.textContent = "Unsupported file. Upload a text transcript or an audio file.";
+  recordingStatus.textContent = "Unsupported file. Upload a .txt transcript or an audio file.";
 }
 
 function clearAll() {
@@ -386,25 +440,11 @@ function clearAll() {
   audioPreview.removeAttribute("src");
   audioPreview.hidden = true;
   recordingStatus.textContent = "Cleared. Record, upload, or type a new transcript.";
-  sampleButtons.forEach((button) => button.classList.remove("active"));
+  sampleButtons.forEach((btn) => btn.classList.remove("active"));
   refresh();
 }
 
-function looksLikeCard(value) {
-  const digits = value.replace(/\D/g, "").split("").map(Number);
-  if (digits.length < 13) return false;
-  let checksum = 0;
-  const parity = digits.length % 2;
-  digits.forEach((digit, index) => {
-    let checkedDigit = digit;
-    if (index % 2 === parity) {
-      checkedDigit *= 2;
-      if (checkedDigit > 9) checkedDigit -= 9;
-    }
-    checksum += checkedDigit;
-  });
-  return checksum % 10 === 0;
-}
+// ─── wiring ──────────────────────────────────────────────────────────────────
 
 startRecordingButton.addEventListener("click", startRecording);
 stopRecordingButton.addEventListener("click", stopRecording);
@@ -412,7 +452,9 @@ clearButton.addEventListener("click", clearAll);
 fileInput.addEventListener("change", handleFileUpload);
 analyzeButton.addEventListener("click", refresh);
 transcriptInput.addEventListener("input", refresh);
-sampleButtons.forEach((button) => button.addEventListener("click", () => setSample(button.dataset.sample)));
+sampleButtons.forEach((btn) =>
+  btn.addEventListener("click", () => setSample(btn.dataset.sample))
+);
 
 if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
   recordingStatus.textContent =

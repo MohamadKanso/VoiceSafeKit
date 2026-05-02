@@ -14,7 +14,8 @@
 
 VoiceSafeKit is a simple safety layer for voice assistants.
 
-It checks what a voice assistant heard before that text is sent to an LLM.
+It records or accepts a voice transcript, checks the text, and helps clean it
+before that text is sent to an LLM.
 
 If the transcript contains private details, risky advice requests, or emergency language,
 VoiceSafeKit explains the problem and creates a safer version of the text.
@@ -38,6 +39,14 @@ It then returns:
 - the private parts that were found
 - a safer transcript with sensitive details removed
 - guidance for how the assistant should respond
+
+The website also includes:
+
+- browser audio recording through `MediaRecorder`
+- live speech-to-text when the browser supports Speech Recognition
+- text transcript upload
+- audio file upload and playback preview
+- paste/manual edit mode
 
 ## Why This Is Useful
 
@@ -68,9 +77,13 @@ Live app:
 
 The app runs in the browser. It does not need an account or an API key.
 
+Recording works best on Chrome or Edge because those browsers support the
+browser recording and speech recognition APIs most reliably. If speech-to-text is
+not available, the app still records audio and lets you type or paste the transcript.
+
 ## Screenshots
 
-### 1. Start With A Voice Transcript
+### 1. Record, Upload, Or Type A Transcript
 
 ![VoiceSafeKit transcript step](docs/assets/screenshot-1-transcript.png)
 
@@ -88,9 +101,15 @@ VoiceSafeKit follows three simple steps.
 
 ### 1. Capture
 
-The voice assistant turns speech into text.
+VoiceSafeKit can capture or load content in four ways:
 
-VoiceSafeKit receives that text transcript.
+- record audio in the browser
+- upload a text transcript
+- upload an audio file for playback
+- type or paste the transcript manually
+
+If the browser supports speech recognition, spoken words can appear in the text box
+while recording. If not, the audio is still recorded and can be played back.
 
 ### 2. Check
 
@@ -177,10 +196,8 @@ It should not be used as a replacement for:
 - Add a Wyoming protocol middleware example
 - Add more privacy detectors
 - Add multilingual rules
-- Add browser microphone demo mode
 - Add optional local LLM explanation mode
 
 ## License
 
 MIT. See [LICENSE](LICENSE).
-

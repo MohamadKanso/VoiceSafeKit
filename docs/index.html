@@ -10,14 +10,16 @@
   >
   <link
     rel="icon"
-    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23101211'/%3E%3Ccircle cx='16' cy='16' r='9' fill='%23f7f4ee'/%3E%3Cpath d='M11 16c3 4 7 5 11 2' fill='none' stroke='%231f8f5f' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23030504'/%3E%3Cpath d='M7 8h18v16H7z' fill='none' stroke='%2300ff84' stroke-width='2'/%3E%3Cpath d='M11 18c3 3 7 3 10 0' fill='none' stroke='%23f6fff9' stroke-width='2' stroke-linecap='square'/%3E%3C/svg%3E"
   >
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header class="topbar">
     <a class="brand" href="#top" aria-label="VoiceSafeKit home">
-      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-mark" aria-hidden="true">
+        <span></span><span></span><span></span><span></span>
+      </span>
       <span>VoiceSafeKit</span>
     </a>
     <nav aria-label="Primary navigation">
@@ -30,52 +32,60 @@
   <main id="top">
     <section class="hero">
       <div class="hero-copy">
-        <p class="eyebrow">Privacy layer for voice assistants</p>
-        <h1>Check what a voice assistant heard before an LLM sees it.</h1>
+        <p class="eyebrow">Local voice safety layer</p>
+        <h1>Record, check, and clean a voice transcript before an LLM sees it.</h1>
         <p>
-          VoiceSafeKit finds private details, risky requests, and emergency language
-          in voice transcripts. It then explains what to remove in simple words.
+          VoiceSafeKit records audio in the browser, accepts transcript files, finds
+          obvious privacy risks, and gives a safer version of the text to send forward.
         </p>
         <div class="hero-actions">
-          <a class="button primary" href="#demo">Try the demo</a>
+          <a class="button primary" href="#demo">Try the live checker</a>
           <a class="button secondary" href="https://github.com/MohamadKanso/VoiceSafeKit">
             View GitHub
           </a>
         </div>
       </div>
-      <div class="hero-panel" aria-label="Voice safety summary">
-        <div class="waveform" aria-hidden="true">
+
+      <div class="hero-console" aria-label="VoiceSafeKit system summary">
+        <div class="console-top">
+          <span>VOICE / SAFE / KIT</span>
+          <span id="heroDecision">REVIEW</span>
+        </div>
+        <div class="glyph-board" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
           <span></span><span></span><span></span><span></span><span></span>
           <span></span><span></span><span></span><span></span><span></span>
         </div>
-        <div class="decision-card">
-          <span class="small-label">Current decision</span>
-          <strong id="heroDecision">REVIEW</strong>
-          <p id="heroSummary">Private details found. Redact before sending to an LLM.</p>
+        <div class="signal-lines" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span>
         </div>
+        <p id="heroSummary">Review before sending. Found private details.</p>
       </div>
     </section>
 
     <section id="workflow" class="workflow">
       <div class="section-heading">
         <p class="eyebrow">Simple workflow</p>
-        <h2>Three steps: Capture, Check, Protect.</h2>
+        <h2>Capture. Check. Protect.</h2>
       </div>
       <div class="steps">
         <article>
           <span>01</span>
           <h3>Capture</h3>
-          <p>The assistant turns speech into text. VoiceSafeKit receives that transcript.</p>
+          <p>Record in the browser, upload a transcript file, or paste text manually.</p>
         </article>
         <article>
           <span>02</span>
           <h3>Check</h3>
-          <p>It looks for private data, risky advice requests, and urgent safety language.</p>
+          <p>Find private data, high-risk requests, and emergency language.</p>
         </article>
         <article>
           <span>03</span>
           <h3>Protect</h3>
-          <p>It creates a safer transcript and plain guidance for the assistant.</p>
+          <p>Create a safer transcript and clear guidance for the assistant.</p>
         </article>
       </div>
     </section>
@@ -83,8 +93,8 @@
     <section id="demo" class="demo-shell">
       <div class="demo-header">
         <div>
-          <p class="eyebrow">Live demo</p>
-          <h2>Paste a transcript or choose a sample.</h2>
+          <p class="eyebrow">Live app</p>
+          <h2>Choose a sample, record audio, upload a file, or type.</h2>
         </div>
         <div class="sample-buttons" aria-label="Transcript samples">
           <button data-sample="password">Password reset</button>
@@ -94,19 +104,43 @@
       </div>
 
       <div class="app-grid">
-        <section class="panel transcript-panel">
+        <section class="panel capture-panel">
           <div class="panel-title">
             <span>Capture</span>
-            <strong>Voice transcript</strong>
+            <strong>Input</strong>
           </div>
+
+          <div class="recorder-card">
+            <div>
+              <span class="small-label">Browser recorder</span>
+              <p id="recordingStatus">Ready. Recording works on HTTPS or localhost.</p>
+            </div>
+            <div class="recorder-actions">
+              <button class="icon-button" id="startRecording" title="Start recording">
+                <span></span>
+              </button>
+              <button class="icon-button stop" id="stopRecording" title="Stop recording" disabled>
+                <span></span>
+              </button>
+            </div>
+            <audio id="audioPreview" controls hidden></audio>
+          </div>
+
+          <div class="upload-row">
+            <label class="upload-button" for="fileInput">Upload text or audio</label>
+            <input id="fileInput" type="file" accept=".txt,.md,.json,text/plain,audio/*">
+            <button class="ghost-button" id="clearButton">Clear</button>
+          </div>
+
+          <label class="text-label" for="transcriptInput">Transcript</label>
           <textarea id="transcriptInput" spellcheck="true"></textarea>
           <button class="button primary full" id="analyzeButton">Check transcript</button>
         </section>
 
-        <section class="panel">
+        <section class="panel result-panel">
           <div class="panel-title">
             <span>Check</span>
-            <strong>Privacy and safety result</strong>
+            <strong>Safety result</strong>
           </div>
           <div class="score-row">
             <div>
@@ -114,8 +148,8 @@
               <strong id="decision">REVIEW</strong>
             </div>
             <div>
-              <span class="small-label">Risk score</span>
-              <strong id="score">58/100</strong>
+              <span class="small-label">Risk</span>
+              <strong id="score">80/100</strong>
             </div>
           </div>
           <p id="summary" class="summary"></p>
@@ -125,7 +159,7 @@
         <section class="panel protected-panel">
           <div class="panel-title">
             <span>Protect</span>
-            <strong>Safe version to send forward</strong>
+            <strong>Safe version</strong>
           </div>
           <pre id="safeTranscript"></pre>
           <div id="guidance" class="guidance"></div>

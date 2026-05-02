@@ -271,11 +271,22 @@ function setSample(name) {
 
 // ─── recording ──────────────────────────────────────────────────────────────
 
-function startRecording() {
+async function startRecording() {
   if (!SpeechRecognition) {
     recordingStatus.textContent =
       "Live speech-to-text is not supported in this browser. Try Chrome or Edge.";
     startRecordingButton.disabled = true;
+    return;
+  }
+
+  // Chrome on HTTPS requires an explicit getUserMedia call to show the
+  // microphone permission prompt before SpeechRecognition will work.
+  // We request the mic, show the dialog, then immediately release it.
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach((t) => t.stop());
+  } catch (err) {
+    recordingStatus.textContent = `Microphone access denied: ${err.message}`;
     return;
   }
 
@@ -296,9 +307,9 @@ function stopRecording() {
   startRecordingButton.disabled = false;
   stopRecordingButton.disabled = true;
   recordingStatus.textContent =
-    speechText.trim().length > 0
+    transcriptInput.value.trim().length > 0
       ? "Done. Your words are in the transcript box below."
-      : "Stopped. Nothing was heard — check your microphone or try again.";
+      : "Stopped. Nothing was heard — make sure your microphone is allowed in the browser.";
   refresh();
 }
 

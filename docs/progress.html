@@ -42,18 +42,18 @@
     <section class="progress-summary-grid" aria-label="Current progress summary">
       <article>
         <span class="small-label">Current phase</span>
-        <strong>Phase 0.2</strong>
-        <p>Integration examples and detector quality improvements.</p>
+        <strong>Phase 0.3</strong>
+        <p>Intelligence and context — confidence scoring, 7 new detectors, conversation mode, and inline highlighting.</p>
       </article>
       <article>
-        <span class="small-label">Latest fix</span>
-        <strong>Grouped findings</strong>
-        <p>Repeated emails now show as one grouped result, such as 2 email addresses.</p>
+        <span class="small-label">Latest additions</span>
+        <strong>SSN · IBAN · CVV</strong>
+        <p>Critical-severity detectors with validation (mod-97 checksum for IBAN, range filter for SSN).</p>
       </article>
       <article>
-        <span class="small-label">Open work</span>
-        <strong>Issue #3</strong>
-        <p>Date-of-birth and location detectors are assigned to an external contributor.</p>
+        <span class="small-label">Shipped 3 June 2026</span>
+        <strong>v0.2.0</strong>
+        <p>Conversation mode, inspect tab, confidence bars, copy + export, and 7 new detectors.</p>
       </article>
     </section>
 
@@ -192,7 +192,7 @@
         <article class="progress-item resolved current">
           <div class="progress-marker">08</div>
           <div>
-            <span class="status-chip">Resolved now</span>
+            <span class="status-chip">Resolved</span>
             <h3>Long transcripts needed a denser warning panel.</h3>
             <p>
               As more detectors were added, the Check panel could become too tall
@@ -208,32 +208,187 @@
       </div>
     </section>
 
+    <!-- Phase 0.3 entries — 3 June 2026 -->
     <section class="progress-section">
       <div class="section-heading">
-        <p class="eyebrow">Latest transcript test</p>
+        <p class="eyebrow">Phase 0.3 — 3 June 2026</p>
+        <h2>Intelligence and context</h2>
+      </div>
+
+      <div class="progress-timeline">
+        <article class="progress-item current">
+          <div class="progress-marker">09</div>
+          <div>
+            <span class="status-chip">Shipped 3 Jun 2026</span>
+            <h3>Critical-severity PII was missing: SSNs, IBANs, and CVV codes.</h3>
+            <p>
+              The original detector set covered emails, phones, and payment card
+              numbers but missed government-issued identity numbers, bank account
+              IBANs, and card security codes — all of which are high-value targets
+              for identity theft and financial fraud.
+            </p>
+            <p>
+              Fixed by adding three <strong>critical-severity</strong> detectors.
+              The SSN detector excludes invalid area codes (000, 666, 900–999).
+              The IBAN detector runs a full <code>mod-97</code> checksum to reject
+              false positives. The CVV detector is keyword-triggered and requires
+              a 3–4 digit number adjacent to CVV/CVC terminology.
+            </p>
+          </div>
+        </article>
+
+        <article class="progress-item current">
+          <div class="progress-marker">10</div>
+          <div>
+            <span class="status-chip">Shipped 3 Jun 2026</span>
+            <h3>Dates of birth and IP addresses were not flagged.</h3>
+            <p>
+              Issue #3 was previously assigned to an external contributor. Both
+              detectors are now part of the core engine. Date of birth handles
+              natural speech patterns ("born on March 15, 1988") and multiple
+              date formats. IP address detection excludes the broadcast and zero
+              addresses.
+            </p>
+          </div>
+        </article>
+
+        <article class="progress-item current">
+          <div class="progress-marker">11</div>
+          <div>
+            <span class="status-chip">Shipped 3 Jun 2026</span>
+            <h3>The tool had no way to detect emotionally vulnerable users or coercion.</h3>
+            <p>
+              A voice assistant may receive transcripts where the user is in
+              emotional distress or is being pressured by a third party. Neither
+              state was detectable, and both require very different assistant
+              responses than a straightforward PII redaction.
+            </p>
+            <p>
+              Fixed by adding two new intent categories. The
+              <strong>emotional distress signal</strong> (high, 70% confidence)
+              catches hopelessness, worthlessness, and giving-up language. The
+              <strong>coercion or pressure signal</strong> (high, 65% confidence)
+              catches phrases that suggest the user is being forced to say or do
+              something. Both trigger specific guidance to the assistant.
+            </p>
+          </div>
+        </article>
+
+        <article class="progress-item current">
+          <div class="progress-marker">12</div>
+          <div>
+            <span class="status-chip">Shipped 3 Jun 2026</span>
+            <h3>Detection had no confidence values — every finding was treated as equally certain.</h3>
+            <p>
+              The original engine returned binary findings with no indication of
+              how confident the detection was. A phone number match near a card
+              number was treated with the same certainty as a Luhn-verified card.
+              This made the risk score misleading and offered no way to tune
+              sensitivity.
+            </p>
+            <p>
+              Fixed by adding <code>confidence: float</code> to every
+              <code>Finding</code>. The risk score is now computed as
+              <code>severity_points × confidence</code>, so a 70%-confidence
+              high finding contributes 25 points rather than 36. The web app
+              shows a CSS confidence bar and percentage on every finding card.
+            </p>
+          </div>
+        </article>
+
+        <article class="progress-item current">
+          <div class="progress-marker">13</div>
+          <div>
+            <span class="status-chip">Shipped 3 Jun 2026</span>
+            <h3>The web app had no way to see which words in the original transcript were flagged.</h3>
+            <p>
+              The existing "Protect" view showed a cleaned transcript, but
+              there was no visual way to understand which specific words or
+              phrases triggered each finding. Users had to read the finding
+              descriptions and mentally match them back to the original text.
+            </p>
+            <p>
+              Fixed by adding an <strong>Inspect tab</strong> to the Check
+              panel. It renders the original transcript with inline
+              <code>&lt;mark&gt;</code> highlights — amber for medium, red for
+              high, brighter red for critical. Each mark is hoverable and shows
+              the finding label, confidence, and explanation in a native tooltip.
+            </p>
+          </div>
+        </article>
+
+        <article class="progress-item current">
+          <div class="progress-marker">14</div>
+          <div>
+            <span class="status-chip">Shipped 3 Jun 2026</span>
+            <h3>Analyzing a multi-turn conversation required calling the API once per turn with no aggregation.</h3>
+            <p>
+              Real voice assistant interactions span multiple turns. The old API
+              had no way to analyze a sequence of utterances together or
+              understand the cumulative risk across a session.
+            </p>
+            <p>
+              Fixed by adding <code>analyze_conversation(utterances)</code> to
+              the Python API and a <strong>Conversation mode</strong> toggle to
+              the web app. Each turn is analyzed independently. The result
+              includes a peak decision, cumulative score, and the union of all
+              entity kinds seen across the session. A conversation timeline view
+              shows all turns with their individual findings.
+            </p>
+          </div>
+        </article>
+
+        <article class="progress-item current">
+          <div class="progress-marker">15</div>
+          <div>
+            <span class="status-chip">Shipped 3 Jun 2026</span>
+            <h3>There was no way to copy or export the analysis result.</h3>
+            <p>
+              The safe transcript could only be read on screen. Developers
+              building voice pipelines had no way to programmatically access the
+              full analysis output from the web app.
+            </p>
+            <p>
+              Fixed by adding a <strong>Copy</strong> button (clipboard,
+              Cmd/Ctrl+Enter shortcut) and an <strong>Export JSON</strong>
+              button that downloads a structured file with the decision, score,
+              findings with confidence, redaction map, and guidance.
+            </p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="progress-section">
+      <div class="section-heading">
+        <p class="eyebrow">Phase 0.3 — latest transcript test</p>
         <h2>What the tool should show now</h2>
       </div>
 
       <div class="progress-test-card">
         <div>
-          <span class="small-label">Expected summary</span>
-          <p class="progress-output">Review before sending. Found: 2 email addresses, Partial card reference, Password or secret, Phone number.</p>
+          <span class="small-label">Test transcript (identity_theft.txt)</span>
+          <p class="progress-output" style="font-size:12px;">"My Social Security Number is 471-55-8843. My bank account IBAN is GB29NWBK60161331926819. The CVV on my Visa is 847. I was born on March 15, 1988."</p>
+          <p>&nbsp;</p>
+          <span class="small-label">Expected decision</span>
+          <p class="progress-output">BLOCK — score 100/100</p>
         </div>
         <div>
           <span class="small-label">Expected finding cards</span>
           <ul>
-            <li>Password or secret / high</li>
-            <li>2 email addresses / medium</li>
-            <li>Phone number / medium</li>
-            <li>Partial card reference / medium</li>
+            <li>Social Security Number / critical / 95%</li>
+            <li>IBAN / Bank account / critical / 88%</li>
+            <li>Card security code / critical / 93%</li>
+            <li>Date of birth / medium / 80%</li>
           </ul>
         </div>
         <div>
-          <span class="small-label">Expected redaction</span>
+          <span class="small-label">Expected behaviour</span>
           <p>
-            Both emails, the phone number, and the password-like phrase should be
-            masked. The 4-digit card ending should also be flagged and replaced
-            as a partial card reference.
+            The SSN, IBAN, and CVV are all replaced. The date of birth is redacted.
+            The Inspect tab shows four colored highlight marks on the original text.
+            The Export JSON button produces a file with a redaction_map showing
+            exactly what was replaced.
           </p>
         </div>
       </div>
@@ -247,19 +402,19 @@
 
       <div class="progress-summary-grid">
         <article>
-          <span class="small-label">Issue #2</span>
+          <span class="small-label">Next up</span>
           <strong>Wyoming middleware</strong>
-          <p>Add a small middleware-style example before a transcript is sent to an assistant service.</p>
+          <p>A Wyoming protocol microservice example so any Home Assistant voice satellite can use VoiceSafeKit as a filter stage.</p>
         </article>
         <article>
-          <span class="small-label">Issue #3</span>
-          <strong>Contributor task</strong>
-          <p>Date-of-birth and location detectors are assigned to 0nullfox and intentionally left open.</p>
+          <span class="small-label">Research</span>
+          <strong>Streaming transcription</strong>
+          <p>Word-by-word detection using a sliding-window Whisper approach so risk scores update in real time while the user speaks.</p>
         </article>
         <article>
           <span class="small-label">Future</span>
-          <strong>Better scoring</strong>
-          <p>Refine the risk score so repeated medium findings and high-risk credentials feel easier to understand.</p>
+          <strong>Multilingual detection</strong>
+          <p>Extend PII patterns and intent rules to support French, German, Spanish, and Arabic transcripts.</p>
         </article>
       </div>
     </section>

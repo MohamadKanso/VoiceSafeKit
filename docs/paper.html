@@ -1031,9 +1031,133 @@
       </p>
     </div>
 
-    <!-- Closing -->
+    <!-- Section 9: Confidence scoring — added June 2026 -->
     <div class="section" id="s9">
-      <p class="section-num">09 - Closing</p>
+      <p class="section-num">09 - Confidence Scoring</p>
+      <h2 class="section-title">Why every finding needs a probability</h2>
+
+      <p>
+        The original engine returned binary findings: a pattern either matched or it did not. That approach overstates certainty. A phone number matched near a credit card number is less likely to be a real phone number than one found in isolation. A medical keyword in a clearly technical context is less alarming than the same keyword in an emotionally charged message. Binary matching discards this context entirely.
+      </p>
+
+      <p>
+        Version 0.2.0 adds a <code style="color:var(--green-2); font-size:13px;">confidence: float</code> field to every <code style="color:var(--green-2); font-size:13px;">Finding</code>. Each rule declares a base confidence that reflects how precise its pattern is. Context-aware validators then adjust it upward or downward.
+      </p>
+
+      <h3 style="font-size: 18px; font-weight: 420; margin: 32px 0 16px; color: var(--text);">Confidence-weighted scoring</h3>
+      <p>The risk score is now computed as:</p>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>engine.py — confidence-weighted score</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre class="code"><span class="k">def</span> <span class="n">_score</span><span class="p">(</span><span class="n">findings</span><span class="p">:</span> <span class="n">list</span><span class="p">[</span><span class="n">Finding</span><span class="p">])</span> <span class="p">-></span> <span class="n">int</span><span class="p">:</span>
+    <span class="n">total</span> <span class="p">=</span> <span class="n">sum</span><span class="p">(</span><span class="n">SEVERITY_POINTS</span><span class="p">[</span><span class="n">f</span><span class="p">.</span><span class="n">severity</span><span class="p">]</span> <span class="p">*</span> <span class="n">f</span><span class="p">.</span><span class="n">confidence</span> <span class="k">for</span> <span class="n">f</span> <span class="k">in</span> <span class="n">findings</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">min</span><span class="p">(</span><span class="s">100</span><span class="p">,</span> <span class="n">round</span><span class="p">(</span><span class="n">total</span><span class="p">))</span></pre>
+      </div>
+
+      <p>
+        A 70%-confidence high-severity finding contributes 25 points (36 × 0.70) rather than the full 36. A Luhn-verified payment card at 99% confidence contributes 35.6 points. This means the score reflects genuine risk rather than a count of regex matches.
+      </p>
+
+      <table class="severity-table">
+        <thead>
+          <tr><th>Detector</th><th>Base confidence</th><th>Reason</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Email address</td><td style="color:var(--text)">98%</td><td>Pattern is highly specific</td></tr>
+          <tr><td>Social Security Number</td><td style="color:var(--text)">95%</td><td>Pattern + invalid-range filter</td></tr>
+          <tr><td>IBAN / Bank account</td><td style="color:var(--text)">88%</td><td>Pattern + mod-97 checksum</td></tr>
+          <tr><td>Phone number</td><td style="color:var(--text)">85%</td><td>Prone to false positives from digit sequences</td></tr>
+          <tr><td>Emotional distress</td><td style="color:var(--text)">70%</td><td>Nuanced language, intent is ambiguous</td></tr>
+          <tr><td>Coercion signal</td><td style="color:var(--text)">65%</td><td>Hardest to detect reliably from text alone</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Section 10: Multi-turn conversation — added June 2026 -->
+    <div class="section" id="s10">
+      <p class="section-num">10 - Multi-Turn Conversation Analysis</p>
+      <h2 class="section-title">Why a single transcript is not enough</h2>
+
+      <p>
+        Voice assistants do not work in isolated utterances. A user might give their name in the first turn, their email address in the second, and their date of birth to confirm their identity in the third. Analyzed individually, turns two and three each get a medium-severity result. Seen together, the session reveals a structured identity disclosure that carries much higher real-world risk.
+      </p>
+
+      <p>
+        The <code style="color:var(--green-2); font-size:13px;">analyze_conversation</code> function takes an ordered list of utterances and returns a <code style="color:var(--green-2); font-size:13px;">ConversationResult</code> with per-turn analysis, a peak decision, and the union of all entity kinds detected across the session.
+      </p>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>Python — multi-turn analysis</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre class="code"><span class="k">from</span> <span class="n">voicesafekit</span> <span class="k">import</span> <span class="n">analyze_conversation</span>
+
+<span class="n">result</span> <span class="p">=</span> <span class="n">analyze_conversation</span><span class="p">([</span>
+    <span class="s">"Set a timer for ten minutes."</span><span class="p">,</span>
+    <span class="s">"My SSN is 471-55-8843 — please verify me."</span><span class="p">,</span>
+    <span class="s">"Thank you, that is all."</span><span class="p">,</span>
+<span class="p">])</span>
+
+<span class="n">result</span><span class="p">.</span><span class="n">peak_decision</span>    <span class="c"># "BLOCK"</span>
+<span class="n">result</span><span class="p">.</span><span class="n">cumulative_score</span> <span class="c"># 95</span>
+<span class="n">result</span><span class="p">.</span><span class="n">seen_kinds</span>       <span class="c"># ("ssn",)</span>
+<span class="n">len</span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">turns</span><span class="p">)</span>        <span class="c"># 3</span></pre>
+      </div>
+
+      <p>
+        The web app exposes this as a <strong>Conversation mode</strong> toggle. Each turn is added explicitly, a turn history panel tracks the sequence, and a timeline view below the main panels shows every turn's findings and decision alongside a cumulative summary bar.
+      </p>
+
+      <div class="callout">
+        <span class="callout-icon">Design note</span>
+        <p>
+          Cross-turn entity tracking (noticing that "my card" in turn 3 refers to the card number mentioned in turn 1) is not yet implemented. Each turn is currently analyzed in isolation. This is noted as a limitation and is the most important remaining engineering gap.
+        </p>
+      </div>
+    </div>
+
+    <!-- Section 11: New detector classes — added June 2026 -->
+    <div class="section" id="s11">
+      <p class="section-num">11 - New Detector Classes (June 2026)</p>
+      <h2 class="section-title">Financial identifiers, context signals, and human vulnerability</h2>
+
+      <p>
+        The v0.2.0 detector set adds three categories that were entirely absent from the original engine.
+      </p>
+
+      <h3 style="font-size: 18px; font-weight: 420; margin: 32px 0 16px; color: var(--text);">Financial identity numbers</h3>
+      <p>
+        SSNs, IBANs, and CVV codes are the three most common financial identifiers that a voice assistant user might accidentally speak. Each has a distinct detection challenge.
+      </p>
+      <p>
+        <strong>SSN</strong> — The pattern <code style="color:var(--green-2); font-size:13px;">\b(?!000|666|9\d{2})\d{3}[-\s]\d{2}[-\s]\d{4}\b</code> excludes area numbers that the Social Security Administration has never issued. This eliminates a class of false positives from account numbers and tracking codes that happen to match the XXX-XX-XXXX format.
+      </p>
+      <p>
+        <strong>IBAN</strong> — The pattern matches the standard two-letter country code, two check digits, and 11–30 alphanumeric BBAN characters. A mod-97 checksum then validates the matched text. Without this step, any sufficiently long alphanumeric string near a country code would be flagged.
+      </p>
+      <p>
+        <strong>CVV</strong> — Unlike card numbers, CVV codes are short (3–4 digits) and indistinguishable from any other number without context. The detector is keyword-triggered: it only fires when a CVV/CVC/security-code phrase precedes the number.
+      </p>
+
+      <h3 style="font-size: 18px; font-weight: 420; margin: 32px 0 16px; color: var(--text);">Emotional and situational context</h3>
+      <p>
+        Two new intent categories address situations that no PII detector can catch but that require fundamentally different assistant behavior.
+      </p>
+      <p>
+        The <strong>emotional distress signal</strong> fires on phrases expressing hopelessness, worthlessness, or a desire to disappear. When detected, the assistant guidance changes: instead of "redact and proceed," the guidance tells the assistant to respond with empathy and direct the user to appropriate support. The confidence is set at 70% because emotional language is genuinely ambiguous — "I feel like giving up" can mean quitting a project as easily as it can signal a crisis.
+      </p>
+      <p>
+        The <strong>coercion signal</strong> fires on phrases suggesting the user is being directed by a third party: "they made me say this," "don't tell anyone I said this." This is the lowest-confidence detector in the system (65%) because coercive language and ordinary reporting language overlap substantially. A higher false negative rate is acceptable here because the guidance produced is non-destructive — it simply tells the assistant not to act on instructions that may have been forced.
+      </p>
+    </div>
+
+    <!-- Closing — renumbered -->
+    <div class="section" id="s12">
+      <p class="section-num">12 - Closing</p>
       <h2 class="section-title">What this project is really about</h2>
       <p>
         Voice assistants are getting smarter quickly. The gap between what someone says and what an AI model is allowed to act on needs careful thought. Most of the safety work in this space focuses on model outputs (preventing harmful responses) rather than model inputs (preventing harmful data going in).
@@ -1049,7 +1173,7 @@
     </div>
 
     <footer class="paper-footer">
-      <span>VoiceSafeKit - Mohamad Kanso - 2025</span>
+      <span>VoiceSafeKit &mdash; Mohamad Kanso &mdash; updated June 2026</span>
       <div style="display:flex; gap: 20px;">
         <a href="https://github.com/MohamadKanso/VoiceSafeKit">GitHub</a>
         <a href="progress.html">Progress</a>
@@ -1071,7 +1195,10 @@
     <a href="#s6">06 - Design Decisions</a>
     <a href="#s7">07 - Limitations</a>
     <a href="#s8">08 - Future Work</a>
-    <a href="#s9">09 - Closing</a>
+    <a href="#s9">09 - Confidence Scoring</a>
+    <a href="#s10">10 - Multi-Turn Analysis</a>
+    <a href="#s11">11 - New Detectors (2026)</a>
+    <a href="#s12">12 - Closing</a>
   </aside>
 
 </div><!-- end page-outer -->

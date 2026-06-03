@@ -17,6 +17,7 @@ class OpenVoiceOSSafetyResult:
     should_continue: bool
     should_review: bool
     findings: tuple[str, ...]
+    finding_details: tuple[dict, ...]
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -28,6 +29,7 @@ class OpenVoiceOSSafetyResult:
             "should_continue": self.should_continue,
             "should_review": self.should_review,
             "findings": list(self.findings),
+            "finding_details": list(self.finding_details),
         }
 
 
@@ -37,7 +39,6 @@ def protect_utterance(transcript: str) -> OpenVoiceOSSafetyResult:
     In a real OpenVoiceOS skill, call this after speech-to-text creates a transcript
     and before the text is passed to a downstream assistant action.
     """
-
     analysis = analyze_transcript(transcript)
     return OpenVoiceOSSafetyResult(
         original_transcript=transcript,
@@ -47,6 +48,14 @@ def protect_utterance(transcript: str) -> OpenVoiceOSSafetyResult:
         assistant_guidance=analysis.assistant_guidance,
         should_continue=analysis.decision != "BLOCK",
         should_review=analysis.decision in {"REVIEW", "BLOCK"},
-        findings=tuple(finding.label for finding in analysis.findings),
+        findings=tuple(f.label for f in analysis.findings),
+        finding_details=tuple(
+            {
+                "label": f.label,
+                "severity": f.severity,
+                "confidence": f.confidence,
+                "kind": f.kind,
+            }
+            for f in analysis.findings
+        ),
     )
-

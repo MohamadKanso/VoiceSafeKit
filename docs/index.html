@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>VoiceSafeKit</title>
-  <meta name="description" content="A privacy and safety checker for local voice assistant transcripts.">
+  <meta name="description" content="A privacy and safety checker for local voice assistant transcripts. Detects PII, SSNs, IBANs, emotional distress, and more — entirely in the browser.">
   <link
     rel="icon"
     href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23030504'/%3E%3Cpath d='M7 8h18v16H7z' fill='none' stroke='%2300ff84' stroke-width='2'/%3E%3Cpath d='M11 18c3 3 7 3 10 0' fill='none' stroke='%23f6fff9' stroke-width='2' stroke-linecap='square'/%3E%3C/svg%3E"
@@ -33,11 +33,12 @@
     <!-- Hero -->
     <section class="hero">
       <div class="hero-copy">
-        <p class="eyebrow">Local voice safety layer</p>
+        <p class="eyebrow">Local voice safety layer &mdash; v0.2.0</p>
         <h1>Record, check, and clean a voice transcript before an LLM sees it.</h1>
         <p>
-          VoiceSafeKit records audio in the browser, finds obvious privacy risks,
-          and gives a safer version of the text to send forward.
+          VoiceSafeKit transcribes audio in the browser, finds privacy and safety risks,
+          and gives a cleaner version of the text. Now with SSN, IBAN, CVV detection,
+          confidence scoring, conversation mode, and inline transcript highlighting.
         </p>
         <div class="hero-actions">
           <a class="button primary" href="#demo">Try the live checker</a>
@@ -48,7 +49,7 @@
 
       <div class="hero-console" aria-label="VoiceSafeKit system summary">
         <div class="console-top">
-          <span>VOICE / SAFE / KIT</span>
+          <span>VOICE / SAFE / KIT &mdash; v0.2.0</span>
           <span id="heroDecision">REVIEW</span>
         </div>
         <div class="glyph-board" aria-hidden="true">
@@ -76,17 +77,17 @@
         <article>
           <span>01</span>
           <h3>Capture</h3>
-          <p>Record your voice, upload a transcript file, or paste text directly.</p>
+          <p>Record your voice, upload a transcript, or paste text directly. Conversation mode lets you chain multiple turns and track cumulative risk.</p>
         </article>
         <article>
           <span>02</span>
           <h3>Check</h3>
-          <p>Find private data, high-risk requests, and emergency language automatically.</p>
+          <p>Detect PII, credentials, SSNs, IBANs, emotional distress, and coercion signals. Every finding shows a confidence score and inline highlight.</p>
         </article>
         <article>
           <span>03</span>
           <h3>Protect</h3>
-          <p>Get a safer version of the transcript and clear guidance for the assistant.</p>
+          <p>Get a redacted transcript, a detailed redaction map, and actionable guidance. Export the full result as JSON for downstream use.</p>
         </article>
       </div>
     </section>
@@ -95,7 +96,7 @@
     <section id="demo" class="demo-shell">
       <div class="demo-header">
         <div>
-          <p class="eyebrow">Live app</p>
+          <p class="eyebrow">Live app &mdash; runs entirely in your browser</p>
           <h2>Try it now</h2>
         </div>
       </div>
@@ -108,15 +109,22 @@
           <div class="panel-title">
             <span class="step-badge">01</span>
             <strong>Capture</strong>
+            <button id="convToggle" class="conv-toggle" title="Switch between single and conversation mode">Single</button>
+          </div>
+
+          <!-- Turn history (conversation mode) -->
+          <div id="turnHistory" class="turn-history" hidden>
+            <p class="turn-history-empty">No turns yet. Type and click "Add Turn +".</p>
           </div>
 
           <p class="panel-desc">Record your voice or load a sample to get started.</p>
 
-          <!-- Sample buttons live here, close to the input -->
           <div class="sample-buttons" aria-label="Load a sample transcript">
             <button data-sample="password">Password reset</button>
-            <button data-sample="medical">Medical question</button>
-            <button data-sample="safe">Safe reminder</button>
+            <button data-sample="medical">Medical + distress</button>
+            <button data-sample="identity">Identity theft</button>
+            <button data-sample="coercion">Coercion</button>
+            <button data-sample="safe">Safe</button>
           </div>
 
           <!-- Recorder -->
@@ -149,6 +157,12 @@
           <!-- Transcript box -->
           <label class="text-label" for="transcriptInput">Transcript</label>
           <textarea id="transcriptInput" spellcheck="true" placeholder="Type or paste a transcript here, or record your voice above."></textarea>
+
+          <!-- Add Turn button (conversation mode) -->
+          <button id="addTurnBtn" class="add-turn-btn" hidden title="Add this turn to the conversation (Cmd+Enter)">
+            + Add Turn
+          </button>
+          <p class="shortcut-hint" id="shortcutHint" hidden>Cmd+Enter to add turn &nbsp;&middot;&nbsp; or click the button above</p>
         </section>
 
         <!-- Column 2: Check -->
@@ -156,14 +170,16 @@
           <div class="panel-title">
             <span class="step-badge">02</span>
             <strong>Check</strong>
+            <div class="panel-tabs" role="tablist">
+              <button class="tab-btn active" data-tab="risks" role="tab" aria-selected="true">Risks</button>
+              <button class="tab-btn" data-tab="inspect" role="tab" aria-selected="false">Inspect</button>
+            </div>
           </div>
-
-          <p class="panel-desc">What was found in the transcript.</p>
 
           <div class="score-row">
             <div class="score-cell">
               <span class="small-label">Decision</span>
-              <strong id="decision">REVIEW</strong>
+              <strong id="decision" class="decision-val review">REVIEW</strong>
             </div>
             <div class="score-cell">
               <span class="small-label">Risk score</span>
@@ -173,8 +189,22 @@
 
           <p id="summary" class="summary-text"></p>
 
-          <div id="findingStats" class="finding-stats" aria-label="Finding totals"></div>
-          <div id="findings" class="findings"></div>
+          <!-- Risks tab -->
+          <div id="risksTab">
+            <div id="findingStats" class="finding-stats" aria-label="Finding totals"></div>
+            <div id="findings" class="findings"></div>
+          </div>
+
+          <!-- Inspect tab -->
+          <div id="inspectTab" hidden>
+            <div class="highlight-legend" aria-label="Colour legend">
+              <span class="legend-item legend-medium">Medium</span>
+              <span class="legend-item legend-high">High</span>
+              <span class="legend-item legend-critical">Critical</span>
+              <span class="legend-hint">Hover a highlight for details</span>
+            </div>
+            <div id="transcriptHighlight" class="transcript-highlight" aria-live="polite"></div>
+          </div>
         </section>
 
         <!-- Row 2: Protect (full width) -->
@@ -182,9 +212,13 @@
           <div class="panel-title">
             <span class="step-badge">03</span>
             <strong>Protect</strong>
+            <div class="protect-actions">
+              <button id="copyBtn" class="action-btn" title="Copy safe transcript (Cmd+Enter in single mode)">Copy</button>
+              <button id="exportBtn" class="action-btn" title="Export full result as JSON">Export JSON</button>
+            </div>
           </div>
 
-          <p class="panel-desc">A cleaned version of the transcript with sensitive parts removed, and guidance for the assistant.</p>
+          <p class="panel-desc">A cleaned version of the transcript with sensitive parts removed, plus guidance for the assistant.</p>
 
           <div class="protect-body">
             <div class="protect-col">
@@ -199,6 +233,17 @@
         </section>
 
       </div>
+
+      <!-- Conversation timeline (hidden until conversation mode) -->
+      <section id="convTimeline" class="conv-timeline" hidden aria-label="Conversation turn history">
+        <div class="conv-timeline-header">
+          <p class="eyebrow">Conversation analysis</p>
+          <h3>Turn history</h3>
+        </div>
+        <div id="cumulativeRisk" class="cumulative-risk"></div>
+        <div id="turnCards" class="turn-cards"></div>
+      </section>
+
     </section>
   </main>
 
@@ -209,6 +254,8 @@
     <a href="https://github.com/OpenVoiceOS/ovos-core">OpenVoiceOS</a>
     <a href="https://github.com/OHF-Voice/wyoming">Wyoming protocol</a>
   </footer>
+
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
   <script type="module" src="app.js"></script>
 </body>

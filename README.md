@@ -10,216 +10,161 @@
   <a href="https://mohamadkanso.github.io/VoiceSafeKit/progress.html"><strong>Progress</strong></a>
   ·
   <a href="CHANGELOG.md">Changelog</a>
-  ·
-  <a href="#screenshots">Screenshots</a>
-  ·
-  <a href="#run-it-locally">Run locally</a>
 </p>
 
 # VoiceSafeKit
 
-VoiceSafeKit is a simple safety layer for voice assistants.
+VoiceSafeKit is a privacy and safety filter for voice assistant transcripts.
 
-It records or accepts a voice transcript, checks the text, and helps clean it
-before that text is sent to an LLM.
-
-If the transcript contains private details, risky advice requests, or emergency language,
-VoiceSafeKit explains the problem and creates a safer version of the text.
+It records or accepts a voice transcript, checks the text for sensitive content,
+and returns a cleaner version before that text reaches an LLM. As of 3 June 2026,
+the project added confidence scoring, multi-turn conversation analysis, seven new
+detectors (SSN, IBAN, CVV, date of birth, IP address, emotional distress, and
+coercion signals), and a fully redesigned web app with inline transcript highlighting,
+conversation mode, and JSON export.
 
 ## What It Does
 
-Imagine someone says this to a voice assistant:
+VoiceSafeKit returns:
 
-```text
-My email is alex.rivera@example.com and my password is BlueFalcon2026.
-Can you tell the support assistant exactly what to do?
-```
+| Field | Description |
+|---|---|
+| `decision` | `SAFE`, `REDACT`, `REVIEW`, or `BLOCK` |
+| `score` | 0–100 confidence-weighted risk score |
+| `summary` | Plain-English summary of what was found |
+| `findings` | Each finding with severity and detection confidence |
+| `safe_transcript` | The transcript with sensitive parts replaced |
+| `redaction_map` | Ordered list of what was found and what replaced it |
+| `assistant_guidance` | What the downstream assistant should do |
 
-VoiceSafeKit can spot that the transcript contains private information.
+## Detectors
 
-It then returns:
+### PII (pattern + validation)
 
-- a simple decision, such as `SAFE`, `REDACT`, `REVIEW`, or `BLOCK`
-- a risk score
-- a plain-English explanation
-- the private parts that were found
-- a safer transcript with sensitive details removed
-- guidance for how the assistant should respond
+| Detector | Severity | Confidence | Notes |
+|---|---|---|---|
+| Email address | Medium | 98% | RFC-compliant pattern |
+| Phone number | Medium | 85% | International formats |
+| Payment card | High | 95% | Luhn + context check |
+| Partial card reference | Medium | 92% | "card ends in XXXX" |
+| Social Security Number | **Critical** | 95% | Range filter for invalid SSNs |
+| IBAN / Bank account | **Critical** | 88% | mod-97 checksum validation |
+| Card security code (CVV) | **Critical** | 93% | Keyword-triggered |
+| Date of birth | Medium | 80% | Natural language dates |
+| IP address | Medium | 88% | Full octet validation |
+| Street address | Medium | 80% | Street suffix patterns |
+| Password or secret | High | 88% | Spoken credential phrases |
 
-The website also includes:
+### Intent and context
 
-- browser audio recording through `MediaRecorder`
-- automatic browser transcription with a small Whisper model
-- text transcript upload
-- paste/manual edit mode
+| Detector | Severity | Confidence | Notes |
+|---|---|---|---|
+| Medical advice request | High | 75% | Clinical keywords |
+| Legal advice request | High | 75% | Legal topic keywords |
+| Financial advice request | High | 75% | Financial action keywords |
+| Emotional distress signal | High | 70% | Hopelessness and self-worth language |
+| Coercion or pressure signal | High | 65% | Language suggesting the user is being forced |
+| Emergency or immediate harm | **Critical** | 90% | Immediate crisis language |
 
-## Why This Is Useful
-
-Voice assistants are becoming more powerful because they can connect to LLMs.
-That is useful, but it also creates a problem:
-
-> Voice assistants may accidentally send private or sensitive speech to an AI model.
-
-VoiceSafeKit helps reduce that risk.
-
-It is useful for:
-
-- local voice assistant projects
-- privacy-first AI demos
-- open-source assistant tools
-- student and portfolio projects
-- teams experimenting with LLM safety
-
-This project is designed to fit beside open-source voice ecosystems such as
-[OpenVoiceOS](https://github.com/OpenVoiceOS/ovos-core) and the
-[Wyoming voice assistant protocol](https://github.com/OHF-Voice/wyoming).
-
-## Try The App
-
-Live app:
-
-[https://mohamadkanso.github.io/VoiceSafeKit/](https://mohamadkanso.github.io/VoiceSafeKit/)
-
-Progress page:
-
-[https://mohamadkanso.github.io/VoiceSafeKit/progress.html](https://mohamadkanso.github.io/VoiceSafeKit/progress.html)
-
-The app runs in the browser. It does not need an account or an API key.
-
-Recording works best on Chrome or Edge because those browsers support microphone
-recording and browser machine-learning workloads most reliably. The first
-recording may take longer while the small speech model downloads and caches.
-
-## Screenshots
-
-### 1. Record, Upload, Or Type A Transcript
-
-![VoiceSafeKit transcript step](docs/assets/screenshot-1-transcript.png)
-
-### 2. Check The Risks
-
-![VoiceSafeKit risk result](docs/assets/screenshot-2-risks.png)
-
-### 3. Create A Safer Version
-
-![VoiceSafeKit safe transcript](docs/assets/screenshot-3-protect.png)
-
-## How It Works
-
-VoiceSafeKit follows three simple steps.
-
-### 1. Capture
-
-VoiceSafeKit can capture or load content in four ways:
-
-- record audio in the browser
-- upload a text transcript
-- type or paste the transcript manually
-
-When recording stops, the browser transcribes the saved audio and places the
-words into the transcript box automatically.
-
-### 2. Check
-
-It checks the transcript for things like:
-
-- email addresses
-- phone numbers
-- street addresses
-- passwords or tokens
-- payment-card-like numbers
-- medical advice requests
-- legal advice requests
-- financial advice requests
-- emergency language
-
-### 3. Protect
-
-It creates:
-
-- a safer transcript
-- a clear decision
-- a short explanation
-- guidance for the assistant
-
-## Integration Example
-
-VoiceSafeKit now includes a small OpenVoiceOS-style adapter example.
-
-It shows the idea in plain language:
-
-1. A voice assistant receives a transcript.
-2. VoiceSafeKit checks it first.
-3. The assistant receives the safer transcript and guidance.
-
-Run the example:
-
-```bash
-python3 examples/integrations/openvoiceos_adapter.py
-```
-
-## Example Output
-
-```json
-{
-  "decision": "REVIEW",
-  "score": 80,
-  "summary": "Review before sending. Found: Email address, Password or secret, Phone number.",
-  "safe_transcript": "Please help me reset my work account. My email is [email removed], my phone number is [phone removed], and my [secret removed]"
-}
-```
-
-## Run It Locally
+## Quick Start
 
 ```bash
 git clone https://github.com/MohamadKanso/VoiceSafeKit
 cd VoiceSafeKit
 python3 -m pip install -e ".[dev]"
-python3 -m voicesafekit check examples/transcripts/password_reset.txt --pretty
 ```
 
-Run the tests:
+Check a single transcript:
+
+```bash
+python3 -m voicesafekit check examples/transcripts/password_reset.txt --pretty
+python3 -m voicesafekit check examples/transcripts/identity_theft.txt --pretty
+```
+
+Analyze a multi-turn conversation:
+
+```bash
+python3 -m voicesafekit conversation \
+  examples/transcripts/safe_reminder.txt \
+  examples/transcripts/identity_theft.txt \
+  --pretty
+```
+
+## Python API
+
+```python
+from voicesafekit import analyze_transcript, analyze_conversation
+
+# Single transcript
+result = analyze_transcript("My SSN is 471-55-8843 and my password is hunter2.")
+print(result.decision)          # BLOCK
+print(result.score)             # 100
+print(result.safe_transcript)   # "My [SSN removed] and my [secret removed]."
+print(result.redaction_map)     # (("471-55-8843", "[SSN removed]"), ...)
+
+# Per-finding confidence
+for finding in result.findings:
+    print(f"{finding.label}: {finding.severity} ({finding.confidence:.0%} confidence)")
+
+# Multi-turn conversation
+conv = analyze_conversation([
+    "Set a timer for ten minutes.",
+    "My bank IBAN is GB29NWBK60161331926819.",
+    "Thank you.",
+])
+print(conv.peak_decision)   # BLOCK
+print(conv.seen_kinds)      # ('iban',)
+print(len(conv.turns))      # 3
+```
+
+## OpenVoiceOS Integration
+
+```python
+from voicesafekit.integrations.openvoiceos import protect_utterance
+
+result = protect_utterance("My email is alex@example.com and my password is hunter2.")
+if result.should_continue:
+    send_to_llm(result.safe_transcript)
+if result.should_review:
+    log_for_audit(result.finding_details)
+```
+
+## Web App
+
+The live app runs entirely in the browser — no server, no API key, no data sent anywhere.
+
+**New in v0.2.0:**
+- **Conversation mode** — chain multiple turns and see cumulative risk and peak decision.
+- **Inspect tab** — inline highlight view showing exactly which text spans were flagged, color-coded by severity.
+- **Confidence bars** — each finding card shows detection confidence.
+- **Copy safe transcript** — one click, or Cmd+Enter.
+- **Export JSON** — download the full analysis result.
+
+```bash
+# Run locally
+python3 -m http.server 8124 --directory docs
+# Open http://127.0.0.1:8124
+```
+
+## Run The Tests
 
 ```bash
 python3 -m pytest
 python3 -m ruff check voicesafekit tests
 ```
 
-Open the web app locally:
+## Design Principles
 
-```bash
-python3 -m http.server 8124 --directory docs
-```
-
-Then open:
-
-```text
-http://127.0.0.1:8124
-```
+- **Client-side first.** The browser app does not send audio or transcripts to any server.
+- **Confidence over silence.** Every finding exposes a confidence score. Uncertain detections are not hidden.
+- **Auditable.** The redaction map shows exactly what was removed and what replaced it.
+- **Not a replacement for security reviews.** This is a practical first layer, not a complete privacy solution.
 
 ## Ethical Position
 
-VoiceSafeKit is intentionally simple and transparent.
+VoiceSafeKit is intentionally transparent. It does not claim to solve all voice AI safety problems. It is a starting point that any developer can understand, copy, and improve.
 
-It does not pretend to solve all AI safety problems.
-
-It is a practical first layer that helps developers notice obvious privacy and
-safety issues before a transcript is passed to an LLM.
-
-It should not be used as a replacement for:
-
-- medical advice
-- legal advice
-- financial advice
-- emergency services
-- a full security review
-
-## Roadmap
-
-- Add a Wyoming protocol middleware example
-- Add more privacy detectors
-- Add multilingual rules
-- Add optional local LLM explanation mode
+It should not be used as a replacement for medical advice, legal advice, financial advice, emergency services, or a full security review.
 
 ## License
 

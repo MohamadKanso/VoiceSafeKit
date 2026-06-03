@@ -318,10 +318,12 @@ function stopRecording() {
 }
 
 async function handleAudioReady() {
+  const mimeType = mediaRecorder?.mimeType || "audio/webm";
+  const chunks = audioChunks.slice();
   setStatus("Transcribing…");
   startRecordingButton.disabled = true;
   try {
-    const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || "audio/webm" });
+    const blob = new Blob(chunks, { type: mimeType });
     const arrayBuffer = await blob.arrayBuffer();
     const audioContext = new AudioContext({ sampleRate: 16000 });
     const decoded = await audioContext.decodeAudioData(arrayBuffer);

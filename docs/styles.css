@@ -14,6 +14,9 @@
   --red: #ff5c5c;
 }
 
+/* Prevent author display rules from overriding the HTML hidden attribute */
+[hidden] { display: none !important; }
+
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 

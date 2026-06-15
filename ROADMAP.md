@@ -12,7 +12,7 @@
 
 - OpenVoiceOS adapter example
 - Wyoming middleware example
-- More detectors for names, dates of birth, and locations
+- More detectors for names, dates of birth and locations
 
 Status: OpenVoiceOS adapter example started. Wyoming middleware and extra
 detectors are still open follow-up work.

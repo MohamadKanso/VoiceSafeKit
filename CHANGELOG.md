@@ -3,50 +3,49 @@
 This file records the visible phases of VoiceSafeKit so the project history is
 easy to follow.
 
-## Phase 0.4 — At-Rest Artifact Protection (15 June 2026)
+## Phase 0.4 - Saved Export Protection (15 June 2026)
 
-Saved VoiceSafeKit analysis artifacts now have a stronger default security
-posture. The filter still analyzes plaintext in memory because detection rules
-must read the transcript, but exported/saved JSON files can avoid leaving raw
-redaction-map values on disk.
+Saved VoiceSafeKit results now have a safer default. The filter still reads the
+transcript in memory because the rules need plain text. The saved JSON file is
+different: it can now be encrypted so the redaction map is not left readable on
+disk.
 
 ### Security
 
-- Added AES-256-GCM encrypted export bundles with PBKDF2-HMAC-SHA256 key derivation.
+- Added AES-256-GCM encrypted export files with PBKDF2-HMAC-SHA256 key derivation.
 - Browser Export now downloads encrypted JSON using the Web Crypto API and a local export key.
 - CLI `--out` now writes encrypted files by default using `VOICESAFEKIT_EXPORT_KEY`.
-- Added `voicesafekit decrypt` for intentional recovery of encrypted exports.
+- Added `voicesafekit decrypt` for opening an encrypted export again.
 - Added `--plain-out` as an explicit local debugging escape hatch.
-- Documented that TLS/HTTPS protects data in transit, while AES-GCM protects saved artifacts at rest.
+- Documented that TLS/HTTPS protects data in transit. AES-GCM protects saved files on disk.
 
 ### Tests
 
 - Added encryption round-trip coverage to verify sensitive values are hidden in stored files.
 - Added CLI coverage proving default `--out` artifacts are encrypted.
 
-## Phase 0.3 — Intelligence and Context (3 June 2026)
+## Phase 0.3 - Intelligence and Context (3 June 2026)
 
-A significant capability upgrade informed by research into production voice AI
-safety systems and the Sesame AI conversational speech model work on contextual
-presence in voice interfaces.
+A larger detection upgrade, shaped by real voice AI safety patterns and the way
+conversational speech can carry context.
 
 ### New detectors (Python + browser)
 
-- **Social Security Number** (critical, 95% confidence) — pattern + invalid-range filter.
-- **IBAN / Bank account** (critical, 88% confidence) — pattern + mod-97 checksum validation.
-- **Card security code / CVV** (critical, 93% confidence) — keyword-triggered exact match.
-- **Date of birth** (medium, 80% confidence) — natural language date patterns.
-- **IP address** (medium, 88% confidence) — full octet validation, excludes broadcast/zero.
-- **Emotional distress signal** (high, 70% confidence) — hopelessness, self-worth, giving-up phrases.
-- **Coercion or pressure signal** (high, 65% confidence) — language suggesting the user is being forced.
+- **Social Security Number** (critical, 95% confidence): pattern plus invalid-range filter.
+- **IBAN / Bank account** (critical, 88% confidence): pattern plus mod-97 checksum validation.
+- **Card security code / CVV** (critical, 93% confidence): keyword-triggered exact match.
+- **Date of birth** (medium, 80% confidence): natural language date patterns.
+- **IP address** (medium, 88% confidence): full octet validation, excludes broadcast and zero.
+- **Emotional distress signal** (high, 70% confidence): hopelessness, self-worth and giving-up phrases.
+- **Coercion or pressure signal** (high, 65% confidence): language suggesting the user is being forced.
 
 ### New Python API
 
-- `analyze_conversation(utterances: list[str]) -> ConversationResult` — multi-turn analysis.
+- `analyze_conversation(utterances: list[str]) -> ConversationResult`: multi-turn analysis.
 - `ConversationTurn`, `ConversationResult` models for structured conversation output.
-- `Finding.confidence: float` — detection confidence on every finding (0.0–1.0).
-- `AnalysisResult.redaction_map` — ordered map of what was found and what replaced it.
-- `voicesafekit conversation` CLI command — analyze multiple transcript files as one conversation.
+- `Finding.confidence: float`: detection confidence on every finding (0.0-1.0).
+- `AnalysisResult.redaction_map`: ordered map of what was found and what replaced it.
+- `voicesafekit conversation` CLI command: analyze multiple transcript files as one conversation.
 - Updated `voicesafekit check --pretty` output now shows confidence percentage per finding.
 - Updated OpenVoiceOS adapter to expose `finding_details` with confidence values.
 
@@ -57,12 +56,12 @@ presence in voice interfaces.
 
 ### Web app
 
-- **Conversation mode** — toggle between Single and Conversation. Chain turns, see cumulative risk, peak decision, and all entity kinds detected across the session.
-- **Inspect tab** — inline transcript highlight view. The original text stays intact; each flagged span is colored (amber = medium, red = high/critical) and hoverable for details.
-- **Confidence bars** — every finding card shows a CSS bar and percentage label.
-- **Copy safe transcript** — one-click clipboard copy. Keyboard shortcut: Cmd/Ctrl+Enter in single mode.
-- **Export JSON** — downloads the full analysis result as a structured JSON file.
-- **Five sample transcripts** — added "Identity theft" (SSN + IBAN + CVV) and "Coercion" samples alongside the existing three.
+- **Conversation mode**: toggle between Single and Conversation. Chain turns, see cumulative risk, peak decision and all entity kinds detected across the session.
+- **Inspect tab**: inline transcript highlight view. The original text stays intact. Each flagged span is colored and hoverable for details.
+- **Confidence bars**: every finding card shows a CSS bar and percentage label.
+- **Copy safe transcript**: one-click clipboard copy. Keyboard shortcut: Cmd/Ctrl+Enter in single mode.
+- **Export JSON**: downloads the full analysis result as a structured JSON file.
+- **Five sample transcripts**: added "Identity theft" (SSN + IBAN + CVV) and "Coercion" samples alongside the existing three.
 - Decision values are now color-coded: green (SAFE), green-dim (REDACT), amber (REVIEW), red (BLOCK).
 
 ### Docs
@@ -91,7 +90,7 @@ presence in voice interfaces.
 ## Phase 0.1.1 - Interface Polish
 
 - Reworked the GitHub Pages demo with a sharper neon green and black interface.
-- Added clearer Capture, Check, and Protect sections.
+- Added clearer Capture, Check and Protect sections.
 - Added updated screenshots and a project explanation page.
 
 ## Phase 0.1 - MVP
@@ -99,4 +98,4 @@ presence in voice interfaces.
 - Added the Python transcript checker.
 - Added the command-line interface.
 - Added the first privacy and safety detectors.
-- Added tests, example transcripts, README, and GitHub Pages demo.
+- Added tests, example transcripts, README and GitHub Pages demo.

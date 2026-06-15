@@ -10,7 +10,7 @@ Good first contributions:
 - improve screenshots or documentation
 - add an OpenVoiceOS or Wyoming adapter example
 
-Please keep the project simple, understandable, and privacy-first.
+Please keep the project simple, understandable and privacy-first.
 
 Before opening a pull request, run:
 
@@ -18,4 +18,3 @@ Before opening a pull request, run:
 python3 -m pytest
 python3 -m ruff check voicesafekit tests
 ```
-

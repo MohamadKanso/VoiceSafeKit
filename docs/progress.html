@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>VoiceSafeKit Progress</title>
-  <meta name="description" content="A transparent progress log showing what broke, what was fixed, and what VoiceSafeKit is solving next.">
+  <meta name="description" content="A transparent progress log showing what broke, what was fixed and what VoiceSafeKit is solving next.">
   <link
     rel="icon"
     href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23030504'/%3E%3Cpath d='M7 8h18v16H7z' fill='none' stroke='%2300ff84' stroke-width='2'/%3E%3Cpath d='M11 18c3 3 7 3 10 0' fill='none' stroke='%23f6fff9' stroke-width='2' stroke-linecap='square'/%3E%3C/svg%3E"
@@ -31,7 +31,7 @@
   <main class="progress-page">
     <section class="progress-hero">
       <p class="eyebrow">Project progression</p>
-      <h1>What broke, what changed, and what is now resolved.</h1>
+      <h1>What broke, what changed and what is fixed now.</h1>
       <p>
         VoiceSafeKit has been improved through real testing. This page keeps the
         project history visible so the work reads like an evolving open-source
@@ -43,17 +43,17 @@
       <article>
         <span class="small-label">Current phase</span>
         <strong>Phase 0.4</strong>
-        <p>At-rest artifact protection — encrypted browser exports and CLI output files.</p>
+        <p>Saved export protection with encrypted browser exports and CLI output files.</p>
       </article>
       <article>
         <span class="small-label">Latest additions</span>
         <strong>AES-GCM exports</strong>
-        <p>Saved analysis artifacts are encrypted at rest, while TLS/HTTPS remains the transport layer.</p>
+        <p>Saved analysis files are encrypted on disk. TLS/HTTPS still handles transport.</p>
       </article>
       <article>
         <span class="small-label">Shipped 15 June 2026</span>
         <strong>v0.4.0</strong>
-        <p>Encrypted JSON export, encrypted CLI <code>--out</code>, and security docs for at-rest storage.</p>
+        <p>Encrypted JSON export, encrypted CLI <code>--out</code> and clearer security notes.</p>
       </article>
     </section>
 
@@ -77,7 +77,7 @@
             <p>
               Fixed by adding browser-based Whisper transcription with
               <code>Xenova/whisper-tiny.en</code>. The browser now records the
-              clip, transcribes it after stop, and places the words into the
+              clip, transcribes it after stop and places the words into the
               transcript box.
             </p>
           </div>
@@ -94,7 +94,7 @@
             </p>
             <p>
               Fixed by adding card-shaped number checks, card context words such
-              as card, debit, credit, payment, and overlap priority so payment
+              as card, debit, credit and payment, plus overlap priority so payment
               card results win over phone results.
             </p>
           </div>
@@ -107,12 +107,12 @@
             <h3>The interface looked messy and hard to scan.</h3>
             <p>
               Early UI versions made the tool harder to understand than the logic
-              itself. Capture, Check, and Protect were not clear enough as a
+              itself. Capture, Check and Protect were not clear enough as a
               workflow.
             </p>
             <p>
               Fixed by rebuilding the interface around sharp neon green panels,
-              thin typography, clear step numbers, and a cleaner two-column demo
+              thin typography, clear step numbers and a cleaner two-column demo
               with the protected transcript below.
             </p>
           </div>
@@ -129,7 +129,7 @@
               story.
             </p>
             <p>
-              Fixed by adding <code>CHANGELOG.md</code>, phase labels, and this
+              Fixed by adding <code>CHANGELOG.md</code>, phase labels and this
               Progress page.
             </p>
           </div>
@@ -165,7 +165,7 @@
             </p>
             <p>
               Fixed by expanding credential detection for phrases like was,
-              might be, could be, maybe, possibly, and something like. The result
+              might be, could be, maybe, possibly and something like. The result
               is now shown as <strong>Password or secret / high</strong>.
             </p>
           </div>
@@ -183,7 +183,7 @@
             </p>
             <p>
               Fixed by adding a partial card reference detector for phrases such
-              as card ends in, card ending with, and last four digits. The UI now
+              as card ends in, card ending with and last four digits. The UI now
               includes this as a separate warning type.
             </p>
           </div>
@@ -199,19 +199,19 @@
               and hard to scan.
             </p>
             <p>
-              Fixed by adding compact totals for flags, grouped warning types,
-              and high-risk groups, plus a scrollable warning list for longer
-              transcripts.
+              Fixed by adding compact totals for flags, grouped warning types
+              and high-risk groups. Longer transcripts now get a scrollable
+              warning list.
             </p>
           </div>
         </article>
       </div>
     </section>
 
-    <!-- Phase 0.3 entries — 3 June 2026 -->
+    <!-- Phase 0.3 entries, 3 June 2026 -->
     <section class="progress-section">
       <div class="section-heading">
-        <p class="eyebrow">Phase 0.3 — 3 June 2026</p>
+        <p class="eyebrow">Phase 0.3, 3 June 2026</p>
         <h2>Intelligence and context</h2>
       </div>
 
@@ -220,19 +220,19 @@
           <div class="progress-marker">09</div>
           <div>
             <span class="status-chip">Shipped 3 Jun 2026</span>
-            <h3>Critical-severity PII was missing: SSNs, IBANs, and CVV codes.</h3>
+            <h3>Critical PII was missing: SSNs, IBANs and CVV codes.</h3>
             <p>
-              The original detector set covered emails, phones, and payment card
+              The original detector set covered emails, phones and payment card
               numbers but missed government-issued identity numbers, bank account
-              IBANs, and card security codes — all of which are high-value targets
+              IBANs and card security codes. Those are high-value targets
               for identity theft and financial fraud.
             </p>
             <p>
               Fixed by adding three <strong>critical-severity</strong> detectors.
-              The SSN detector excludes invalid area codes (000, 666, 900–999).
+              The SSN detector excludes invalid area codes (000, 666 and 900-999).
               The IBAN detector runs a full <code>mod-97</code> checksum to reject
               false positives. The CVV detector is keyword-triggered and requires
-              a 3–4 digit number adjacent to CVV/CVC terminology.
+              a 3-4 digit number adjacent to CVV/CVC terminology.
             </p>
           </div>
         </article>
@@ -260,13 +260,13 @@
             <p>
               A voice assistant may receive transcripts where the user is in
               emotional distress or is being pressured by a third party. Neither
-              state was detectable, and both require very different assistant
+              state was detectable and both require very different assistant
               responses than a straightforward PII redaction.
             </p>
             <p>
               Fixed by adding two new intent categories. The
               <strong>emotional distress signal</strong> (high, 70% confidence)
-              catches hopelessness, worthlessness, and giving-up language. The
+              catches hopelessness, worthlessness and giving-up language. The
               <strong>coercion or pressure signal</strong> (high, 65% confidence)
               catches phrases that suggest the user is being forced to say or do
               something. Both trigger specific guidance to the assistant.
@@ -278,7 +278,7 @@
           <div class="progress-marker">12</div>
           <div>
             <span class="status-chip">Shipped 3 Jun 2026</span>
-            <h3>Detection had no confidence values — every finding was treated as equally certain.</h3>
+            <h3>Detection had no confidence values. Every finding looked equally certain.</h3>
             <p>
               The original engine returned binary findings with no indication of
               how confident the detection was. A phone number match near a card
@@ -310,9 +310,9 @@
             <p>
               Fixed by adding an <strong>Inspect tab</strong> to the Check
               panel. It renders the original transcript with inline
-              <code>&lt;mark&gt;</code> highlights — amber for medium, red for
+              <code>&lt;mark&gt;</code> highlights: amber for medium, red for
               high, brighter red for critical. Each mark is hoverable and shows
-              the finding label, confidence, and explanation in a native tooltip.
+              the finding label, confidence and explanation in a native tooltip.
             </p>
           </div>
         </article>
@@ -331,7 +331,7 @@
               Fixed by adding <code>analyze_conversation(utterances)</code> to
               the Python API and a <strong>Conversation mode</strong> toggle to
               the web app. Each turn is analyzed independently. The result
-              includes a peak decision, cumulative score, and the union of all
+              includes a peak decision, cumulative score and the union of all
               entity kinds seen across the session. A conversation timeline view
               shows all turns with their individual findings.
             </p>
@@ -352,18 +352,18 @@
               Fixed by adding a <strong>Copy</strong> button (clipboard,
               Cmd/Ctrl+Enter shortcut) and an <strong>Export JSON</strong>
               button that downloads a structured file with the decision, score,
-              findings with confidence, redaction map, and guidance.
+              findings with confidence, redaction map and guidance.
             </p>
           </div>
         </article>
       </div>
     </section>
 
-    <!-- Phase 0.4 entries — 15 June 2026 -->
+    <!-- Phase 0.4 entries, 15 June 2026 -->
     <section class="progress-section">
       <div class="section-heading">
-        <p class="eyebrow">Phase 0.4 — 15 June 2026</p>
-        <h2>At-rest artifact protection</h2>
+        <p class="eyebrow">Phase 0.4, 15 June 2026</p>
+        <h2>Saved export protection</h2>
       </div>
 
       <div class="progress-timeline">
@@ -371,24 +371,23 @@
           <div class="progress-marker">16</div>
           <div>
             <span class="status-chip">Shipped 15 Jun 2026</span>
-            <h3>Saved exports could preserve sensitive redaction-map values in plaintext.</h3>
+            <h3>Saved exports could keep sensitive values in plain JSON.</h3>
             <p>
               VoiceSafeKit intentionally keeps the transcript readable in memory
-              while filtering, because the detector rules need plaintext to find
-              emails, SSNs, IBANs, passwords, and safety signals. The exported
-              JSON artifact was different: once saved to disk, it could preserve
-              the redaction map and other sensitive analysis details at rest.
+              while filtering because the detector rules need plain text to find
+              emails, SSNs, IBANs, passwords and safety signals. The saved JSON
+              file was different. Once it landed on disk, it could keep the
+              redaction map and other sensitive details readable.
             </p>
             <p>
-              Fixed by encrypting saved analysis artifacts with
-              <strong>AES-256-GCM</strong> and a passphrase-derived key. Browser
-              export now uses the Web Crypto API and a local export key. The CLI
-              <code>--out</code> path encrypts by default using
-              <code>VOICESAFEKIT_EXPORT_KEY</code>, with
-              <code>voicesafekit decrypt</code> available for intentional recovery
-              and <code>--plain-out</code> kept only as an explicit debugging option.
-              TLS/HTTPS remains the transport protection layer for network calls;
-              it is not used as local at-rest file encryption.
+              Fixed by encrypting saved analysis files with
+              <strong>AES-256-GCM</strong> and a key made from the export
+              passphrase. Browser export now uses the Web Crypto API and a local
+              export key. The CLI <code>--out</code> path encrypts by default
+              with <code>VOICESAFEKIT_EXPORT_KEY</code>. There is also
+              <code>voicesafekit decrypt</code> for opening an encrypted export
+              again. TLS/HTTPS still protects network traffic. It does not
+              encrypt local files on disk.
             </p>
           </div>
         </article>
@@ -397,7 +396,7 @@
 
     <section class="progress-section">
       <div class="section-heading">
-        <p class="eyebrow">Phase 0.3 — latest transcript test</p>
+        <p class="eyebrow">Latest transcript test</p>
         <h2>What the tool should show now</h2>
       </div>
 
@@ -407,7 +406,7 @@
           <p class="progress-output" style="font-size:12px;">"My Social Security Number is 471-55-8843. My bank account IBAN is GB29NWBK60161331926819. The CVV on my Visa is 847. I was born on March 15, 1988."</p>
           <p>&nbsp;</p>
           <span class="small-label">Expected decision</span>
-          <p class="progress-output">BLOCK — score 100/100</p>
+          <p class="progress-output">BLOCK, score 100/100</p>
         </div>
         <div>
           <span class="small-label">Expected finding cards</span>
@@ -421,7 +420,7 @@
         <div>
           <span class="small-label">Expected behaviour</span>
           <p>
-            The SSN, IBAN, and CVV are all replaced. The date of birth is redacted.
+            The SSN, IBAN and CVV are all replaced. The date of birth is redacted.
             The Inspect tab shows four colored highlight marks on the original text.
             The Export JSON button produces an encrypted file so the redaction_map
             is not stored as plaintext on disk.
@@ -450,14 +449,14 @@
         <article>
           <span class="small-label">Future</span>
           <strong>Multilingual detection</strong>
-          <p>Extend PII patterns and intent rules to support French, German, Spanish, and Arabic transcripts.</p>
+          <p>Extend PII patterns and intent rules to support French, German, Spanish and Arabic transcripts.</p>
         </article>
       </div>
     </section>
   </main>
 
   <footer>
-    <span>VoiceSafeKit is a demo safety layer, not legal, medical, or security advice.</span>
+    <span>VoiceSafeKit is a demo safety layer, not legal, medical or security advice.</span>
     <a href="index.html">Home</a>
     <a href="paper.html">Paper</a>
     <a href="progress.html">Progress</a>

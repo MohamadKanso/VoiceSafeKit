@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>VoiceSafeKit</title>
-  <meta name="description" content="A privacy and safety checker for local voice assistant transcripts. Detects PII, SSNs, IBANs, emotional distress, and more — entirely in the browser.">
+  <meta name="description" content="A privacy and safety checker for local voice assistant transcripts. Detects PII, SSNs, IBANs, emotional distress and more in the browser.">
   <link
     rel="icon"
     href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23030504'/%3E%3Cpath d='M7 8h18v16H7z' fill='none' stroke='%2300ff84' stroke-width='2'/%3E%3Cpath d='M11 18c3 3 7 3 10 0' fill='none' stroke='%23f6fff9' stroke-width='2' stroke-linecap='square'/%3E%3C/svg%3E"
@@ -33,12 +33,12 @@
     <!-- Hero -->
     <section class="hero">
       <div class="hero-copy">
-        <p class="eyebrow">Local voice safety layer &mdash; v0.4.0</p>
-        <h1>Record, check, and clean a voice transcript before an LLM sees it.</h1>
+        <p class="eyebrow">Local voice safety layer v0.4.0</p>
+        <h1>Record, check and clean a voice transcript before an LLM sees it.</h1>
         <p>
-          VoiceSafeKit transcribes audio in the browser, finds privacy and safety risks,
-          and gives a cleaner version of the text. Now with SSN, IBAN, CVV detection,
-          confidence scoring, conversation mode, and inline transcript highlighting.
+          VoiceSafeKit transcribes audio in the browser, finds privacy and safety risks
+          and gives you cleaner text to send on. It now includes SSN, IBAN and CVV
+          detection, confidence scores, conversation history and highlighted transcript spans.
         </p>
         <div class="hero-actions">
           <a class="button primary" href="#demo">Try the live checker</a>
@@ -49,7 +49,7 @@
 
       <div class="hero-console" aria-label="VoiceSafeKit system summary">
         <div class="console-top">
-          <span>VOICE / SAFE / KIT &mdash; v0.4.0</span>
+          <span>VOICE / SAFE / KIT v0.4.0</span>
           <span id="heroDecision">REVIEW</span>
         </div>
         <div class="glyph-board" aria-hidden="true">
@@ -77,17 +77,17 @@
         <article>
           <span>01</span>
           <h3>Capture</h3>
-          <p>Record your voice, upload a transcript, or paste text directly. Conversation mode lets you chain multiple turns and track cumulative risk.</p>
+          <p>Record your voice, upload a transcript or paste text directly. Conversation mode lets you chain turns and track risk across the session.</p>
         </article>
         <article>
           <span>02</span>
           <h3>Check</h3>
-          <p>Detect PII, credentials, SSNs, IBANs, emotional distress, and coercion signals. Every finding shows a confidence score and inline highlight.</p>
+          <p>Detect PII, credentials, SSNs, IBANs, emotional distress and coercion signals. Every finding shows a confidence score and inline highlight.</p>
         </article>
         <article>
           <span>03</span>
           <h3>Protect</h3>
-          <p>Get a redacted transcript, a detailed redaction map, and actionable guidance. Export the full result as JSON for downstream use.</p>
+          <p>Get a redacted transcript, a detailed redaction map and simple guidance. Export the full result as encrypted JSON when you need to save it.</p>
         </article>
       </div>
     </section>
@@ -96,7 +96,7 @@
     <section id="demo" class="demo-shell">
       <div class="demo-header">
         <div>
-          <p class="eyebrow">Live app &mdash; runs entirely in your browser</p>
+          <p class="eyebrow">Live app, runs entirely in your browser</p>
           <h2>Try it now</h2>
         </div>
       </div>
@@ -114,7 +114,7 @@
 
           <!-- Turn history (conversation mode) -->
           <div id="turnHistory" class="turn-history" hidden>
-            <p class="turn-history-empty">No turns yet. Type and click "Add Turn +".</p>
+            <p class="turn-history-empty">No turns yet. Type something and click "Add Turn +".</p>
           </div>
 
           <p class="panel-desc">Record your voice or load a sample to get started.</p>
@@ -131,7 +131,7 @@
           <div class="recorder-card">
             <div class="recorder-info">
               <span class="small-label">Voice to text</span>
-              <p id="recordingStatus">Press record, speak, then press stop. Your words appear below.</p>
+              <p id="recordingStatus">Press record, speak then press stop. Your words appear below.</p>
               <div class="waveform" aria-hidden="true">
                 <span></span><span></span><span></span><span></span><span></span>
                 <span></span><span></span><span></span><span></span><span></span>
@@ -156,7 +156,7 @@
 
           <!-- Transcript box -->
           <label class="text-label" for="transcriptInput">Transcript</label>
-          <textarea id="transcriptInput" spellcheck="true" placeholder="Type or paste a transcript here, or record your voice above."></textarea>
+          <textarea id="transcriptInput" spellcheck="true" placeholder="Type or paste a transcript here or record your voice above."></textarea>
 
           <!-- Add Turn button (conversation mode) -->
           <button id="addTurnBtn" class="add-turn-btn" hidden title="Add this turn to the conversation (Cmd+Enter)">
@@ -218,7 +218,7 @@
             </div>
           </div>
 
-          <p class="panel-desc">A cleaned version of the transcript with sensitive parts removed, plus guidance for the assistant.</p>
+          <p class="panel-desc">A cleaned transcript with sensitive parts removed, plus guidance for the assistant.</p>
 
           <div class="export-options">
             <label class="text-label" for="exportPassphrase">Export key</label>
@@ -259,7 +259,7 @@
   </main>
 
   <footer>
-    <span>VoiceSafeKit is a demo safety layer, not legal, medical, or security advice.</span>
+    <span>VoiceSafeKit is a demo safety layer, not legal, medical or security advice.</span>
     <a href="paper.html">How it was built</a>
     <a href="progress.html">Progress</a>
     <a href="https://github.com/OpenVoiceOS/ovos-core">OpenVoiceOS</a>

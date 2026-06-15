@@ -32,7 +32,7 @@
   </g>
   <g fill="#f6fff9" font-family="Inter, ui-sans-serif, system-ui, sans-serif">
     <text x="330" y="166" font-size="82" font-weight="300">VoiceSafeKit</text>
-    <text x="334" y="220" font-size="28" font-weight="300" fill="#8aa596">Record, check, and clean voice transcripts before an LLM sees them.</text>
+    <text x="334" y="220" font-size="28" font-weight="300" fill="#8aa596">Record, check and clean voice transcripts before an LLM sees them.</text>
   </g>
   <g transform="translate(336 274)" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" font-size="18">
     <rect width="132" height="42" fill="none" stroke="#00ff84"/>

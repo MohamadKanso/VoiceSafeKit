@@ -1,6 +1,6 @@
 from voicesafekit.engine import analyze_conversation, analyze_transcript
 
-# ─── existing detector tests ───────────────────────────────────────────────────
+# existing detector tests
 
 
 def test_redacts_email_phone_and_secret() -> None:
@@ -89,7 +89,7 @@ def test_long_account_recovery_transcript_flags_all_relevant_groups() -> None:
     assert "[partial card reference removed]" in result.safe_transcript
 
 
-# ─── new detector tests (v0.2.0) ──────────────────────────────────────────────
+# new detector tests (v0.2.0)
 
 
 def test_detects_ssn() -> None:
@@ -110,7 +110,7 @@ def test_ssn_confidence_is_high() -> None:
 
 def test_detects_valid_iban() -> None:
     result = analyze_transcript(
-        "Please transfer funds to GB29NWBK60161331926819 — that is my account."
+        "Please transfer funds to GB29NWBK60161331926819 - that is my account."
     )
     assert result.decision == "BLOCK"
     assert any(f.kind == "iban" for f in result.findings)
@@ -119,13 +119,13 @@ def test_detects_valid_iban() -> None:
 
 def test_rejects_invalid_iban_checksum() -> None:
     result = analyze_transcript(
-        "The reference number is GB29NWBK60161331926800 — just store it."
+        "The reference number is GB29NWBK60161331926800 - just store it."
     )
     assert not any(f.kind == "iban" for f in result.findings)
 
 
 def test_detects_cvv() -> None:
-    result = analyze_transcript("The CVV on my card is 847, and the card ends in 4821.")
+    result = analyze_transcript("The CVV on my card is 847 and the card ends in 4821.")
     assert result.decision == "BLOCK"
     assert any(f.kind == "cvv" for f in result.findings)
     assert "[security code removed]" in result.safe_transcript
@@ -199,7 +199,7 @@ def test_identity_theft_transcript_blocks() -> None:
 def test_analyze_conversation_tracks_peak_decision() -> None:
     utterances = [
         "Set a timer for ten minutes.",
-        "My SSN is 471-55-8843 — I need to verify.",
+        "My SSN is 471-55-8843 - I need to verify.",
         "Thank you, I think that is all.",
     ]
     result = analyze_conversation(utterances)

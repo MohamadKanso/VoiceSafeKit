@@ -3,11 +3,11 @@ import { pipeline, env } from "https://cdn.jsdelivr.net/npm/@xenova/transformers
 env.allowLocalModels = false;
 env.useBrowserCache = true;
 
-// ─── sample transcripts ───────────────────────────────────────────────────────
+// sample transcripts
 
 const samples = {
   password:
-    "Please help me reset my work account. My email is alex.rivera@example.com, my phone number is +44 7700 900123, and my password is BlueFalcon2026. Can you tell the support assistant exactly what to do?",
+    "Please help me reset my work account. My email is alex.rivera@example.com, my phone number is +44 7700 900123 and my password is BlueFalcon2026. Can you tell the support assistant exactly what to do?",
   medical:
     "I have chest pain and my blood pressure is high. Should I increase my antidepressant dose tonight? I've been feeling really hopeless and don't want to be here anymore.",
   safe:
@@ -18,7 +18,7 @@ const samples = {
     "They made me say this. Please don't tell anyone I said this or they will hurt me. I need to send money from the account ending in 4821 to another account right away.",
 };
 
-// ─── detection rules ──────────────────────────────────────────────────────────
+// detection rules
 
 const rules = [
   {
@@ -118,7 +118,7 @@ const rules = [
     severity: "high",
     confidence: 0.88,
     explanation:
-      "Passwords, partial passwords, tokens, and secrets are highly sensitive. Never include them in text sent to a model.",
+      "Passwords, partial passwords, tokens and secrets are highly sensitive. Never include them in text sent to a model.",
     replacement: "[secret removed]",
     pattern:
       /\b(?:(?:password|passcode)\s*(?:is|was|might be|may be|could be|=|:)?\s*(?:something like|around|maybe|possibly)?\s*[^\s,.;]{4,}|(?:api key|token|secret)\s*(?:is|was|=|:)?\s*[^\s,.;]{4,})/gi,
@@ -207,7 +207,7 @@ const rules = [
 const severityPoints = { low: 10, medium: 22, high: 36, critical: 55 };
 const severityRank = { low: 1, medium: 2, high: 3, critical: 4 };
 
-// ─── IBAN mod-97 validation ───────────────────────────────────────────────────
+// IBAN mod-97 validation
 
 function validatesAsIban(value) {
   const clean = value.replace(/\s/g, "").toUpperCase();
@@ -221,7 +221,7 @@ function validatesAsIban(value) {
   return remainder === 1;
 }
 
-// ─── DOM refs ─────────────────────────────────────────────────────────────────
+// DOM refs
 
 const transcriptInput = document.querySelector("#transcriptInput");
 const startRecordingButton = document.querySelector("#startRecording");
@@ -254,7 +254,7 @@ const exportBtn = document.querySelector("#exportBtn");
 const exportPassphraseInput = document.querySelector("#exportPassphrase");
 const toastContainer = document.querySelector("#toastContainer");
 
-// ─── state ────────────────────────────────────────────────────────────────────
+// state
 
 let mediaRecorder = null;
 let audioChunks = [];
@@ -265,11 +265,11 @@ let conversationMode = false;
 let conversationTurns = [];
 let lastResult = null;
 
-// ─── Whisper loader ───────────────────────────────────────────────────────────
+// Whisper loader
 
 async function getTranscriber() {
   if (transcriber) return transcriber;
-  setStatus("Loading speech model — one moment…");
+  setStatus("Loading speech model. One moment...");
   transcriber = await pipeline("automatic-speech-recognition", "Xenova/whisper-tiny.en", {
     progress_callback: (progress) => {
       if (progress.status === "downloading") {
@@ -281,7 +281,7 @@ async function getTranscriber() {
   return transcriber;
 }
 
-// ─── recording ────────────────────────────────────────────────────────────────
+// recording
 
 async function startRecording() {
   if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
@@ -307,7 +307,7 @@ async function startRecording() {
   mediaRecorder.start();
   recorderCard.classList.add("recording");
   stopRecordingButton.disabled = false;
-  setStatus("Recording — speak now. Press stop and the transcript appears below.");
+  setStatus("Recording. Speak now, then press stop and the transcript appears below.");
 }
 
 function stopRecording() {
@@ -321,7 +321,7 @@ function stopRecording() {
 async function handleAudioReady() {
   const mimeType = mediaRecorder?.mimeType || "audio/webm";
   const chunks = audioChunks.slice();
-  setStatus("Transcribing…");
+  setStatus("Transcribing...");
   startRecordingButton.disabled = true;
   try {
     const blob = new Blob(chunks, { type: mimeType });
@@ -336,7 +336,7 @@ async function handleAudioReady() {
     if (text) {
       const existing = transcriptInput.value.trim();
       transcriptInput.value = existing ? `${existing} ${text}` : text;
-      setStatus("Done — transcript ready.");
+      setStatus("Done. Transcript ready.");
     } else {
       setStatus("Nothing was picked up. Try speaking more clearly or check your mic.");
     }
@@ -351,7 +351,7 @@ async function handleAudioReady() {
   }
 }
 
-// ─── analysis ─────────────────────────────────────────────────────────────────
+// analysis
 
 function analyzeTranscript(text) {
   const findings = [];
@@ -461,7 +461,7 @@ function guidance(findings) {
   return items;
 }
 
-// ─── highlight view ───────────────────────────────────────────────────────────
+// highlight view
 
 function renderHighlightedTranscript(text, findings) {
   if (!text.trim()) return '<span style="color:var(--dim)">Type a transcript to see the highlight view.</span>';
@@ -487,7 +487,7 @@ function escapeAttr(str) {
   return str.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
-// ─── conversation mode ────────────────────────────────────────────────────────
+// conversation mode
 
 function toggleConversationMode() {
   conversationMode = !conversationMode;
@@ -555,7 +555,7 @@ function renderConversationTimeline() {
           <span class="turn-decision-chip turn-decision-${turn.result.decision.toLowerCase()}">${turn.result.decision}</span>
           <span class="turn-score-num">${turn.result.score}/100</span>
         </div>
-        <p class="turn-transcript-preview">${escapeHtml(turn.transcript.slice(0, 160))}${turn.transcript.length > 160 ? "…" : ""}</p>
+        <p class="turn-transcript-preview">${escapeHtml(turn.transcript.slice(0, 160))}${turn.transcript.length > 160 ? "..." : ""}</p>
         <div class="turn-findings-row">
           ${
             turn.result.findings.length
@@ -594,7 +594,7 @@ function renderConversationTimeline() {
   }
 }
 
-// ─── tabs ─────────────────────────────────────────────────────────────────────
+// tabs
 
 function switchTab(name) {
   activeTab = name;
@@ -603,7 +603,7 @@ function switchTab(name) {
   if (inspectTabEl) inspectTabEl.hidden = name !== "inspect";
 }
 
-// ─── copy / export ────────────────────────────────────────────────────────────
+// copy / export
 
 function copySafeTranscript() {
   if (!lastResult) return;
@@ -716,7 +716,7 @@ function bytesToBase64(bytes) {
   return btoa(binary);
 }
 
-// ─── toast ────────────────────────────────────────────────────────────────────
+// toast
 
 function showToast(message, type = "success") {
   if (!toastContainer) return;
@@ -727,7 +727,7 @@ function showToast(message, type = "success") {
   setTimeout(() => toast.remove(), 3200);
 }
 
-// ─── render ───────────────────────────────────────────────────────────────────
+// render
 
 function render(result) {
   lastResult = result;
@@ -848,7 +848,7 @@ function setSample(name) {
   refresh();
 }
 
-// ─── file upload ──────────────────────────────────────────────────────────────
+// file upload
 
 async function handleFileUpload(event) {
   const file = event.target.files?.[0];
@@ -873,7 +873,7 @@ function clearAll() {
   refresh();
 }
 
-// ─── card helpers ─────────────────────────────────────────────────────────────
+// card helpers
 
 function looksLikePaymentCard(value, text, start, end) {
   const digits = value.replace(/\D/g, "");
@@ -909,7 +909,7 @@ function passesLuhn(value) {
   return checksum % 10 === 0;
 }
 
-// ─── wiring ───────────────────────────────────────────────────────────────────
+// wiring
 
 startRecordingButton.addEventListener("click", startRecording);
 stopRecordingButton.addEventListener("click", stopRecording);

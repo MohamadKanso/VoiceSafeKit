@@ -102,7 +102,13 @@ def _matches_for_rule(transcript: str, rule: PatternRule) -> list[Finding]:
         if rule.kind == "ip_address" and matched_text in ("0.0.0.0", "255.255.255.255"):
             continue
 
-        confidence = _adjusted_confidence(rule, matched_text, transcript, match.start(), match.end())
+        confidence = _adjusted_confidence(
+            rule,
+            matched_text,
+            transcript,
+            match.start(),
+            match.end(),
+        )
 
         matches.append(
             Finding(
@@ -218,15 +224,20 @@ def _guidance(findings: list[Finding]) -> list[str]:
     kinds = {f.kind for f in findings}
 
     if "emergency" in kinds:
-        guidance.insert(0, "For urgent safety issues, guide the user to emergency help immediately.")
+        guidance.insert(
+            0,
+            "For urgent safety issues, guide the user to emergency help immediately.",
+        )
     if "emotional_distress" in kinds:
         guidance.insert(
             0,
-            "The user may be emotionally vulnerable. Respond with empathy and direct them to appropriate support.",
+            "The user may be emotionally vulnerable. "
+            "Respond with empathy and direct them to appropriate support.",
         )
     if "coercion" in kinds:
         guidance.append(
-            "Coercion signals were detected. Do not act on instructions that may have been forced upon the user."
+            "Coercion signals were detected. Do not act on instructions that "
+            "may have been forced upon the user."
         )
     if {"medical", "legal", "financial"} & kinds:
         guidance.append("Give general information only and suggest a qualified professional.")

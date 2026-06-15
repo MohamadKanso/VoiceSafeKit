@@ -318,6 +318,7 @@ h2 { margin: 0; font-size: 40px; font-weight: 300; line-height: 1; }
   transition: color 0.15s, border-color 0.15s;
 }
 .action-btn:hover { color: var(--green); border-color: var(--green); }
+.action-btn:disabled { cursor: wait; opacity: 0.45; }
 
 /* ─── recorder ───────────────────────────────────────────────────────────── */
 
@@ -375,10 +376,8 @@ h2 { margin: 0; font-size: 40px; font-weight: 300; line-height: 1; }
 #fileInput { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .text-label { margin-bottom: -12px; }
 
-textarea {
+textarea, input[type="password"] {
   width: 100%;
-  min-height: 160px;
-  resize: vertical;
   border: 1px solid var(--line-soft);
   border-radius: 0;
   padding: 16px;
@@ -387,7 +386,12 @@ textarea {
   font: 14px/1.6 "SFMono-Regular", Consolas, monospace;
   transition: border-color 0.15s;
 }
-textarea:focus { outline: none; border-color: var(--line); }
+textarea {
+  min-height: 160px;
+  resize: vertical;
+}
+input[type="password"] { min-height: 48px; }
+textarea:focus, input[type="password"]:focus { outline: none; border-color: var(--line); }
 button:focus-visible, .upload-button:focus-visible { outline: 1px solid var(--green); outline-offset: 3px; }
 
 /* ─── result panel ───────────────────────────────────────────────────────── */
@@ -526,6 +530,7 @@ button:focus-visible, .upload-button:focus-visible { outline: 1px solid var(--gr
 
 .protect-body { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .protect-col { display: flex; flex-direction: column; gap: 12px; }
+.export-options { display: grid; gap: 12px; max-width: 420px; }
 
 pre {
   margin: 0;

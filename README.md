@@ -17,11 +17,11 @@
 VoiceSafeKit is a privacy and safety filter for voice assistant transcripts.
 
 It records or accepts a voice transcript, checks the text for sensitive content,
-and returns a cleaner version before that text reaches an LLM. As of 3 June 2026,
-the project added confidence scoring, multi-turn conversation analysis, seven new
-detectors (SSN, IBAN, CVV, date of birth, IP address, emotional distress, and
-coercion signals), and a fully redesigned web app with inline transcript highlighting,
-conversation mode, and JSON export.
+and returns a cleaner version before that text reaches an LLM. As of 15 June 2026,
+the project includes encrypted at-rest exports, confidence scoring, multi-turn
+conversation analysis, seven new detectors (SSN, IBAN, CVV, date of birth, IP
+address, emotional distress, and coercion signals), and a fully redesigned web
+app with inline transcript highlighting.
 
 ## What It Does
 
@@ -36,6 +36,12 @@ VoiceSafeKit returns:
 | `safe_transcript` | The transcript with sensitive parts replaced |
 | `redaction_map` | Ordered list of what was found and what replaced it |
 | `assistant_guidance` | What the downstream assistant should do |
+
+Saved artifacts can now be encrypted at rest. Browser exports and CLI `--out`
+files use AES-256-GCM with a passphrase-derived key, so raw values in the
+redaction map are not left in plaintext on disk. TLS/HTTPS remains the right
+layer for data in transit if a developer forwards the safe transcript to another
+service.
 
 ## Detectors
 
@@ -79,6 +85,27 @@ Check a single transcript:
 ```bash
 python3 -m voicesafekit check examples/transcripts/password_reset.txt --pretty
 python3 -m voicesafekit check examples/transcripts/identity_theft.txt --pretty
+```
+
+Write an encrypted at-rest result file:
+
+```bash
+export VOICESAFEKIT_EXPORT_KEY="use-a-long-local-passphrase"
+python3 -m voicesafekit check examples/transcripts/identity_theft.txt \
+  --out result.encrypted.json
+```
+
+Decrypt an encrypted result when you intentionally need to inspect it:
+
+```bash
+python3 -m voicesafekit decrypt result.encrypted.json --out result.json
+```
+
+Plaintext JSON output is still available for local debugging:
+
+```bash
+python3 -m voicesafekit check examples/transcripts/password_reset.txt \
+  --out result.json --plain-out
 ```
 
 Analyze a multi-turn conversation:
@@ -133,12 +160,16 @@ if result.should_review:
 
 The live app runs entirely in the browser — no server, no API key, no data sent anywhere.
 
-**New in v0.2.0:**
+**New in v0.4.0:**
+- **Encrypted JSON export** — download the full analysis result encrypted at rest with AES-256-GCM.
+- **Encrypted CLI output files** — `--out` writes encrypted artifacts by default when `VOICESAFEKIT_EXPORT_KEY` is set.
+- **Intentional decrypt command** — `voicesafekit decrypt` restores an encrypted export when needed.
+
+**Added in v0.2.0:**
 - **Conversation mode** — chain multiple turns and see cumulative risk and peak decision.
 - **Inspect tab** — inline highlight view showing exactly which text spans were flagged, color-coded by severity.
 - **Confidence bars** — each finding card shows detection confidence.
 - **Copy safe transcript** — one click, or Cmd+Enter.
-- **Export JSON** — download the full analysis result.
 
 ```bash
 # Run locally
@@ -156,6 +187,7 @@ python3 -m ruff check voicesafekit tests
 ## Design Principles
 
 - **Client-side first.** The browser app does not send audio or transcripts to any server.
+- **Encrypted at rest.** Saved analysis artifacts are encrypted with AES-256-GCM; TLS/HTTPS covers transport, not local storage.
 - **Confidence over silence.** Every finding exposes a confidence score. Uncertain detections are not hidden.
 - **Auditable.** The redaction map shows exactly what was removed and what replaced it.
 - **Not a replacement for security reviews.** This is a practical first layer, not a complete privacy solution.

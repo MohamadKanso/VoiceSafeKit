@@ -42,18 +42,18 @@
     <section class="progress-summary-grid" aria-label="Current progress summary">
       <article>
         <span class="small-label">Current phase</span>
-        <strong>Phase 0.3</strong>
-        <p>Intelligence and context — confidence scoring, 7 new detectors, conversation mode, and inline highlighting.</p>
+        <strong>Phase 0.4</strong>
+        <p>At-rest artifact protection — encrypted browser exports and CLI output files.</p>
       </article>
       <article>
         <span class="small-label">Latest additions</span>
-        <strong>SSN · IBAN · CVV</strong>
-        <p>Critical-severity detectors with validation (mod-97 checksum for IBAN, range filter for SSN).</p>
+        <strong>AES-GCM exports</strong>
+        <p>Saved analysis artifacts are encrypted at rest, while TLS/HTTPS remains the transport layer.</p>
       </article>
       <article>
-        <span class="small-label">Shipped 3 June 2026</span>
-        <strong>v0.2.0</strong>
-        <p>Conversation mode, inspect tab, confidence bars, copy + export, and 7 new detectors.</p>
+        <span class="small-label">Shipped 15 June 2026</span>
+        <strong>v0.4.0</strong>
+        <p>Encrypted JSON export, encrypted CLI <code>--out</code>, and security docs for at-rest storage.</p>
       </article>
     </section>
 
@@ -359,6 +359,42 @@
       </div>
     </section>
 
+    <!-- Phase 0.4 entries — 15 June 2026 -->
+    <section class="progress-section">
+      <div class="section-heading">
+        <p class="eyebrow">Phase 0.4 — 15 June 2026</p>
+        <h2>At-rest artifact protection</h2>
+      </div>
+
+      <div class="progress-timeline">
+        <article class="progress-item current">
+          <div class="progress-marker">16</div>
+          <div>
+            <span class="status-chip">Shipped 15 Jun 2026</span>
+            <h3>Saved exports could preserve sensitive redaction-map values in plaintext.</h3>
+            <p>
+              VoiceSafeKit intentionally keeps the transcript readable in memory
+              while filtering, because the detector rules need plaintext to find
+              emails, SSNs, IBANs, passwords, and safety signals. The exported
+              JSON artifact was different: once saved to disk, it could preserve
+              the redaction map and other sensitive analysis details at rest.
+            </p>
+            <p>
+              Fixed by encrypting saved analysis artifacts with
+              <strong>AES-256-GCM</strong> and a passphrase-derived key. Browser
+              export now uses the Web Crypto API and a local export key. The CLI
+              <code>--out</code> path encrypts by default using
+              <code>VOICESAFEKIT_EXPORT_KEY</code>, with
+              <code>voicesafekit decrypt</code> available for intentional recovery
+              and <code>--plain-out</code> kept only as an explicit debugging option.
+              TLS/HTTPS remains the transport protection layer for network calls;
+              it is not used as local at-rest file encryption.
+            </p>
+          </div>
+        </article>
+      </div>
+    </section>
+
     <section class="progress-section">
       <div class="section-heading">
         <p class="eyebrow">Phase 0.3 — latest transcript test</p>
@@ -387,8 +423,8 @@
           <p>
             The SSN, IBAN, and CVV are all replaced. The date of birth is redacted.
             The Inspect tab shows four colored highlight marks on the original text.
-            The Export JSON button produces a file with a redaction_map showing
-            exactly what was replaced.
+            The Export JSON button produces an encrypted file so the redaction_map
+            is not stored as plaintext on disk.
           </p>
         </div>
       </div>

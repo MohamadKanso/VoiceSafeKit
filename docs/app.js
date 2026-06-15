@@ -251,6 +251,7 @@ const convTimelineEl = document.querySelector("#convTimeline");
 const turnCardsEl = document.querySelector("#turnCards");
 const copyBtn = document.querySelector("#copyBtn");
 const exportBtn = document.querySelector("#exportBtn");
+const exportPassphraseInput = document.querySelector("#exportPassphrase");
 const toastContainer = document.querySelector("#toastContainer");
 
 // ─── state ────────────────────────────────────────────────────────────────────
@@ -612,9 +613,40 @@ function copySafeTranscript() {
     .catch(() => showToast("Copy failed", "error"));
 }
 
-function exportJSON() {
+async function exportJSON() {
   if (!lastResult) return;
-  const payload = {
+  if (!window.crypto?.subtle) {
+    showToast("Encrypted export is not available in this browser", "error");
+    return;
+  }
+  const passphrase = exportPassphraseInput?.value || "";
+  if (passphrase.length < 12) {
+    exportPassphraseInput?.focus();
+    showToast("Use an export key with at least 12 characters", "error");
+    return;
+  }
+  const payload = buildExportPayload();
+  try {
+    exportBtn.disabled = true;
+    const encrypted = await encryptExportPayload(payload, passphrase);
+    const blob = new Blob([JSON.stringify(encrypted, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `voicesafekit-encrypted-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast("Encrypted JSON exported");
+  } catch (error) {
+    console.error(error);
+    showToast("Encrypted export failed", "error");
+  } finally {
+    exportBtn.disabled = false;
+  }
+}
+
+function buildExportPayload() {
+  return {
     decision: lastResult.decision,
     score: lastResult.score,
     summary: lastResult.summary,
@@ -629,14 +661,59 @@ function exportJSON() {
     })),
     redaction_map: lastResult.redactionMap,
   };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `voicesafekit-${Date.now()}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast("JSON exported");
+}
+
+async function encryptExportPayload(payload, passphrase) {
+  const encoder = new TextEncoder();
+  const salt = window.crypto.getRandomValues(new Uint8Array(16));
+  const nonce = window.crypto.getRandomValues(new Uint8Array(12));
+  const keyMaterial = await window.crypto.subtle.importKey(
+    "raw",
+    encoder.encode(passphrase),
+    "PBKDF2",
+    false,
+    ["deriveKey"]
+  );
+  const key = await window.crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt,
+      iterations: 600000,
+      hash: "SHA-256",
+    },
+    keyMaterial,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt"]
+  );
+  const ciphertext = await window.crypto.subtle.encrypt(
+    {
+      name: "AES-GCM",
+      iv: nonce,
+      additionalData: encoder.encode("VoiceSafeKit encrypted export v1"),
+    },
+    key,
+    encoder.encode(JSON.stringify(payload))
+  );
+  return {
+    format: "voicesafekit.encrypted_export",
+    version: 1,
+    algorithm: "AES-256-GCM",
+    kdf: "PBKDF2-HMAC-SHA256",
+    iterations: 600000,
+    salt: bytesToBase64(salt),
+    nonce: bytesToBase64(nonce),
+    ciphertext: bytesToBase64(new Uint8Array(ciphertext)),
+  };
+}
+
+function bytesToBase64(bytes) {
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.slice(i, i + chunkSize));
+  }
+  return btoa(binary);
 }
 
 // ─── toast ────────────────────────────────────────────────────────────────────

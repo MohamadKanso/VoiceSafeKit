@@ -2,10 +2,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
 from voicesafekit import __version__
+from voicesafekit.encryption import (
+    MIN_PASSPHRASE_LENGTH,
+    decrypt_json_payload,
+    encrypt_json_payload,
+)
 from voicesafekit.engine import analyze_conversation, analyze_transcript
 
 
@@ -29,6 +35,16 @@ def _parser() -> argparse.ArgumentParser:
     check = sub.add_parser("check", help="Analyze a single transcript file.")
     check.add_argument("transcript", help="Text file containing the voice transcript.")
     check.add_argument("--out", help="Optional JSON output path.")
+    check.add_argument(
+        "--plain-out",
+        action="store_true",
+        help="Write --out as plaintext JSON instead of an encrypted at-rest export.",
+    )
+    check.add_argument(
+        "--passphrase-env",
+        default="VOICESAFEKIT_EXPORT_KEY",
+        help="Environment variable containing the export encryption passphrase.",
+    )
     check.add_argument("--pretty", action="store_true", help="Print a human-readable result.")
     check.set_defaults(func=_cmd_check)
 
@@ -42,8 +58,32 @@ def _parser() -> argparse.ArgumentParser:
         help="Text files, one per conversation turn (in order).",
     )
     conversation.add_argument("--out", help="Optional JSON output path.")
-    conversation.add_argument("--pretty", action="store_true", help="Print a human-readable result.")
+    conversation.add_argument(
+        "--plain-out",
+        action="store_true",
+        help="Write --out as plaintext JSON instead of an encrypted at-rest export.",
+    )
+    conversation.add_argument(
+        "--passphrase-env",
+        default="VOICESAFEKIT_EXPORT_KEY",
+        help="Environment variable containing the export encryption passphrase.",
+    )
+    conversation.add_argument(
+        "--pretty",
+        action="store_true",
+        help="Print a human-readable result.",
+    )
     conversation.set_defaults(func=_cmd_conversation)
+
+    decrypt = sub.add_parser("decrypt", help="Decrypt an encrypted VoiceSafeKit JSON export.")
+    decrypt.add_argument("encrypted_export", help="Encrypted VoiceSafeKit export file.")
+    decrypt.add_argument("--out", help="Optional plaintext JSON output path.")
+    decrypt.add_argument(
+        "--passphrase-env",
+        default="VOICESAFEKIT_EXPORT_KEY",
+        help="Environment variable containing the export encryption passphrase.",
+    )
+    decrypt.set_defaults(func=_cmd_decrypt)
 
     return parser
 
@@ -68,13 +108,44 @@ def _cmd_conversation(args: argparse.Namespace) -> int:
     return 1 if result.peak_decision == "BLOCK" else 0
 
 
+def _cmd_decrypt(args: argparse.Namespace) -> int:
+    encrypted = json.loads(Path(args.encrypted_export).read_text(encoding="utf-8"))
+    passphrase = os.environ.get(args.passphrase_env, "")
+    if not passphrase:
+        raise SystemExit(f"Set {args.passphrase_env} to decrypt this VoiceSafeKit export.")
+    payload = decrypt_json_payload(encrypted, passphrase)
+    if args.out:
+        output = Path(args.out)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    else:
+        print(json.dumps(payload, indent=2))
+    return 0
+
+
 def _write_or_print(payload: dict, args: argparse.Namespace) -> None:
     if getattr(args, "out", None):
         output = Path(args.out)
         output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        stored_payload = payload if args.plain_out else _encrypted_output_payload(payload, args)
+        output.write_text(json.dumps(stored_payload, indent=2) + "\n", encoding="utf-8")
     elif not getattr(args, "pretty", False):
         print(json.dumps(payload, indent=2))
+
+
+def _encrypted_output_payload(payload: dict, args: argparse.Namespace) -> dict[str, object]:
+    passphrase_env = args.passphrase_env
+    passphrase = os.environ.get(passphrase_env, "")
+    if not passphrase:
+        raise SystemExit(
+            f"--out writes encrypted files by default. Set {passphrase_env} "
+            "or pass --plain-out for a plaintext debug export."
+        )
+    if len(passphrase) < MIN_PASSPHRASE_LENGTH:
+        raise SystemExit(
+            f"{passphrase_env} must be at least {MIN_PASSPHRASE_LENGTH} characters."
+        )
+    return encrypt_json_payload(payload, passphrase)
 
 
 def _print_pretty_single(payload: dict) -> None:
@@ -89,7 +160,10 @@ def _print_pretty_single(payload: dict) -> None:
     print("\nFindings:")
     for finding in payload["findings"]:
         conf = round(finding["confidence"] * 100)
-        print(f"  - {finding['label']} ({finding['severity']}, {conf}% confidence): {finding['explanation']}")
+        print(
+            f"  - {finding['label']} ({finding['severity']}, "
+            f"{conf}% confidence): {finding['explanation']}"
+        )
 
 
 def _print_pretty_conversation(payload: dict) -> None:

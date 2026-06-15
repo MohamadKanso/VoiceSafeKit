@@ -3,6 +3,27 @@
 This file records the visible phases of VoiceSafeKit so the project history is
 easy to follow.
 
+## Phase 0.4 — At-Rest Artifact Protection (15 June 2026)
+
+Saved VoiceSafeKit analysis artifacts now have a stronger default security
+posture. The filter still analyzes plaintext in memory because detection rules
+must read the transcript, but exported/saved JSON files can avoid leaving raw
+redaction-map values on disk.
+
+### Security
+
+- Added AES-256-GCM encrypted export bundles with PBKDF2-HMAC-SHA256 key derivation.
+- Browser Export now downloads encrypted JSON using the Web Crypto API and a local export key.
+- CLI `--out` now writes encrypted files by default using `VOICESAFEKIT_EXPORT_KEY`.
+- Added `voicesafekit decrypt` for intentional recovery of encrypted exports.
+- Added `--plain-out` as an explicit local debugging escape hatch.
+- Documented that TLS/HTTPS protects data in transit, while AES-GCM protects saved artifacts at rest.
+
+### Tests
+
+- Added encryption round-trip coverage to verify sensitive values are hidden in stored files.
+- Added CLI coverage proving default `--out` artifacts are encrypted.
+
 ## Phase 0.3 — Intelligence and Context (3 June 2026)
 
 A significant capability upgrade informed by research into production voice AI

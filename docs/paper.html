@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>How VoiceSafeKit Works - Technical Paper</title>
-  <meta name="description" content="A technical walkthrough of how VoiceSafeKit was built: in-browser Whisper transcription, privacy rule detection, and client-side AI safety filtering.">
+  <meta name="description" content="A technical walkthrough of how VoiceSafeKit was built: in-browser Whisper transcription, privacy rule detection and client-side AI safety filtering.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23030504'/%3E%3Cpath d='M7 8h18v16H7z' fill='none' stroke='%2300ff84' stroke-width='2'/%3E%3C/svg%3E">
   <style>
     :root {
@@ -572,6 +572,7 @@
       }
 
       .toc-sidebar {
+        box-sizing: border-box;
         padding: 64px 0 120px 40px;
         position: sticky;
         top: 70px;
@@ -606,7 +607,7 @@
         border-left-color: var(--green);
       }
 
-      .page-wrap { width: auto; padding-right: 0; }
+      .page-wrap { width: auto; min-width: 0; padding-right: 0; }
     }
 
     @media (max-width: 640px) {
@@ -642,12 +643,12 @@
       <p class="paper-label">Technical paper</p>
       <h1 class="paper-title">How <em>VoiceSafeKit</em> was built</h1>
       <p style="color: var(--muted); font-size: 15px; margin-top: 14px;">
-        A walkthrough of the design, the reasoning, and every technical decision behind a browser-based privacy filter for voice assistant transcripts.
+        A walkthrough of the design, reasoning and technical choices behind a browser-based privacy filter for voice assistant transcripts.
       </p>
       <div class="paper-meta">
         <span><span class="meta-dot"></span>Mohamad Kanso</span>
-        <span><span class="meta-dot"></span>2025</span>
-        <span><span class="meta-dot"></span>Client-side AI, Privacy, Voice Assistants</span>
+        <span><span class="meta-dot"></span>2026</span>
+        <span><span class="meta-dot"></span>Client-side AI, Privacy and Voice Assistants</span>
       </div>
     </div>
 
@@ -655,7 +656,7 @@
     <div class="abstract-box section" id="abstract">
       <span class="abstract-label">Abstract</span>
       <p>
-        VoiceSafeKit is a privacy filter that sits between a voice assistant and a large language model. It records audio in the browser, transcribes it using a Whisper speech model running entirely on the user's device, then scans the resulting text for sensitive information before it can be forwarded to an AI. The project was built as a zero-dependency, static web application with a mirrored Python package for server-side use. This paper explains the problem it solves, how it was designed, what it detects, and the reasoning behind each decision.
+        VoiceSafeKit is a privacy filter that sits between a voice assistant and a large language model. It records audio in the browser, transcribes it with a Whisper speech model running on the user's device, then checks the text for sensitive information before it can be sent to an AI. The project is a static web app with a mirrored Python package for CLI and server-side use. This paper explains the problem it solves, how it was designed, what it detects and why those choices were made.
       </p>
     </div>
 
@@ -667,7 +668,7 @@
         Voice assistants are becoming more capable because they can now pass what a user says directly to a large language model. That creates a real risk. When someone speaks to an assistant, they often include private details without thinking: an email address, a phone number, a password reset flow, a medical question. The assistant records all of it and sends it upstream.
       </p>
       <p>
-        There is usually nothing in between. The raw transcript goes to a cloud model, often unfiltered. Most developers building voice assistants focus on intent detection and response quality. Privacy filtering at the speech input layer is rarely a priority, and off-the-shelf solutions for it are almost non-existent.
+        There is usually nothing in between. The raw transcript goes to a cloud model, often unfiltered. Most developers building voice assistants focus on intent detection and response quality. Privacy filtering at the speech input layer is rarely a priority and off-the-shelf solutions for it are almost non-existent.
       </p>
       <p>
         VoiceSafeKit addresses that gap. It is a safety layer that checks what was said before it leaves the device.
@@ -677,7 +678,7 @@
         <span class="callout-icon">Example</span>
         <p>
           A user says: <strong style="color: var(--green-2); font-family: monospace; font-size: 13px;">"My email is john@example.com and my password is BlueFalcon2026. Help me reset my account."</strong>
-          Without filtering, that entire string goes to the model. VoiceSafeKit flags the email and password, produces a redacted version, and advises the assistant not to echo the credentials back.
+          Without filtering, that entire string goes to the model. VoiceSafeKit flags the email and password, produces a redacted version and tells the assistant not to echo the credentials back.
         </p>
       </div>
     </div>
@@ -727,16 +728,16 @@
       </div>
 
       <p>
-        Nothing in that chain touches a server. The audio is captured in the browser, decoded in the browser, and transcribed in the browser. The only thing that ever leaves the device is the cleaned transcript, and only if the user chooses to forward it.
+        Nothing in that chain touches a server. The audio is captured in the browser, decoded in the browser and transcribed in the browser. The only thing that ever leaves the device is the cleaned transcript and only if the user chooses to forward it.
       </p>
     </div>
 
     <!-- Section 3: Whisper -->
     <div class="section" id="s3">
       <p class="section-num">03 - In-Browser Speech Recognition</p>
-      <h2 class="section-title">Why Whisper, and how it runs in a browser</h2>
+      <h2 class="section-title">Why Whisper and how it runs in a browser</h2>
       <p>
-        The first version of VoiceSafeKit used the browser's built-in <strong>Web Speech API</strong>. It was unreliable. The API stops recognising speech after a short pause, varies widely between browsers, and in some Chrome versions silently fails unless a separate microphone permission call has already been made. It is also inherently online: Chrome's implementation sends audio to Google's servers.
+        The first version of VoiceSafeKit used the browser's built-in <strong>Web Speech API</strong>. It was unreliable. The API stops recognising speech after a short pause, varies widely between browsers and in some Chrome versions silently fails unless a separate microphone permission call has already been made. It is also inherently online: Chrome's implementation sends audio to Google's servers.
       </p>
       <p>
         The replacement is <strong>Whisper</strong>, a speech recognition model published by OpenAI in 2022 and widely regarded as one of the most accurate open speech models available. The variant used here is <code style="color: var(--green-2); font-size: 13px;">whisper-tiny.en</code>, an English-only model around 75 MB in size.
@@ -782,7 +783,7 @@
       <p class="section-num">04 - The Detection Engine</p>
       <h2 class="section-title">What it looks for and how it decides</h2>
       <p>
-        Once the transcript exists as plain text, VoiceSafeKit runs it through a set of detection rules. Each rule has a pattern (a regular expression), a severity level, a human-readable explanation, and a replacement string for the redacted output.
+        Once the transcript exists as plain text, VoiceSafeKit runs it through a set of detection rules. Each rule has a pattern (a regular expression), a severity level, a human-readable explanation and a replacement string for the redacted output.
       </p>
 
       <div class="rule-grid">
@@ -948,12 +949,20 @@
           <p class="tech-role">Decodes the audio blob to 16kHz mono PCM for Whisper.</p>
         </div>
         <div class="stack-item">
+          <p class="tech-name">Web Crypto API</p>
+          <p class="tech-role">Encrypts browser exports before they are saved as JSON files.</p>
+        </div>
+        <div class="stack-item">
           <p class="tech-name">GitHub Pages</p>
           <p class="tech-role">HTTPS static hosting. Required for microphone access permissions.</p>
         </div>
         <div class="stack-item">
           <p class="tech-name">Python package</p>
-          <p class="tech-role">The same detection rules mirrored in Python for server-side or CLI use.</p>
+          <p class="tech-role">The same detection rules mirrored in Python for CLI or server-side use.</p>
+        </div>
+        <div class="stack-item">
+          <p class="tech-name">cryptography</p>
+          <p class="tech-role">Adds AES-GCM encrypted exports to the Python CLI.</p>
         </div>
         <div class="stack-item">
           <p class="tech-name">pytest</p>
@@ -968,7 +977,7 @@
       <div class="callout" style="margin-top: 28px;">
         <span class="callout-icon">Why no framework?</span>
         <p>
-          Using React, Vue, or any other framework would require a build step, a <code>node_modules</code> folder, and a bundler. The entire point of this project is that it should run as a static file on any HTTPS host with no server, no backend, and no deployment complexity. Vanilla HTML/JS achieves that with far less overhead.
+          Using React, Vue or any other framework would require a build step, a <code>node_modules</code> folder and a bundler. The point of this project is that it should run as static files on any HTTPS host with no server, no backend and no deployment complexity. Vanilla HTML/JS keeps that simple.
         </p>
       </div>
     </div>
@@ -978,13 +987,15 @@
       <p class="section-num">06 - Design Decisions</p>
       <h2 class="section-title">The reasoning behind key choices</h2>
 
-      <p><strong>Why no API key for transcription?</strong> Any API key embedded in a public GitHub repository is public. Anyone can read your source, extract the key, and use it. Running the model entirely in the browser avoids this problem entirely. It also means the audio never touches a third-party server, which is directly relevant to the privacy use case.</p>
+      <p><strong>Why no API key for transcription?</strong> Any API key embedded in a public GitHub repository is public. Anyone can read your source, extract the key and use it. Running the model entirely in the browser avoids this problem entirely. It also means the audio never touches a third-party server, which is directly relevant to the privacy use case.</p>
 
       <p><strong>Why not use the Luhn algorithm to validate card numbers?</strong> The Luhn checksum is used by card issuers to catch typos. It does not distinguish real cards from made-up ones that happen to pass. More importantly, a user dictating a card number to a voice assistant may speak the digits in a way that produces a transcript with a typo. The card would fail Luhn but should still be flagged. A safety tool should err on the side of flagging too much, not too little.</p>
 
       <p><strong>Why flag intent (medical, legal, financial) separately from data?</strong> A transcript might not contain any personally identifiable information but still be problematic. Someone asking an AI for a medication dose change or investment advice needs different handling to someone asking for a restaurant recommendation. Intent rules capture that distinction.</p>
 
       <p><strong>Why client-side everything?</strong> The thesis of the project is that sensitive voice data should not leave the device unless it has been checked and cleaned. If the checking itself required sending data to a server, the whole premise would collapse. Everything runs locally by design.</p>
+
+      <p><strong>Why encrypt saved exports?</strong> The filter has to read plain text while it is checking the transcript. That part happens in memory. Saved files are different. They can include the redaction map, which may contain the exact email address, SSN or account number that was removed from the safe transcript. Browser exports now use the Web Crypto API to save encrypted JSON. The Python CLI uses AES-256-GCM through the <code>cryptography</code> package. TLS/HTTPS is still useful when data travels over a network, but it does not encrypt a file sitting on disk.</p>
     </div>
 
     <!-- Section 7: Limitations -->
@@ -1027,11 +1038,11 @@
       </p>
 
       <p>
-        Other areas worth exploring include streaming transcription, neural intent classification to replace keyword rules, and a dashboard for assistant developers to tune sensitivity thresholds per deployment context.
+        Other areas worth exploring include streaming transcription, neural intent classification to replace keyword rules and a dashboard for assistant developers to tune sensitivity thresholds per deployment context.
       </p>
     </div>
 
-    <!-- Section 9: Confidence scoring — added June 2026 -->
+    <!-- Section 9: Confidence scoring - added June 2026 -->
     <div class="section" id="s9">
       <p class="section-num">09 - Confidence Scoring</p>
       <h2 class="section-title">Why every finding needs a probability</h2>
@@ -1049,7 +1060,7 @@
 
       <div class="code-block">
         <div class="code-block-header">
-          <span>engine.py — confidence-weighted score</span>
+          <span>engine.py - confidence-weighted score</span>
           <button class="copy-btn" onclick="copyCode(this)">Copy</button>
         </div>
         <pre class="code"><span class="k">def</span> <span class="n">_score</span><span class="p">(</span><span class="n">findings</span><span class="p">:</span> <span class="n">list</span><span class="p">[</span><span class="n">Finding</span><span class="p">])</span> <span class="p">-></span> <span class="n">int</span><span class="p">:</span>
@@ -1076,29 +1087,29 @@
       </table>
     </div>
 
-    <!-- Section 10: Multi-turn conversation — added June 2026 -->
+    <!-- Section 10: Multi-turn conversation - added June 2026 -->
     <div class="section" id="s10">
       <p class="section-num">10 - Multi-Turn Conversation Analysis</p>
       <h2 class="section-title">Why a single transcript is not enough</h2>
 
       <p>
-        Voice assistants do not work in isolated utterances. A user might give their name in the first turn, their email address in the second, and their date of birth to confirm their identity in the third. Analyzed individually, turns two and three each get a medium-severity result. Seen together, the session reveals a structured identity disclosure that carries much higher real-world risk.
+        Voice assistants do not work in isolated utterances. A user might give their name in the first turn, their email address in the second and their date of birth to confirm their identity in the third. Analyzed individually, turns two and three each get a medium-severity result. Seen together, the session reveals a structured identity disclosure that carries much higher real-world risk.
       </p>
 
       <p>
-        The <code style="color:var(--green-2); font-size:13px;">analyze_conversation</code> function takes an ordered list of utterances and returns a <code style="color:var(--green-2); font-size:13px;">ConversationResult</code> with per-turn analysis, a peak decision, and the union of all entity kinds detected across the session.
+        The <code style="color:var(--green-2); font-size:13px;">analyze_conversation</code> function takes an ordered list of utterances and returns a <code style="color:var(--green-2); font-size:13px;">ConversationResult</code> with per-turn analysis, a peak decision and the union of all entity kinds detected across the session.
       </p>
 
       <div class="code-block">
         <div class="code-block-header">
-          <span>Python — multi-turn analysis</span>
+          <span>Python - multi-turn analysis</span>
           <button class="copy-btn" onclick="copyCode(this)">Copy</button>
         </div>
         <pre class="code"><span class="k">from</span> <span class="n">voicesafekit</span> <span class="k">import</span> <span class="n">analyze_conversation</span>
 
 <span class="n">result</span> <span class="p">=</span> <span class="n">analyze_conversation</span><span class="p">([</span>
     <span class="s">"Set a timer for ten minutes."</span><span class="p">,</span>
-    <span class="s">"My SSN is 471-55-8843 — please verify me."</span><span class="p">,</span>
+    <span class="s">"My SSN is 471-55-8843 - please verify me."</span><span class="p">,</span>
     <span class="s">"Thank you, that is all."</span><span class="p">,</span>
 <span class="p">])</span>
 
@@ -1109,7 +1120,7 @@
       </div>
 
       <p>
-        The web app exposes this as a <strong>Conversation mode</strong> toggle. Each turn is added explicitly, a turn history panel tracks the sequence, and a timeline view below the main panels shows every turn's findings and decision alongside a cumulative summary bar.
+        The web app exposes this as a <strong>Conversation mode</strong> toggle. Each turn is added explicitly, a turn history panel tracks the sequence and a timeline view below the main panels shows every turn's findings and decision alongside a cumulative summary bar.
       </p>
 
       <div class="callout">
@@ -1120,10 +1131,10 @@
       </div>
     </div>
 
-    <!-- Section 11: New detector classes — added June 2026 -->
+    <!-- Section 11: New detector classes - added June 2026 -->
     <div class="section" id="s11">
       <p class="section-num">11 - New Detector Classes (June 2026)</p>
-      <h2 class="section-title">Financial identifiers, context signals, and human vulnerability</h2>
+      <h2 class="section-title">Financial identifiers, context signals and human vulnerability</h2>
 
       <p>
         The v0.2.0 detector set adds three categories that were entirely absent from the original engine.
@@ -1131,16 +1142,16 @@
 
       <h3 style="font-size: 18px; font-weight: 420; margin: 32px 0 16px; color: var(--text);">Financial identity numbers</h3>
       <p>
-        SSNs, IBANs, and CVV codes are the three most common financial identifiers that a voice assistant user might accidentally speak. Each has a distinct detection challenge.
+        SSNs, IBANs and CVV codes are the three most common financial identifiers that a voice assistant user might accidentally speak. Each has a distinct detection challenge.
       </p>
       <p>
-        <strong>SSN</strong> — The pattern <code style="color:var(--green-2); font-size:13px;">\b(?!000|666|9\d{2})\d{3}[-\s]\d{2}[-\s]\d{4}\b</code> excludes area numbers that the Social Security Administration has never issued. This eliminates a class of false positives from account numbers and tracking codes that happen to match the XXX-XX-XXXX format.
+        <strong>SSN</strong> - The pattern <code style="color:var(--green-2); font-size:13px;">\b(?!000|666|9\d{2})\d{3}[-\s]\d{2}[-\s]\d{4}\b</code> excludes area numbers that the Social Security Administration has never issued. This eliminates a class of false positives from account numbers and tracking codes that happen to match the XXX-XX-XXXX format.
       </p>
       <p>
-        <strong>IBAN</strong> — The pattern matches the standard two-letter country code, two check digits, and 11–30 alphanumeric BBAN characters. A mod-97 checksum then validates the matched text. Without this step, any sufficiently long alphanumeric string near a country code would be flagged.
+        <strong>IBAN</strong> - The pattern matches the standard two-letter country code, two check digits and 11-30 alphanumeric BBAN characters. A mod-97 checksum then validates the matched text. Without this step, any sufficiently long alphanumeric string near a country code would be flagged.
       </p>
       <p>
-        <strong>CVV</strong> — Unlike card numbers, CVV codes are short (3–4 digits) and indistinguishable from any other number without context. The detector is keyword-triggered: it only fires when a CVV/CVC/security-code phrase precedes the number.
+        <strong>CVV</strong> - Unlike card numbers, CVV codes are short (3-4 digits) and indistinguishable from any other number without context. The detector is keyword-triggered: it only fires when a CVV/CVC/security-code phrase precedes the number.
       </p>
 
       <h3 style="font-size: 18px; font-weight: 420; margin: 32px 0 16px; color: var(--text);">Emotional and situational context</h3>
@@ -1148,14 +1159,14 @@
         Two new intent categories address situations that no PII detector can catch but that require fundamentally different assistant behavior.
       </p>
       <p>
-        The <strong>emotional distress signal</strong> fires on phrases expressing hopelessness, worthlessness, or a desire to disappear. When detected, the assistant guidance changes: instead of "redact and proceed," the guidance tells the assistant to respond with empathy and direct the user to appropriate support. The confidence is set at 70% because emotional language is genuinely ambiguous — "I feel like giving up" can mean quitting a project as easily as it can signal a crisis.
+        The <strong>emotional distress signal</strong> fires on phrases expressing hopelessness, worthlessness, or a desire to disappear. When detected, the assistant guidance changes: instead of "redact and proceed," the guidance tells the assistant to respond with empathy and direct the user to appropriate support. The confidence is set at 70% because emotional language is genuinely ambiguous - "I feel like giving up" can mean quitting a project as easily as it can signal a crisis.
       </p>
       <p>
-        The <strong>coercion signal</strong> fires on phrases suggesting the user is being directed by a third party: "they made me say this," "don't tell anyone I said this." This is the lowest-confidence detector in the system (65%) because coercive language and ordinary reporting language overlap substantially. A higher false negative rate is acceptable here because the guidance produced is non-destructive — it simply tells the assistant not to act on instructions that may have been forced.
+        The <strong>coercion signal</strong> fires on phrases suggesting the user is being directed by a third party: "they made me say this," "don't tell anyone I said this." This is the lowest-confidence detector in the system (65%) because coercive language and ordinary reporting language overlap substantially. A higher false negative rate is acceptable here because the guidance produced is non-destructive - it simply tells the assistant not to act on instructions that may have been forced.
       </p>
     </div>
 
-    <!-- Closing — renumbered -->
+    <!-- Closing - renumbered -->
     <div class="section" id="s12">
       <p class="section-num">12 - Closing</p>
       <h2 class="section-title">What this project is really about</h2>
@@ -1163,7 +1174,7 @@
         Voice assistants are getting smarter quickly. The gap between what someone says and what an AI model is allowed to act on needs careful thought. Most of the safety work in this space focuses on model outputs (preventing harmful responses) rather than model inputs (preventing harmful data going in).
       </p>
       <p>
-        VoiceSafeKit is an argument that input filtering matters too, and that it can be done locally, in a browser, with no infrastructure, and with a good user experience. The code is open-source. The approach is intentionally simple so that it can be understood, copied, and improved.
+        VoiceSafeKit is an argument that input filtering matters too and that it can be done locally, in a browser, with no infrastructure and with a good user experience. The code is open-source. The approach is intentionally simple so that it can be understood, copied and improved.
       </p>
 
       <div class="callout" style="margin-top: 28px;">
@@ -1173,7 +1184,7 @@
     </div>
 
     <footer class="paper-footer">
-      <span>VoiceSafeKit &mdash; Mohamad Kanso &mdash; updated June 2026</span>
+      <span>VoiceSafeKit, Mohamad Kanso, updated June 2026</span>
       <div style="display:flex; gap: 20px;">
         <a href="https://github.com/MohamadKanso/VoiceSafeKit">GitHub</a>
         <a href="progress.html">Progress</a>

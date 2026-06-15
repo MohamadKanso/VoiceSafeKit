@@ -16,12 +16,12 @@
 
 VoiceSafeKit is a privacy and safety filter for voice assistant transcripts.
 
-It records or accepts a voice transcript, checks the text for sensitive content,
+It records or accepts a voice transcript, checks the text for sensitive content
 and returns a cleaner version before that text reaches an LLM. As of 15 June 2026,
-the project includes encrypted at-rest exports, confidence scoring, multi-turn
+the project includes encrypted saved exports, confidence scoring, multi-turn
 conversation analysis, seven new detectors (SSN, IBAN, CVV, date of birth, IP
-address, emotional distress, and coercion signals), and a fully redesigned web
-app with inline transcript highlighting.
+address, emotional distress and coercion signals) and a redesigned web app with
+inline transcript highlighting.
 
 ## What It Does
 
@@ -30,18 +30,17 @@ VoiceSafeKit returns:
 | Field | Description |
 |---|---|
 | `decision` | `SAFE`, `REDACT`, `REVIEW`, or `BLOCK` |
-| `score` | 0–100 confidence-weighted risk score |
+| `score` | 0-100 confidence-weighted risk score |
 | `summary` | Plain-English summary of what was found |
 | `findings` | Each finding with severity and detection confidence |
 | `safe_transcript` | The transcript with sensitive parts replaced |
 | `redaction_map` | Ordered list of what was found and what replaced it |
 | `assistant_guidance` | What the downstream assistant should do |
 
-Saved artifacts can now be encrypted at rest. Browser exports and CLI `--out`
-files use AES-256-GCM with a passphrase-derived key, so raw values in the
-redaction map are not left in plaintext on disk. TLS/HTTPS remains the right
-layer for data in transit if a developer forwards the safe transcript to another
-service.
+Saved exports can now be encrypted on disk. Browser exports and CLI `--out`
+files use AES-256-GCM with a key made from your export passphrase. That means
+the raw values in the redaction map do not sit in a readable JSON file. TLS/HTTPS
+is still the right layer when data moves over a network.
 
 ## Detectors
 
@@ -87,7 +86,7 @@ python3 -m voicesafekit check examples/transcripts/password_reset.txt --pretty
 python3 -m voicesafekit check examples/transcripts/identity_theft.txt --pretty
 ```
 
-Write an encrypted at-rest result file:
+Write an encrypted result file:
 
 ```bash
 export VOICESAFEKIT_EXPORT_KEY="use-a-long-local-passphrase"
@@ -158,18 +157,18 @@ if result.should_review:
 
 ## Web App
 
-The live app runs entirely in the browser — no server, no API key, no data sent anywhere.
+The live app runs entirely in the browser. No server, no API key, no data sent anywhere.
 
 **New in v0.4.0:**
-- **Encrypted JSON export** — download the full analysis result encrypted at rest with AES-256-GCM.
-- **Encrypted CLI output files** — `--out` writes encrypted artifacts by default when `VOICESAFEKIT_EXPORT_KEY` is set.
-- **Intentional decrypt command** — `voicesafekit decrypt` restores an encrypted export when needed.
+- **Encrypted JSON export**: download the full result as an AES-256-GCM encrypted file.
+- **Encrypted CLI output**: `--out` writes encrypted files by default when `VOICESAFEKIT_EXPORT_KEY` is set.
+- **Decrypt command**: `voicesafekit decrypt` restores an encrypted export when needed.
 
 **Added in v0.2.0:**
-- **Conversation mode** — chain multiple turns and see cumulative risk and peak decision.
-- **Inspect tab** — inline highlight view showing exactly which text spans were flagged, color-coded by severity.
-- **Confidence bars** — each finding card shows detection confidence.
-- **Copy safe transcript** — one click, or Cmd+Enter.
+- **Conversation mode**: chain multiple turns and see cumulative risk plus peak decision.
+- **Inspect tab**: see which parts of the original text were flagged.
+- **Confidence bars**: each finding card shows detection confidence.
+- **Copy safe transcript**: one click, or Cmd+Enter.
 
 ```bash
 # Run locally
@@ -187,14 +186,16 @@ python3 -m ruff check voicesafekit tests
 ## Design Principles
 
 - **Client-side first.** The browser app does not send audio or transcripts to any server.
-- **Encrypted at rest.** Saved analysis artifacts are encrypted with AES-256-GCM; TLS/HTTPS covers transport, not local storage.
+- **Encrypted saves.** Saved analysis files are encrypted with AES-256-GCM. TLS/HTTPS covers transport, not local storage.
 - **Confidence over silence.** Every finding exposes a confidence score. Uncertain detections are not hidden.
 - **Auditable.** The redaction map shows exactly what was removed and what replaced it.
 - **Not a replacement for security reviews.** This is a practical first layer, not a complete privacy solution.
 
 ## Ethical Position
 
-VoiceSafeKit is intentionally transparent. It does not claim to solve all voice AI safety problems. It is a starting point that any developer can understand, copy, and improve.
+VoiceSafeKit is intentionally transparent. It does not claim to solve every voice
+AI safety problem. It is a starting point that developers can understand, copy
+and improve.
 
 It should not be used as a replacement for medical advice, legal advice, financial advice, emergency services, or a full security review.
 

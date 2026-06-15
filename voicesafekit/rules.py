@@ -16,7 +16,7 @@ class PatternRule:
     single_match: bool = False
 
 
-# ─── PII pattern rules ─────────────────────────────────────────────────────────
+# PII pattern rules
 
 PATTERN_RULES: tuple[PatternRule, ...] = (
     PatternRule(
@@ -149,7 +149,7 @@ PATTERN_RULES: tuple[PatternRule, ...] = (
         severity="high",
         confidence=0.88,
         explanation=(
-            "Passwords, partial passwords, tokens, and secrets are highly sensitive. "
+            "Passwords, partial passwords, tokens and secrets are highly sensitive. "
             "Never include them in text sent to a model."
         ),
         replacement="[secret removed]",
@@ -178,7 +178,7 @@ PATTERN_RULES: tuple[PatternRule, ...] = (
 )
 
 
-# ─── Intent and context rules ──────────────────────────────────────────────────
+# Intent and context rules
 
 INTENT_RULES: tuple[PatternRule, ...] = (
     PatternRule(

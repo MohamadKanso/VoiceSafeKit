@@ -14,7 +14,7 @@ class Finding:
     start: int
     end: int
     replacement: str
-    confidence: float = 1.0  # 0.0–1.0 detection confidence
+    confidence: float = 1.0  # 0.0-1.0 detection confidence
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)

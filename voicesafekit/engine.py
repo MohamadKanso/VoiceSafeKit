@@ -42,7 +42,7 @@ def analyze_conversation(
     """Analyze a sequence of utterances as a multi-turn conversation.
 
     Each utterance is analyzed independently. The result contains per-turn
-    analysis, a cumulative peak score, and the union of all entity kinds seen.
+    analysis, a cumulative peak score and the union of all entity kinds seen.
     """
     turns: list[ConversationTurn] = []
     seen_kinds: set[str] = set()
@@ -65,7 +65,7 @@ def analyze_conversation(
     )
 
 
-# ─── internal helpers ──────────────────────────────────────────────────────────
+# internal helpers
 
 
 def _find_risks(transcript: str) -> list[Finding]:
@@ -280,7 +280,7 @@ def _group_label(label: str, count: int) -> str:
     return f"{count} {_PLURAL_LABELS.get(label, label.lower() + ' findings')}"
 
 
-# ─── validators ────────────────────────────────────────────────────────────────
+# validators
 
 
 def _looks_like_payment_card(value: str, transcript: str, start: int, end: int) -> bool:

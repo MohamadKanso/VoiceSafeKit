@@ -391,6 +391,30 @@
             </p>
           </div>
         </article>
+
+        <article class="progress-item current">
+          <div class="progress-marker">17</div>
+          <div>
+            <span class="status-chip">Implementation note</span>
+            <h3>The encryption path had to keep the local-first design intact.</h3>
+            <p>
+              The detector still works on readable transcript text in memory,
+              because that is the only way to find and redact sensitive values.
+              The storage boundary is where the new protection starts: before a
+              result is downloaded or written to disk, the full analysis payload
+              is wrapped into an encrypted export object.
+            </p>
+            <p>
+              The browser path derives an AES-GCM key from the local export key
+              with Web Crypto, then stores only salt, nonce, iterations and
+              ciphertext in the JSON file. The Python CLI mirrors the same idea
+              with the <code>cryptography</code> package, encrypted
+              <code>--out</code> by default, <code>--plain-out</code> for an
+              explicit local debug file and <code>voicesafekit decrypt</code>
+              for intentional recovery.
+            </p>
+          </div>
+        </article>
       </div>
     </section>
 

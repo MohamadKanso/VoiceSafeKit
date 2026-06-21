@@ -996,6 +996,10 @@
       <p><strong>Why client-side everything?</strong> The thesis of the project is that sensitive voice data should not leave the device unless it has been checked and cleaned. If the checking itself required sending data to a server, the whole premise would collapse. Everything runs locally by design.</p>
 
       <p><strong>Why encrypt saved exports?</strong> The filter has to read plain text while it is checking the transcript. That part happens in memory. Saved files are different. They can include the redaction map, which may contain the exact email address, SSN or account number that was removed from the safe transcript. Browser exports now use the Web Crypto API to save encrypted JSON. The Python CLI uses AES-256-GCM through the <code>cryptography</code> package. TLS/HTTPS is still useful when data travels over a network, but it does not encrypt a file sitting on disk.</p>
+
+      <p><strong>How the export encryption was built.</strong> The analysis engine was left unchanged: it still produces the same structured result with <code>decision</code>, <code>findings</code>, <code>safe_transcript</code> and <code>redaction_map</code>. The encryption layer sits after analysis, at the moment a user chooses to save the result. That keeps detection simple while making the saved artifact safer.</p>
+
+      <p>In the browser, the Export JSON button requires a local export key, derives an AES-GCM key through Web Crypto and saves only the encrypted bundle. In the CLI, <code>--out</code> writes encrypted files by default using <code>VOICESAFEKIT_EXPORT_KEY</code>. The explicit <code>--plain-out</code> option is kept for local debugging, and <code>voicesafekit decrypt</code> restores an encrypted export when the same passphrase is available. Tests cover the round trip and confirm that sensitive redaction-map values are not visible in the stored JSON.</p>
     </div>
 
     <!-- Section 7: Limitations -->

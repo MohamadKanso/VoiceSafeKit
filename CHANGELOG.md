@@ -17,6 +17,9 @@ recordings as well as transcripts, and is measured on a held-out real-speech set
 - Emails where speech-to-text dropped the "at" (`alex.rivera.gmail.com`) are caught for
   well-known providers. "log in at mail.yahoo.com" no longer reads as a spoken email.
 - "fin" (a common Whisper mishearing of "PIN") is treated as PIN when digits follow.
+- A card number where STT repeated a group (`4242-4242-4242-4242-4242`, 20 digits) is still
+  caught when card words are nearby. Found by driving the live demo with a TTS voice as the
+  microphone: in-browser Whisper heard one group twice and the number went through.
 - **Held-out benchmark:** new scripts, a British TTS voice and Whisper `small.en`, frozen
   before any change: 0.6 protects 106/108 (0.5: 102/108, Presidio: 70/108) with 1/40 false
   alarms. The three failures are public in #9.
@@ -39,7 +42,9 @@ recordings as well as transcripts, and is measured on a held-out real-speech set
 
 ### Packaging
 
-- Version 0.6.0. Release workflow publishes to PyPI with trusted publishing (no tokens).
+- Version 0.6.0. Release workflow publishes to PyPI with trusted publishing (no tokens),
+  checks the tag matches the version, and runs as a dry run when started by hand.
+- CLI: a missing file prints a one-line error instead of a traceback.
 - New extras: `audio`, `openwebui`, `litellm`. CI gains a gateways job.
 
 ## Phase 0.5 - Voice-Native Detection (7 November 2026)

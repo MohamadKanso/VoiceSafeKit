@@ -65,7 +65,7 @@ PATTERN_RULES: tuple[PatternRule, ...] = (
         confidence=0.95,
         explanation="This looks like a payment card number. Do not send it to an LLM.",
         replacement="[payment number removed]",
-        pattern=re.compile(r"\b(?:\d[ -]?){12,18}\d\b"),
+        pattern=re.compile(r"\b(?:\d[ -]?){12,23}\d\b"),
     ),
     PatternRule(
         kind="payment_card_partial",

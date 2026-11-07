@@ -24,12 +24,18 @@
   ·
   <a href="#bleep-the-recording-not-just-the-transcript">Audio</a>
   ·
-  <a href="CHANGELOG.md">Changelog</a>
+  <a href="https://github.com/MohamadKanso/VoiceSafeKit/blob/main/CHANGELOG.md">Changelog</a>
 </p>
 
 # VoiceSafeKit
 
 **Your voice agent is sending card numbers to the LLM, and your PII filter can't see them.**
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/MohamadKanso/VoiceSafeKit/main/docs/assets/demo.gif" alt="A spoken card number and email are recorded in the browser, transcribed by Whisper on-device, and both are flagged for redaction" width="860">
+  <br>
+  <sub>A voice says a card number and an email into the <a href="https://mohamadkanso.github.io/VoiceSafeKit/">live app</a>. Whisper runs on-device and both are caught. Recording sped up 5×.</sub>
+</p>
 
 Speech-to-text writes what people *say*, not what they *mean*:
 
@@ -246,7 +252,7 @@ idempotent redactor for transcript and log hooks. Full example: `examples/liveki
 ## Open WebUI
 
 A Filter Function: **Admin Panel > Functions > + > paste
-[`examples/openwebui/voicesafekit_filter.py`](examples/openwebui/voicesafekit_filter.py) > Save**,
+[`examples/openwebui/voicesafekit_filter.py`](https://github.com/MohamadKanso/VoiceSafeKit/blob/main/examples/openwebui/voicesafekit_filter.py) > Save**,
 then enable it. It installs VoiceSafeKit through its `requirements:` line.
 
 - Every user message is protected before the model sees it ("my card is four two four
@@ -282,7 +288,7 @@ litellm --config config.yaml
 
 Tested on a running LiteLLM 1.108 proxy: the upstream model received `my card is [CARD_1]`,
 the client got the real values back (normal and streamed), and an SSN request returned
-HTTP 400 without reaching the model. See [`examples/litellm/`](examples/litellm/).
+HTTP 400 without reaching the model. See [`examples/litellm/`](https://github.com/MohamadKanso/VoiceSafeKit/tree/main/examples/litellm/).
 
 ## Bleep the recording, not just the transcript
 
@@ -360,7 +366,7 @@ python3 -m http.server 8124 --directory docs   # run it locally
 The most valuable contribution is a transcript your STT engine produced that VoiceSafeKit
 missed (fake data only). Use the
 [Missed spoken PII](https://github.com/MohamadKanso/VoiceSafeKit/issues/new?template=missed_spoken_pii.yml)
-template. See [CONTRIBUTING.md](CONTRIBUTING.md) and the [roadmap](ROADMAP.md).
+template. See [CONTRIBUTING.md](https://github.com/MohamadKanso/VoiceSafeKit/blob/main/CONTRIBUTING.md) and the [roadmap](https://github.com/MohamadKanso/VoiceSafeKit/blob/main/ROADMAP.md).
 
 ```bash
 pip install -e ".[dev]" && pytest && python benchmarks/run.py
@@ -368,4 +374,4 @@ pip install -e ".[dev]" && pytest && python benchmarks/run.py
 
 ## License
 
-MIT. See [LICENSE](LICENSE). Not legal, medical or security advice.
+MIT. See [LICENSE](https://github.com/MohamadKanso/VoiceSafeKit/blob/main/LICENSE). Not legal, medical or security advice.

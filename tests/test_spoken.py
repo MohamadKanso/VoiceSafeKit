@@ -201,3 +201,15 @@ def test_email_with_dropped_at(text: str) -> None:
 @pytest.mark.parametrize("text", ["log in at mail.yahoo.com", "open www.gmail.com"])
 def test_provider_urls_are_not_emails(text: str) -> None:
     assert analyze_transcript(text).decision == "SAFE"
+
+
+def test_card_with_a_repeated_group_is_still_a_card() -> None:
+    # Real in-browser Whisper output: one group heard twice, 20 digits.
+    result = analyze_transcript("My card number is 4242-4242-4242-4242-4242 and that's it")
+    assert any(f.kind == "payment_card" for f in result.findings)
+    assert "4242" not in result.safe_transcript
+
+
+def test_long_number_without_card_context_is_not_a_card() -> None:
+    result = analyze_transcript("Order reference 4242-4242-4242-4242-4242 shipped")
+    assert not any(f.kind == "payment_card" for f in result.findings)

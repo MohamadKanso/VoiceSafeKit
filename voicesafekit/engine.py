@@ -340,8 +340,12 @@ def _group_label(label: str, count: int) -> str:
 
 def _looks_like_payment_card(value: str, transcript: str, start: int, end: int) -> bool:
     digits = [c for c in value if c.isdigit()]
-    if not 13 <= len(digits) <= 19:
+    if len(digits) < 13:
         return False
+    if len(digits) > 19:
+        # Too long for a card, but speech-to-text often repeats a digit group
+        # ("4242-4242-4242-4242-4242"). Next to card words it is still a card number.
+        return _has_card_context(transcript, start, end)
     return _passes_luhn(value) or _has_card_context(transcript, start, end)
 
 

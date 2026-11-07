@@ -19,7 +19,14 @@ def main(argv: list[str] | None = None) -> int:
     if not hasattr(args, "func"):
         parser.print_help()
         return 0
-    return int(args.func(args))
+    try:
+        return int(args.func(args))
+    except FileNotFoundError as exc:
+        print(f"voicesafekit: file not found: {exc.filename}", file=sys.stderr)
+        return 2
+    except IsADirectoryError as exc:
+        print(f"voicesafekit: expected a file, got a folder: {exc.filename}", file=sys.stderr)
+        return 2
 
 
 def _parser() -> argparse.ArgumentParser:

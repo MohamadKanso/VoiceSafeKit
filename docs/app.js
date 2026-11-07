@@ -393,7 +393,7 @@ const patternRules = [
     confidence: 0.95,
     explanation: "This looks like a payment card number. Do not send it to an LLM.",
     replacement: "[payment number removed]",
-    pattern: /\b(?:\d[ -]?){12,18}\d\b/g,
+    pattern: /\b(?:\d[ -]?){12,23}\d\b/g,
   },
   {
     kind: "payment_card_partial",
@@ -894,7 +894,10 @@ function guidance(findings) {
 
 function looksLikePaymentCard(value, text, start, end) {
   const digits = value.replace(/\D/g, "");
-  if (digits.length < 13 || digits.length > 19) return false;
+  if (digits.length < 13) return false;
+  // Too long for a card, but speech-to-text often repeats a digit group
+  // ("4242-4242-4242-4242-4242"). Next to card words it is still a card number.
+  if (digits.length > 19) return hasCardContext(text, start, end);
   return passesLuhn(value) || hasCardContext(text, start, end);
 }
 

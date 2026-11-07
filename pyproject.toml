@@ -32,7 +32,7 @@ keywords = [
   "audio-redaction",
 ]
 classifiers = [
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",
@@ -40,6 +40,8 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Topic :: Security",
+  "Operating System :: OS Independent",
+  "Intended Audience :: Information Technology",
   "Topic :: Multimedia :: Sound/Audio :: Speech",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
@@ -49,6 +51,8 @@ Homepage = "https://github.com/MohamadKanso/VoiceSafeKit"
 Repository = "https://github.com/MohamadKanso/VoiceSafeKit"
 Demo = "https://mohamadkanso.github.io/VoiceSafeKit/"
 Changelog = "https://github.com/MohamadKanso/VoiceSafeKit/blob/main/CHANGELOG.md"
+Issues = "https://github.com/MohamadKanso/VoiceSafeKit/issues"
+Benchmark = "https://github.com/MohamadKanso/VoiceSafeKit/tree/main/benchmarks"
 
 [project.scripts]
 voicesafekit = "voicesafekit.cli:main"

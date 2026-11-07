@@ -91,6 +91,33 @@ def _parser() -> argparse.ArgumentParser:
     redact.add_argument("--no-spoken", action="store_true", help="Skip spoken-form normalisation.")
     redact.set_defaults(func=_cmd_redact)
 
+    bleep = sub.add_parser(
+        "bleep",
+        help="Bleep spoken PII out of a WAV recording (writes a new WAV).",
+    )
+    bleep.add_argument("audio", help="Input PCM WAV file.")
+    bleep.add_argument("-o", "--out", required=True, help="Output WAV path.")
+    bleep.add_argument(
+        "--words",
+        help="Word timings JSON (faster-whisper/whisper segments, Deepgram response, or a "
+        "list of {word,start,end}). Without it the audio is transcribed with faster-whisper.",
+    )
+    bleep.add_argument("--silence", action="store_true", help="Write silence instead of a beep.")
+    bleep.add_argument(
+        "--padding",
+        type=float,
+        default=0.15,
+        help="Seconds added before and after each span (default 0.15).",
+    )
+    bleep.add_argument("--model", default="base.en", help="faster-whisper model (default base.en).")
+    bleep.add_argument("--no-spoken", action="store_true", help="Skip spoken-form normalisation.")
+    bleep.add_argument(
+        "--report",
+        action="store_true",
+        help="Print a JSON report (decision, safe transcript, spans) instead of text.",
+    )
+    bleep.set_defaults(func=_cmd_bleep)
+
     decrypt = sub.add_parser("decrypt", help="Decrypt an encrypted VoiceSafeKit JSON export.")
     decrypt.add_argument("encrypted_export", help="Encrypted VoiceSafeKit export file.")
     decrypt.add_argument("--out", help="Optional plaintext JSON output path.")
@@ -139,6 +166,44 @@ def _cmd_redact(args: argparse.Namespace) -> int:
     result = analyze_transcript(transcript, spoken=not args.no_spoken)
     print(result.safe_transcript)
     return 1 if result.decision == "BLOCK" else 0
+
+
+def _cmd_bleep(args: argparse.Namespace) -> int:
+    from voicesafekit.audio import bleep_file, load_words
+
+    words = None
+    if args.words:
+        words = load_words(json.loads(Path(args.words).read_text(encoding="utf-8")))
+    try:
+        redaction = bleep_file(
+            args.audio,
+            args.out,
+            words=words,
+            model=args.model,
+            spoken=not args.no_spoken,
+            padding=args.padding,
+            mode="silence" if args.silence else "beep",
+        )
+    except (ImportError, ValueError) as exc:
+        raise SystemExit(f"voicesafekit bleep: {exc}") from exc
+    if args.report:
+        print(json.dumps({"out": args.out, **redaction.to_dict()}, indent=2))
+        return 0
+    print(redaction.safe_transcript)
+    print()
+    if not redaction.spans:
+        print(f"No PII found; {args.out} is an unchanged copy.")
+        return 0
+    what = "Silenced" if args.silence else "Bleeped"
+    print(f"{what} {len(redaction.spans)} span(s) -> {args.out}")
+    for span in redaction.spans:
+        print(f"  {_clock(span.start)} - {_clock(span.end)}  {span.label}")
+    return 0
+
+
+def _clock(seconds: float) -> str:
+    minutes, secs = divmod(seconds, 60)
+    return f"{int(minutes):02d}:{secs:06.3f}"
 
 
 def _cmd_decrypt(args: argparse.Namespace) -> int:

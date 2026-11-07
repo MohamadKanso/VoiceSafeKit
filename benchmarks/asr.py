@@ -70,7 +70,7 @@ def _read_wav(path: Path):
     return np.frombuffer(frames, dtype=np.int16).astype(np.float32) / 32768.0
 
 
-def transcribe(model_name: str, voice: str) -> None:
+def transcribe(model_name: str, voice: str, offset: int = 0, out_path: Path = ASR) -> None:
     from faster_whisper import WhisperModel
 
     rows = [json.loads(line) for line in DATA.read_text().splitlines() if line]
@@ -78,8 +78,9 @@ def transcribe(model_name: str, voice: str) -> None:
     for row in rows:
         if row["form"] == "spoken":
             kind = row["entities"][0]["type"]
-            if counts.get(kind, 0) < PER_TYPE:
-                counts[kind] = counts.get(kind, 0) + 1
+            seen = counts.get(kind, 0)
+            counts[kind] = seen + 1
+            if offset <= seen < offset + PER_TYPE:
                 picked.append(row)
         elif row["form"] == "negative":
             picked.append(row)
@@ -101,15 +102,17 @@ def transcribe(model_name: str, voice: str) -> None:
                 item["type"], item["value"] = gold_value(row)
             out.append(item)
             print(f"[{i + 1}/{len(picked)}] {text}", file=sys.stderr)
-    ASR.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in out))
+    out_path.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in out))
 
 
 def score(use_presidio: bool, data: Path = ASR) -> None:
     from run import presidio_detector, vsk_detector
 
+    from voicesafekit import __version__
+
     rows = [json.loads(line) for line in Path(data).read_text().splitlines() if line]
-    detectors = [("VoiceSafeKit 0.5", vsk_detector(True)),
-                 ("VoiceSafeKit 0.5 (spoken mode off)", vsk_detector(False))]
+    detectors = [(f"VoiceSafeKit {__version__}", vsk_detector(True)),
+                 (f"VoiceSafeKit {__version__} (spoken mode off)", vsk_detector(False))]
     if use_presidio:
         detectors.append(("Microsoft Presidio", presidio_detector()))
 
@@ -146,12 +149,14 @@ def main() -> None:
     t = sub.add_parser("transcribe")
     t.add_argument("--model", default="base.en")
     t.add_argument("--voice", default="Samantha")
+    t.add_argument("--offset", type=int, default=0, help="Skip this many spoken rows per type.")
+    t.add_argument("--out", default=str(ASR))
     s = sub.add_parser("score")
     s.add_argument("--presidio", action="store_true")
     s.add_argument("--data", default=str(ASR), help="ASR transcripts JSONL to score.")
     args = parser.parse_args()
     if args.cmd == "transcribe":
-        transcribe(args.model, args.voice)
+        transcribe(args.model, args.voice, args.offset, Path(args.out))
     else:
         score(args.presidio, Path(args.data))
 

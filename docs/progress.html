@@ -43,18 +43,18 @@
     <section class="progress-summary-grid" aria-label="Current progress summary">
       <article>
         <span class="small-label">Current phase</span>
-        <strong>Phase 0.5</strong>
-        <p>Voice-native detection: PII that speech-to-text writes as words is now caught, redacted and, when the agent needs it, restored.</p>
+        <strong>Phase 0.6</strong>
+        <p>Reach and real speech: Open WebUI and LiteLLM adapters, audio bleeping, Whisper number formatting and a held-out real-speech benchmark.</p>
       </article>
       <article>
         <span class="small-label">Latest additions</span>
-        <strong>Spoken PII, 11% to 100%</strong>
-        <p>On the SpokenPII benchmark, spoken-form normalisation lifts protection of spoken PII from 11% to 100%, with no false alarms.</p>
+        <strong>98% on unseen speech</strong>
+        <p>On a held-out set spoken by a new voice and transcribed by a bigger Whisper model, 0.6 protects 106 of 108 PII utterances. Presidio: 70.</p>
       </article>
       <article>
         <span class="small-label">Shipped 7 November 2026</span>
-        <strong>v0.5.0</strong>
-        <p>Reversible placeholders, Pipecat and LiveKit drop-ins, a public benchmark against Presidio and a zero-dependency core.</p>
+        <strong>v0.6.0</strong>
+        <p>Open WebUI and LiteLLM drop-ins, <code>voicesafekit bleep</code> for recordings, the Pipecat split-frame fix and a PyPI release workflow.</p>
       </article>
     </section>
 
@@ -427,7 +427,7 @@
       </div>
 
       <div class="progress-timeline">
-        <article class="progress-item current">
+        <article class="progress-item resolved">
           <div class="progress-marker">18</div>
           <div>
             <span class="status-chip">Shipped 7 Nov 2026</span>
@@ -453,7 +453,7 @@
           </div>
         </article>
 
-        <article class="progress-item current">
+        <article class="progress-item resolved">
           <div class="progress-marker">19</div>
           <div>
             <span class="status-chip">Shipped 7 Nov 2026</span>
@@ -476,7 +476,7 @@
           </div>
         </article>
 
-        <article class="progress-item current">
+        <article class="progress-item resolved">
           <div class="progress-marker">20</div>
           <div>
             <span class="status-chip">Shipped 7 Nov 2026</span>
@@ -494,7 +494,7 @@
           </div>
         </article>
 
-        <article class="progress-item current">
+        <article class="progress-item resolved">
           <div class="progress-marker">21</div>
           <div>
             <span class="status-chip">Shipped 7 Nov 2026</span>
@@ -513,7 +513,7 @@
           </div>
         </article>
 
-        <article class="progress-item current">
+        <article class="progress-item resolved">
           <div class="progress-marker">22</div>
           <div>
             <span class="status-chip">Shipped 7 Nov 2026</span>
@@ -536,7 +536,7 @@
           </div>
         </article>
 
-        <article class="progress-item current">
+        <article class="progress-item resolved">
           <div class="progress-marker">23</div>
           <div>
             <span class="status-chip">Shipped 7 Nov 2026</span>
@@ -557,7 +557,7 @@
           </div>
         </article>
 
-        <article class="progress-item current">
+        <article class="progress-item resolved">
           <div class="progress-marker">24</div>
           <div>
             <span class="status-chip">Shipped 7 Nov 2026</span>
@@ -577,7 +577,7 @@
           </div>
         </article>
 
-        <article class="progress-item current">
+        <article class="progress-item resolved">
           <div class="progress-marker">25</div>
           <div>
             <span class="status-chip">Shipped 7 Nov 2026</span>
@@ -599,6 +599,102 @@
       </div>
     </section>
 
+    <!-- Phase 0.6 entries, 7 November 2026 -->
+    <section class="progress-section">
+      <div class="section-heading">
+        <p class="eyebrow">Phase 0.6, 7 November 2026</p>
+        <h2>Reach and real speech</h2>
+      </div>
+
+      <div class="progress-timeline">
+        <article class="progress-item current">
+          <div class="progress-marker">26</div>
+          <div>
+            <span class="status-chip">Shipped 7 Nov 2026 &middot; Issue #6</span>
+            <h3>Real Whisper output punctuated numbers like lists, and 7 of 108 values leaked.</h3>
+            <p>
+              The first real-speech benchmark showed Whisper writing one spoken card number as
+              <code>3790, 4339, 7110, 7181</code>, gluing keywords to digits
+              (<code>SSN609507896</code>), turning digits into decimals and hearing "PIN" as "fin".
+            </p>
+            <p>
+              Fixed by joining punctuated digit groups that follow a sensitive word, allowing
+              keywords glued to digits, and treating "fin" as PIN when digits follow. Years,
+              prices, room numbers and scores stay untouched, and a test checks that they do.
+            </p>
+          </div>
+        </article>
+
+        <article class="progress-item current">
+          <div class="progress-marker">27</div>
+          <div>
+            <span class="status-chip">Shipped 7 Nov 2026 &middot; Issue #7</span>
+            <h3>In Pipecat, a card number split across two STT frames leaked its first digits.</h3>
+            <p>
+              Many STT services send several final transcriptions per turn. Each frame was
+              checked alone, so "my card number is four two four two" went through and the
+              rest was labelled a phone number.
+            </p>
+            <p>
+              Fixed by holding a fragment that ends mid-number near a sensitive word for up to
+              0.8 s and merging it with the next frame. Ordinary speech is never held.
+            </p>
+          </div>
+        </article>
+
+        <article class="progress-item current">
+          <div class="progress-marker">28</div>
+          <div>
+            <span class="status-chip">Shipped 7 Nov 2026</span>
+            <h3>Only voice-framework users could use it.</h3>
+            <p>
+              Most people running LLMs on their own data do it behind Open WebUI or a LiteLLM
+              proxy. Neither had a spoken-PII filter.
+            </p>
+            <p>
+              Added an Open WebUI Filter Function you paste into the admin panel, and a LiteLLM
+              custom guardrail. Both swap values for placeholders before the model and restore
+              them in the reply, streamed or not. The LiteLLM guardrail was tested on a running
+              proxy: the model only ever saw <code>[CARD_1]</code>.
+            </p>
+          </div>
+        </article>
+
+        <article class="progress-item current">
+          <div class="progress-marker">29</div>
+          <div>
+            <span class="status-chip">Shipped 7 Nov 2026</span>
+            <h3>The transcript was clean but the call recording still held the card number.</h3>
+            <p>
+              Audio redaction is a paid enterprise feature on the big speech platforms.
+            </p>
+            <p>
+              Added <code>voicesafekit bleep</code>: findings are mapped to word timestamps and
+              those spans are beeped or silenced in the WAV file, with standard-library code.
+              Transcribing the bleeped file with Whisper finds no card or PIN digits.
+            </p>
+          </div>
+        </article>
+
+        <article class="progress-item current">
+          <div class="progress-marker">30</div>
+          <div>
+            <span class="status-chip">Shipped 7 Nov 2026 &middot; Issue #9</span>
+            <h3>The real-speech score had been tuned on, so it no longer proved anything.</h3>
+            <p>
+              Once the 7 misses were fixed, the first real-speech set scored 108/108, but only
+              because the fixes were written against it.
+            </p>
+            <p>
+              A new held-out set (new scripts, the British <code>Daniel</code> voice, Whisper
+              <code>small.en</code>) was transcribed before any change and scored once:
+              106/108 protected, 1/40 false alarms. The three failures are published as issue #9.
+            </p>
+          </div>
+        </article>
+      </div>
+    </section>
+
     <section class="progress-section">
       <div class="section-heading">
         <p class="eyebrow">SpokenPII benchmark</p>
@@ -612,22 +708,21 @@
           <p>VoiceSafeKit 0.5 against Microsoft Presidio on 270 spoken PII sentences (synthetic set). With spoken mode off, VoiceSafeKit gets 11%.</p>
         </article>
         <article>
-          <span class="small-label">Real Whisper transcripts</span>
-          <strong>94% vs 73%</strong>
-          <p>108 utterances read by a TTS voice and transcribed by Whisper <code>base.en</code>. Nothing was tuned on this set.</p>
+          <span class="small-label">Held-out real speech</span>
+          <strong>98% vs 65%</strong>
+          <p>108 utterances spoken by a new voice and transcribed by Whisper <code>small.en</code>, frozen before any 0.6 change. v0.5 scored 94% on the same set.</p>
         </article>
         <article>
           <span class="small-label">False alarms on ordinary requests</span>
-          <strong>0% vs 42%</strong>
+          <strong>2% vs 42%</strong>
           <p>Requests like "set a timer for twenty five minutes" and "call Sue". Speed: 0.06 ms per sentence against about 3 ms.</p>
         </article>
       </div>
       <p class="progress-note">
         The synthetic set was written by the same author as the detector, so it works as a
         regression suite rather than proof. Presidio was run with its defaults and is not
-        built for speech. The seven real-Whisper misses (digit groups split by commas,
-        <code>SSN609507896</code>, digits written as decimals, "fin" heard for "PIN") are the
-        next fixes. Everything is reproducible from <code>benchmarks/</code> in the repo.
+        built for speech. The held-out misses (a PIN written as money, a comma before a birth year, a mangled date
+        read as a phone) are tracked in issue #9. Everything is reproducible from <code>benchmarks/</code> in the repo.
       </p>
     </section>
 
@@ -675,13 +770,13 @@
       <div class="progress-summary-grid">
         <article>
           <span class="small-label">Next up</span>
-          <strong>Whisper number formatting</strong>
-          <p>Fix the patterns the real-Whisper benchmark exposed: comma-split digit groups, keywords glued to numbers and digits written as decimals. <a href="https://github.com/MohamadKanso/VoiceSafeKit/issues/6">Issue #6</a></p>
+          <strong>Held-out failures</strong>
+          <p>A PIN Whisper wrote as money, a comma before a birth year and a mangled date read as a phone number. <a href="https://github.com/MohamadKanso/VoiceSafeKit/issues/9">Issue #9</a></p>
         </article>
         <article>
           <span class="small-label">Next up</span>
-          <strong>Audio redaction</strong>
-          <p>Map findings to STT word timestamps and bleep or mute those spans in recordings, so the audio is as clean as the text.</p>
+          <strong>Bleeping in the browser</strong>
+          <p>Play back your own recording in the live app with the card number and PIN bleeped out.</p>
         </article>
         <article>
           <span class="small-label">Open</span>

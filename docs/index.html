@@ -49,7 +49,7 @@
     <!-- Hero -->
     <section class="hero">
       <div class="hero-copy">
-        <p class="eyebrow">Local voice safety layer v0.5.0</p>
+        <p class="eyebrow">Local voice safety layer v0.6.0</p>
         <h1>Catch the private details speech-to-text writes as words.</h1>
         <p>
           Transcripts say &ldquo;four two four two&hellip;&rdquo; and &ldquo;alex dot rivera at gmail dot com&rdquo;,
@@ -66,7 +66,7 @@
 
       <div class="hero-console" aria-label="VoiceSafeKit system summary">
         <div class="console-top">
-          <span>VOICE / SAFE / KIT v0.5.0</span>
+          <span>VOICE / SAFE / KIT v0.6.0</span>
           <span id="heroDecision">REVIEW</span>
         </div>
         <div class="glyph-board" aria-hidden="true">
@@ -343,14 +343,14 @@
           <p>270 spoken sentences: cards, SSNs, phones, emails, PINs, one-time codes, passports, dates of birth, names. With spoken mode off, VoiceSafeKit itself drops to 11%.</p>
         </article>
         <article>
-          <span>Real Whisper transcripts</span>
-          <h3>94% <small>vs 73%</small></h3>
-          <p>108 utterances spoken by a TTS voice and transcribed by Whisper <code>base.en</code>. Nothing was tuned on this set; the 7 misses are published as the next fixes.</p>
+          <span>Held-out real speech</span>
+          <h3>98% <small>vs 65%</small></h3>
+          <p>108 utterances spoken by a British TTS voice and transcribed by Whisper <code>small.en</code>, frozen before any change and never tuned on. The 2 misses are public as the next fixes.</p>
         </article>
         <article>
           <span>False alarms, everyday requests</span>
-          <h3>0% <small>vs 42%</small></h3>
-          <p>"Set a timer for twenty five minutes", "call Sue", "emergency fund". About 0.06 ms per sentence against 3 ms, with zero dependencies.</p>
+          <h3>2% <small>vs 42%</small></h3>
+          <p>1 of 40 everyday requests flagged on real speech ("set a timer for twenty five minutes", "call Sue"), 0 of 40 on the synthetic set. About 0.06 ms per sentence against 3 ms, with zero dependencies.</p>
         </article>
       </div>
       <p class="section-note">
@@ -367,6 +367,7 @@
         <p class="eyebrow">Drop it into your voice agent</p>
         <h2>The LLM sees placeholders. The voice says the real thing.</h2>
         <p class="section-lede">
+          Pipecat, LiveKit, Open WebUI and LiteLLM drop-ins, plus audio bleeping for recordings.
           Reversible placeholders keep personal data out of the model while the agent can still
           say it back. Passwords, PINs, CVVs and one-time codes are never stored, so they can
           never be read aloud.
@@ -405,8 +406,35 @@ class Assistant(VoiceSafeAgent):   # not Agent
         )</code></pre>
         </article>
         <article>
+          <span>Open WebUI</span>
+          <pre class="code-panel small"><code># Admin Panel &gt; Functions &gt; + &gt; paste
+# examples/openwebui/voicesafekit_filter.py
+
+"my card is four two four two ..."
+  -&gt; model sees "my card is [CARD_1]"
+  -&gt; you see the real value in the reply</code></pre>
+        </article>
+        <article>
+          <span>LiteLLM proxy</span>
+          <pre class="code-panel small"><code>guardrails:
+  - guardrail_name: voicesafekit
+    litellm_params:
+      guardrail: voicesafekit.integrations.litellm.VoiceSafeGuardrail
+      mode: [pre_call, post_call]
+      default_on: true</code></pre>
+        </article>
+        <article>
+          <span>Bleep the recording</span>
+          <pre class="code-panel small"><code>voicesafekit bleep call.wav -o call.bleeped.wav
+
+Bleeped 3 span(s)
+  00:00.950 - 00:01.870  Person name
+  00:02.990 - 00:07.330  Payment card-like number
+  00:07.730 - 00:08.850  PIN</code></pre>
+        </article>
+        <article>
           <span>Python or CLI</span>
-          <pre class="code-panel small"><code>pip install git+https://github.com/MohamadKanso/VoiceSafeKit
+          <pre class="code-panel small"><code>pip install voicesafekit
 
 from voicesafekit import PrivacySession
 s = PrivacySession()

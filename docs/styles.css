@@ -788,6 +788,7 @@ footer a { color: var(--green-2); text-decoration: none; }
 .code-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .code-grid article { padding: 24px; min-width: 0; }
 .code-grid article:last-child { grid-column: 1 / -1; }
+.code-grid article:last-child:nth-child(even) { grid-column: auto; }
 
 @media (max-width: 900px) {
   .compare-row { grid-template-columns: 1fr; gap: 8px; }

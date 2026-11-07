@@ -149,3 +149,55 @@ def test_value_only_redaction_keeps_context_words() -> None:
     assert result.safe_transcript == (
         "My name is [name removed] and my passport number is [passport number removed]."
     )
+
+
+# Real Whisper formatting (issue #6): punctuated digit groups after sensitive words
+
+
+@pytest.mark.parametrize(
+    ("transcript", "kind"),
+    [
+        ("charge it to my visa, 3790, 4339, 7110, 7181 please.", "payment_card"),
+        ("For verification my Social Security is 2122, 142, 74", "ssn"),
+        ("My mobile is 073, 49.95, 3022.", "phone"),
+        ("Passport 97-0, 172, 34-9", "passport"),
+        ("SSN609507896", "ssn"),
+        ("SSN65424467.5", "ssn"),
+        ("My fin is 96-28.", "pin"),
+    ],
+)
+def test_whisper_punctuated_numbers(transcript: str, kind: str) -> None:
+    result = analyze_transcript(transcript)
+    assert any(f.kind == kind for f in result.findings), result.findings
+    digits = "".join(c for c in result.safe_transcript if c.isdigit())
+    assert len(digits) < 4, result.safe_transcript
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "We moved in 2020, 2021, 2022.",
+        "My card was charged 49.95, 30.00 yesterday.",
+        "The number of guests is 4, 5 or 6.",
+        "Table numbers 12, 14, 16 please.",
+        "Room 101, 102 and 103.",
+        "I scored 1,250 points.",
+    ],
+)
+def test_punctuated_numbers_without_pii_stay_safe(text: str) -> None:
+    assert analyze_transcript(text).decision == "SAFE"
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["my email is alex.rivera.gmail.com", "email me at priya_patel.outlook.com please"],
+)
+def test_email_with_dropped_at(text: str) -> None:
+    result = analyze_transcript(text)
+    assert any(f.kind == "email" for f in result.findings), result.findings
+    assert "gmail" not in result.safe_transcript
+
+
+@pytest.mark.parametrize("text", ["log in at mail.yahoo.com", "open www.gmail.com"])
+def test_provider_urls_are_not_emails(text: str) -> None:
+    assert analyze_transcript(text).decision == "SAFE"

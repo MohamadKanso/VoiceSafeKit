@@ -1,0 +1,20 @@
+# LiteLLM proxy with VoiceSafeKit in front of every model.
+#   pip install "litellm[proxy]" "voicesafekit[litellm] @ git+https://github.com/MohamadKanso/VoiceSafeKit"
+#   export LITELLM_MASTER_KEY=sk-...   OPENAI_API_KEY=sk-...
+#   litellm --config examples/litellm/config.yaml
+model_list:
+  - model_name: gpt-4o-mini
+    litellm_params:
+      model: openai/gpt-4o-mini
+      api_key: os.environ/OPENAI_API_KEY
+
+guardrails:
+  - guardrail_name: voicesafekit
+    litellm_params:
+      guardrail: voicesafekit.integrations.litellm.VoiceSafeGuardrail
+      mode: [pre_call, post_call]   # pre_call redacts, post_call restores (also when streaming)
+      default_on: true              # run on every request; set false to opt in per request
+      # Optional, passed to VoiceSafeGuardrail(...):
+      spoken: true                  # catch "four two four two ..." as well as "4242"
+      block_on_critical: true       # HTTP 400 for government IDs, card security codes, emergencies
+      restore_in_output: true       # put real values back into the reply

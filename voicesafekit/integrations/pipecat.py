@@ -28,7 +28,11 @@ Requires ``pip install "voicesafekit[pipecat]"``.
 
 from __future__ import annotations
 
+import asyncio
+import re
+
 from pipecat.frames.frames import (
+    EndFrame,
     Frame,
     InterimTranscriptionFrame,
     LLMFullResponseEndFrame,
@@ -37,10 +41,41 @@ from pipecat.frames.frames import (
     TextFrame,
     TranscriptionFrame,
     TTSSpeakFrame,
+    UserStoppedSpeakingFrame,
+    VADUserStoppedSpeakingFrame,
 )
 from pipecat.processors.frame_processor import FrameDirection, FrameProcessor
 
 from voicesafekit.session import PrivacySession, StreamRestorer
+from voicesafekit.spoken import (
+    REPEATERS,
+    SENSITIVE_KEYWORDS,
+    TEENS,
+    TENS,
+    UNITS,
+)
+
+_NUMBER_WORDS = set(UNITS) | set(TEENS) | set(TENS) | set(REPEATERS) | {"hundred", "plus"}
+_TURN_END_FRAMES = (UserStoppedSpeakingFrame, VADUserStoppedSpeakingFrame, EndFrame)
+
+
+def ends_mid_value(text: str) -> bool:
+    """True when a transcript fragment probably stops in the middle of a value.
+
+    "my card number is four two four two" or "my card number is" are held back
+    so the rest of the number, arriving in the next STT frame, is checked with
+    its context. Ordinary speech ("set a timer for five") is never held because
+    no sensitive keyword is nearby.
+    """
+    tokens = re.findall(r"[a-z]+|\d+", text.lower())
+    if not tokens or not any(t in SENSITIVE_KEYWORDS for t in tokens[-8:]):
+        return False
+    last = tokens[-1]
+    if last.isdigit() or last in _NUMBER_WORDS:
+        return True
+    if last in SENSITIVE_KEYWORDS:
+        return True
+    return last in {"is", "was", "are"} and len(tokens) > 1 and tokens[-2] in SENSITIVE_KEYWORDS
 
 DEFAULT_BLOCK_MESSAGE = (
     "I can't pass that on to the assistant. If this is an emergency, "
@@ -56,6 +91,11 @@ class VoiceSafeInputProcessor(FrameProcessor):
             processor so replies can be restored.
         block_message: Spoken when a transcript is blocked. ``None`` to stay silent.
         drop_blocked: Drop blocked transcripts instead of forwarding them redacted.
+        hold_split_values: Many STT services send several final transcriptions per
+            turn. When one ends mid-number near a sensitive word, hold it and merge
+            it with the next one so a card number split across frames is caught.
+        hold_timeout: Longest time (seconds) a fragment is held before it is
+            checked and forwarded on its own.
     """
 
     def __init__(
@@ -64,12 +104,19 @@ class VoiceSafeInputProcessor(FrameProcessor):
         *,
         block_message: str | None = DEFAULT_BLOCK_MESSAGE,
         drop_blocked: bool = True,
+        hold_split_values: bool = True,
+        hold_timeout: float = 0.8,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
         self.session = session or PrivacySession()
         self._block_message = block_message
         self._drop_blocked = drop_blocked
+        self._hold = hold_split_values
+        self._hold_timeout = hold_timeout
+        self._pending: TranscriptionFrame | None = None
+        self._pending_direction = FrameDirection.DOWNSTREAM
+        self._flush_task: asyncio.Task | None = None
         self._register_event_handler("on_decision")
         self._register_event_handler("on_block")
 
@@ -77,20 +124,57 @@ class VoiceSafeInputProcessor(FrameProcessor):
         await super().process_frame(frame, direction)
 
         if isinstance(frame, TranscriptionFrame):
-            protected = self.session.protect(frame.text)
-            await self._call_event_handler("on_decision", protected)
-            if protected.blocked:
-                await self._call_event_handler("on_block", protected)
-                if self._block_message:
-                    await self.push_frame(TTSSpeakFrame(self._block_message), direction)
-                if self._drop_blocked:
-                    return
-            frame.text = protected.text
+            if self._pending is not None:
+                frame.text = f"{self._pending.text.rstrip()} {frame.text.lstrip()}"
+                self._pending = None
+                await self._cancel_flush()
+            if self._hold and ends_mid_value(frame.text):
+                self._pending = frame
+                self._pending_direction = direction
+                self._flush_task = self.create_task(self._flush_after_timeout())
+                return
+            await self._emit(frame, direction)
+            return
+
+        if isinstance(frame, _TURN_END_FRAMES):
+            await self._cancel_flush()
+            await self._flush_pending()
         elif isinstance(frame, InterimTranscriptionFrame):
             # Interim text can reach UIs and logs; never let it carry raw values.
             frame.text = self.session.protect(frame.text).text
 
         await self.push_frame(frame, direction)
+
+    async def cleanup(self) -> None:
+        await self._cancel_flush()
+        await super().cleanup()
+
+    async def _emit(self, frame: TranscriptionFrame, direction: FrameDirection) -> None:
+        protected = self.session.protect(frame.text)
+        await self._call_event_handler("on_decision", protected)
+        if protected.blocked:
+            await self._call_event_handler("on_block", protected)
+            if self._block_message:
+                await self.push_frame(TTSSpeakFrame(self._block_message), direction)
+            if self._drop_blocked:
+                return
+        frame.text = protected.text
+        await self.push_frame(frame, direction)
+
+    async def _flush_pending(self) -> None:
+        if self._pending is not None:
+            frame, self._pending = self._pending, None
+            await self._emit(frame, self._pending_direction)
+
+    async def _flush_after_timeout(self) -> None:
+        await asyncio.sleep(self._hold_timeout)
+        self._flush_task = None
+        await self._flush_pending()
+
+    async def _cancel_flush(self) -> None:
+        task, self._flush_task = self._flush_task, None
+        if task is not None and task is not asyncio.current_task():
+            await self.cancel_task(task)
 
 
 class VoiceSafeOutputProcessor(FrameProcessor):

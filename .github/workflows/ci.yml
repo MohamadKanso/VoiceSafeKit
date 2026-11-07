@@ -43,3 +43,13 @@ jobs:
           python-version: "3.12"
       - run: python -m pip install -e ".[dev,pipecat,livekit]"
       - run: python -m pytest tests/test_pipecat.py tests/test_livekit.py
+
+  gateways:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e ".[dev,litellm,openwebui]"
+      - run: python -m pytest tests/test_litellm.py tests/test_openwebui.py tests/test_audio.py

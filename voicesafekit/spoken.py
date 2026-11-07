@@ -80,6 +80,15 @@ MONTHS = {
     "jan", "feb", "mar", "apr", "jun", "jul", "aug", "sep", "sept", "oct", "nov", "dec",
 }
 
+# Words that make a nearby digit sequence worth joining even when STT punctuates
+# it like a list ("my visa, 3790, 4339, 7110, 7181").
+SENSITIVE_KEYWORDS = {
+    "card", "visa", "mastercard", "amex", "debit", "credit", "number", "social",
+    "security", "ssn", "passport", "mobile", "phone", "cell", "telephone", "pin", "fin",
+    "code", "otp", "account", "iban", "routing", "sort", "licence", "license",
+    "insurance", "nino", "cvv", "cvc",
+}
+
 # A token is a word, a run of digits, or a single punctuation mark.
 _TOKEN = re.compile(r"[A-Za-z]+(?:'[A-Za-z]+)?|\d+|[^\sA-Za-z\d]")
 
@@ -242,6 +251,10 @@ def _number_value(tokens: list[_Tok], i: int) -> tuple[int, str] | None:
     return None
 
 
+def _has_sensitive_keyword(tokens: list[_Tok], i: int, window: int = 6) -> bool:
+    return any(tokens[k].low in SENSITIVE_KEYWORDS for k in range(max(0, i - window), i))
+
+
 def _is_number_start(tokens: list[_Tok], i: int) -> bool:
     low = tokens[i].low
     if low in WEAK_ZERO:
@@ -267,6 +280,7 @@ def _match_number_run(
     digits: list[str] = []
     spans: list[tuple[int, int]] = []
     word_tokens = 0
+    separators = 0
     while j < len(tokens):
         tok = tokens[j]
         # Allow light separators inside a run: "four seven one, five five - eight".
@@ -274,6 +288,7 @@ def _match_number_run(
             if _number_value(tokens, j + 1) is not None and tokens[j + 1].low != "hundred":
                 digits.append(" ")
                 spans.append((tok.start, tok.end))
+                separators += 1
                 j += 1
                 continue
             break
@@ -298,8 +313,17 @@ def _match_number_run(
         j -= 1
 
     digit_count = sum(ch.isdigit() for ch in digits)
-    # Only rewrite runs that contain spoken words and are long enough to matter.
-    if word_tokens == 0 or digit_count < 3:
+    if word_tokens == 0:
+        # Written digits are left alone unless STT split one number into punctuated
+        # groups right after a sensitive word: "my visa, 3790, 4339, 7110, 7181",
+        # "SSN65424467.5", "my mobile is 073, 49.95, 3022". Join those groups.
+        if separators == 0 or digit_count < 4 or not _has_sensitive_keyword(tokens, i):
+            return None
+        kept = [(ch, sp) for ch, sp in zip(digits, spans, strict=True) if ch != " "]
+        digits = [ch for ch, _ in kept]
+        spans = [sp for _, sp in kept]
+    elif digit_count < 3:
+        # Only rewrite spoken runs that are long enough to matter.
         return None
     value = "".join(digits)
     if plus:
@@ -319,6 +343,13 @@ _LOCAL_JOINERS = {
 }
 
 
+# Ordinary words that come right before "at" in speech and are not email names.
+_NOT_EMAIL_LOCAL = {
+    "in", "me", "us", "him", "her", "them", "it", "on", "here", "there", "home", "work",
+    "back", "up", "out", "online", "look", "is", "be", "you", "we", "they", "i",
+}
+
+
 def _email_word(tok: _Tok) -> bool:
     return bool(re.fullmatch(r"[A-Za-z0-9]+", tok.text))
 
@@ -335,6 +366,8 @@ def _match_spoken_email(tokens: list[_Tok], i: int) -> tuple[int, str] | None:
         j += 2
     if j >= len(tokens) or tokens[j].low not in {"at", "@"}:
         return None
+    if len(local) == 1 and tokens[i].low in _NOT_EMAIL_LOCAL:
+        return None  # "log in at mail.yahoo.com", "meet me at home dot com"
     j += 1
     if j < len(tokens) and tokens[j].low in {"sign", "symbol"}:
         j += 1

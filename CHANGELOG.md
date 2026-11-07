@@ -3,6 +3,45 @@
 This file records the visible phases of VoiceSafeKit so the project history is
 easy to follow.
 
+## Phase 0.6 - Reach and Real Speech (7 November 2026)
+
+VoiceSafeKit now plugs into the two biggest self-hosted LLM gateways, redacts call
+recordings as well as transcripts, and is measured on a held-out real-speech set.
+
+### Real speech
+
+- Whisper often punctuates one spoken number like a list (`my visa, 3790, 4339, 7110, 7181`),
+  glues keywords to digits (`SSN609507896`) or writes digits as decimals. Digit groups right
+  after a sensitive word are now joined before detection; years, prices, room numbers and
+  scores stay untouched (#6).
+- Emails where speech-to-text dropped the "at" (`alex.rivera.gmail.com`) are caught for
+  well-known providers. "log in at mail.yahoo.com" no longer reads as a spoken email.
+- "fin" (a common Whisper mishearing of "PIN") is treated as PIN when digits follow.
+- **Held-out benchmark:** new scripts, a British TTS voice and Whisper `small.en`, frozen
+  before any change: 0.6 protects 106/108 (0.5: 102/108, Presidio: 70/108) with 1/40 false
+  alarms. The three failures are public in #9.
+
+### Integrations
+
+- **Pipecat:** a number split across two final transcription frames no longer leaks. The
+  input processor holds a fragment that ends mid-number near a sensitive word for up to
+  0.8 s and merges it with the next frame (#7).
+- **Open WebUI** Filter Function (paste-in file), with per-chat placeholders, streamed
+  restore, history handling and blocking of critical new messages.
+- **LiteLLM** custom guardrail: redact before the model, restore after (streaming too),
+  HTTP 400 for critical data. Tested on a running LiteLLM 1.108 proxy.
+
+### Audio
+
+- `voicesafekit bleep` and `voicesafekit.audio`: map findings to word timestamps (faster-
+  whisper, Deepgram, WhisperX or plain dicts) and beep or silence those spans in PCM WAV
+  files. Standard library only; faster-whisper is optional (`[audio]`).
+
+### Packaging
+
+- Version 0.6.0. Release workflow publishes to PyPI with trusted publishing (no tokens).
+- New extras: `audio`, `openwebui`, `litellm`. CI gains a gateways job.
+
 ## Phase 0.5 - Voice-Native Detection (7 November 2026)
 
 Speech-to-text engines often write what people say, not what they mean:

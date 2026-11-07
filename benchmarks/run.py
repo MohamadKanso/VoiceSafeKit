@@ -24,7 +24,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT.parent))
 
-from voicesafekit import analyze_transcript  # noqa: E402
+from voicesafekit import __version__, analyze_transcript  # noqa: E402
 from voicesafekit.rules import INTENT_RULES  # noqa: E402
 
 INTENT_KINDS = {r.kind for r in INTENT_RULES}
@@ -126,8 +126,8 @@ def main() -> None:
 
     rows = [json.loads(line) for line in Path(args.data).read_text().splitlines() if line]
     results = [
-        evaluate("VoiceSafeKit 0.5", vsk_detector(True), rows),
-        evaluate("VoiceSafeKit 0.5 (spoken mode off)", vsk_detector(False), rows),
+        evaluate(f"VoiceSafeKit {__version__}", vsk_detector(True), rows),
+        evaluate(f"VoiceSafeKit {__version__} (spoken mode off)", vsk_detector(False), rows),
     ]
     if args.presidio:
         results.append(evaluate("Microsoft Presidio", presidio_detector(), rows))

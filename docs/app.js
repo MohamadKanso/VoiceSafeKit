@@ -217,6 +217,22 @@ function numberValue(tokens, i) {
   return null;
 }
 
+// Words that make a nearby digit sequence worth joining even when STT punctuates
+// it like a list ("my visa, 3790, 4339, 7110, 7181").
+const SENSITIVE_KEYWORDS = new Set([
+  "card", "visa", "mastercard", "amex", "debit", "credit", "number", "social",
+  "security", "ssn", "passport", "mobile", "phone", "cell", "telephone", "pin", "fin",
+  "code", "otp", "account", "iban", "routing", "sort", "licence", "license",
+  "insurance", "nino", "cvv", "cvc",
+]);
+
+function hasSensitiveKeyword(tokens, i, window = 6) {
+  for (let k = Math.max(0, i - window); k < i; k++) {
+    if (SENSITIVE_KEYWORDS.has(tokens[k].low)) return true;
+  }
+  return false;
+}
+
 function isNumberStart(tokens, i) {
   const low = tokens[i].low;
   if (WEAK_ZERO.has(low)) {
@@ -237,9 +253,10 @@ function matchNumberRun(tokens, i) {
   }
   if (!isNumberStart(tokens, j)) return null;
 
-  const digits = [];
-  const spans = [];
+  let digits = [];
+  let spans = [];
   let wordTokens = 0;
+  let separators = 0;
   while (j < tokens.length) {
     const tok = tokens[j];
     // Allow light separators inside a run: "four seven one, five five - eight".
@@ -247,6 +264,7 @@ function matchNumberRun(tokens, i) {
       if (numberValue(tokens, j + 1) !== null && tokens[j + 1].low !== "hundred") {
         digits.push(" ");
         spans.push([tok.start, tok.end]);
+        separators += 1;
         j += 1;
         continue;
       }
@@ -273,8 +291,17 @@ function matchNumberRun(tokens, i) {
   }
 
   const digitCount = digits.filter((ch) => /\d/.test(ch)).length;
-  // Only rewrite runs that contain spoken words and are long enough to matter.
-  if (wordTokens === 0 || digitCount < 3) return null;
+  if (wordTokens === 0) {
+    // Written digits are left alone unless STT split one number into punctuated
+    // groups right after a sensitive word: "my visa, 3790, 4339, 7110, 7181".
+    if (separators === 0 || digitCount < 4 || !hasSensitiveKeyword(tokens, i)) return null;
+    const keep = digits.map((ch) => ch !== " ");
+    spans = spans.filter((_, k) => keep[k]);
+    digits = digits.filter((_, k) => keep[k]);
+  } else if (digitCount < 3) {
+    // Only rewrite spoken runs that are long enough to matter.
+    return null;
+  }
   let value = digits.join("");
   if (plus) {
     value = "+" + value;
@@ -284,6 +311,12 @@ function matchNumberRun(tokens, i) {
 }
 
 // spoken emails: "alex dot rivera at gmail dot com" -> "alex.rivera@gmail.com"
+// Ordinary words that come right before "at" in speech and are not email names.
+const NOT_EMAIL_LOCAL = new Set([
+  "in", "me", "us", "him", "her", "them", "it", "on", "here", "there", "home", "work",
+  "back", "up", "out", "online", "look", "is", "be", "you", "we", "they", "i",
+]);
+
 function matchSpokenEmail(tokens, i) {
   if (!isEmailWord(tokens[i]) || tokens[i].low === "at" || tokens[i].low === "dot") return null;
   const local = [tokens[i].text];
@@ -293,6 +326,8 @@ function matchSpokenEmail(tokens, i) {
     j += 2;
   }
   if (j >= tokens.length || (tokens[j].low !== "at" && tokens[j].low !== "@")) return null;
+  // "log in at mail.yahoo.com", "meet me at home dot com"
+  if (local.length === 1 && NOT_EMAIL_LOCAL.has(tokens[i].low)) return null;
   j += 1;
   if (j < tokens.length && (tokens[j].low === "sign" || tokens[j].low === "symbol")) j += 1;
   if (j >= tokens.length || !isEmailWord(tokens[j])) return null;
@@ -330,6 +365,17 @@ const patternRules = [
     explanation: "Email addresses can identify a person. Remove them before sending text to a model.",
     replacement: "[email removed]",
     pattern: /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g,
+  },
+  {
+    kind: "email",
+    label: "Email address",
+    severity: "medium",
+    confidence: 0.85,
+    explanation:
+      "Speech-to-text often drops the 'at' in a spoken email ('alex.rivera.gmail.com'). This still identifies a person.",
+    replacement: "[email removed]",
+    pattern:
+      /\b(?!(?:www|mail|accounts|login|support|help)\.)[a-z0-9][a-z0-9_-]*(?:\.[a-z0-9_-]+)*\.(?:gmail|googlemail|outlook|hotmail|live|yahoo|icloud|proton|protonmail|aol|gmx)\.(?:com|co\.uk|me|net)\b/gi,
   },
   {
     kind: "phone",
@@ -458,7 +504,7 @@ const patternRules = [
       "A nine-digit number said right after 'social security' or 'SSN'. Spoken SSNs rarely include dashes. Never transmit them.",
     replacement: "[SSN removed]",
     pattern:
-      /\b(?:ssn|social security(?:\s+number)?|social)\b[^.!?\n\d]{0,25}?(?<v>(?!000|666|9\d{2})\d{3}[-\s]?\d{2}[-\s]?\d{4})\b/gid,
+      /\b(?:ssn|social security(?:\s+number)?|social)(?:\b|(?=\d))[^.!?\n\d]{0,25}?(?<v>(?!000|666|9\d{2})\d{3}[-\s]?\d{2}[-\s]?\d{4})\b/gid,
   },
   {
     kind: "pin",
@@ -467,7 +513,7 @@ const patternRules = [
     confidence: 0.9,
     explanation: "PINs unlock cards, phones and accounts. Never send them to a model.",
     replacement: "[PIN removed]",
-    pattern: /\bpin(?:\s+(?:number|code))?\s*(?:is|was|=|:)?\s*(?<v>\d(?:[ -]?\d){3,7})\b/gid,
+    pattern: /\b(?:pin|fin)(?:\s+(?:number|code))?\s*(?:is|was|=|:)?\s*(?<v>\d(?:[ -]?\d){3,7})\b/gid,
   },
   {
     kind: "otp",

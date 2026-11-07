@@ -33,6 +33,23 @@ PATTERN_RULES: tuple[PatternRule, ...] = (
         pattern=re.compile(r"\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b"),
     ),
     PatternRule(
+        kind="email",
+        label="Email address",
+        severity="medium",
+        confidence=0.85,
+        explanation=(
+            "Speech-to-text often drops the 'at' in a spoken email "
+            "('alex.rivera.gmail.com'). This still identifies a person."
+        ),
+        replacement="[email removed]",
+        pattern=re.compile(
+            r"\b(?!(?:www|mail|accounts|login|support|help)\.)[a-z0-9][a-z0-9_-]*"
+            r"(?:\.[a-z0-9_-]+)*\.(?:gmail|googlemail|outlook|hotmail|live|yahoo|icloud|"
+            r"proton|protonmail|aol|gmx)\.(?:com|co\.uk|me|net)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    PatternRule(
         kind="phone",
         label="Phone number",
         severity="medium",
@@ -194,7 +211,7 @@ PATTERN_RULES: tuple[PatternRule, ...] = (
         ),
         replacement="[SSN removed]",
         pattern=re.compile(
-            r"\b(?:ssn|social security(?:\s+number)?|social)\b[^.!?\n\d]{0,25}?"
+            r"\b(?:ssn|social security(?:\s+number)?|social)(?:\b|(?=\d))[^.!?\n\d]{0,25}?"
             r"(?P<v>(?!000|666|9\d{2})\d{3}[-\s]?\d{2}[-\s]?\d{4})\b",
             re.IGNORECASE,
         ),
@@ -207,7 +224,7 @@ PATTERN_RULES: tuple[PatternRule, ...] = (
         explanation="PINs unlock cards, phones and accounts. Never send them to a model.",
         replacement="[PIN removed]",
         pattern=re.compile(
-            r"\bpin(?:\s+(?:number|code))?\s*(?:is|was|=|:)?\s*(?P<v>\d(?:[ -]?\d){3,7})\b",
+            r"\b(?:pin|fin)(?:\s+(?:number|code))?\s*(?:is|was|=|:)?\s*(?P<v>\d(?:[ -]?\d){3,7})\b",
             re.IGNORECASE,
         ),
     ),

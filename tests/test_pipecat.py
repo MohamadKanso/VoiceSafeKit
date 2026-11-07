@@ -85,3 +85,67 @@ def test_context_guard_keeps_real_values_out_of_context() -> None:
         )
     )
     assert down[0].text == "Sent to [EMAIL_1]."
+
+
+def test_number_split_across_frames_is_merged_and_caught() -> None:
+    parts = [
+        "my card number is four two four two",
+        "four two four two four two four two four two four two",
+    ]
+    down, _ = asyncio.run(
+        run_test(
+            VoiceSafeInputProcessor(),
+            frames_to_send=[_transcript(t) for t in parts],
+            expected_down_frames=[TranscriptionFrame],
+        )
+    )
+    assert down[0].text == "my card number is [CARD_1]"
+
+
+def test_keyword_at_end_of_frame_waits_for_the_value() -> None:
+    down, _ = asyncio.run(
+        run_test(
+            VoiceSafeInputProcessor(),
+            frames_to_send=[
+                _transcript("my social security number is"),
+                _transcript("four seven one five five eight eight four three"),
+            ],
+            expected_down_frames=[TTSSpeakFrame],
+        )
+    )
+    # Blocked as an SSN; nothing raw is forwarded.
+    assert all("four seven" not in getattr(f, "text", "") for f in down)
+
+
+def test_held_fragment_is_flushed_at_end_of_pipeline() -> None:
+    down, _ = asyncio.run(
+        run_test(
+            VoiceSafeInputProcessor(),
+            frames_to_send=[_transcript("my pin is four eight two one")],
+        )
+    )
+    texts = [f.text for f in down if isinstance(f, TranscriptionFrame)]
+    assert texts == ["my pin is [PIN_1]"]
+
+
+def test_held_fragment_is_flushed_after_timeout() -> None:
+    async def scenario():
+        processor = VoiceSafeInputProcessor(hold_timeout=0.05)
+        return await run_test(
+            processor,
+            frames_to_send=[_transcript("my card ends in 4821")],
+            expected_down_frames=[TranscriptionFrame],
+        )
+
+    down, _ = asyncio.run(scenario())
+    assert down[0].text == "my [CARD_LAST4_1]"
+
+
+def test_ordinary_number_endings_are_not_held() -> None:
+    from voicesafekit.integrations.pipecat import ends_mid_value
+
+    assert not ends_mid_value("set a timer for five")
+    assert not ends_mid_value("I have two kids and one dog")
+    assert ends_mid_value("my card number is four two four two")
+    assert ends_mid_value("my card number is")
+    assert ends_mid_value("my social security number is")

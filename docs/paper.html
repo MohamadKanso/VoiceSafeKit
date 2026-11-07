@@ -646,7 +646,7 @@
 
     <!-- Paper header -->
     <div class="paper-header">
-      <p class="paper-label">Technical paper &middot; v0.5</p>
+      <p class="paper-label">Technical paper &middot; v0.6</p>
       <h1 class="paper-title">How <em>VoiceSafeKit</em> was built</h1>
       <p style="color: var(--muted); font-size: 15px; margin-top: 14px;">
         Speech-to-text writes what people say, not what they mean. This paper explains how VoiceSafeKit reads personal data in that spoken form and keeps it away from the language model behind a voice assistant.
@@ -662,7 +662,7 @@
     <div class="abstract-box section" id="abstract">
       <span class="abstract-label">Abstract</span>
       <p>
-        Speech-to-text engines write what people say. A card number arrives as "four two four two four two&hellip;", an email as "alex dot rivera at gmail dot com", a phone number as "oh seven seven double oh&hellip;". Text-only PII tools, regex filters and NER models alike, are built for written text and pass all three straight through to the model. VoiceSafeKit is a privacy filter that sits between speech-to-text and a large language model. It first normalises spoken forms into written ones, runs its detectors on the written form, then maps every finding back to the original words so the redaction lands on what was actually said. Version 0.5 is a Python library with zero runtime dependencies, a browser app that transcribes with Whisper on the user's device, and drop-in processors for Pipecat and LiveKit Agents. On real Whisper transcripts it protects 94% of PII utterances with no false alarms; Microsoft Presidio, run with its defaults, protects 73% and raises false alarms on 42% of ordinary requests. This paper explains the problem, the design, what it detects, how it was measured and where it still fails.
+        Speech-to-text engines write what people say. A card number arrives as "four two four two four two&hellip;", an email as "alex dot rivera at gmail dot com", a phone number as "oh seven seven double oh&hellip;". Text-only PII tools, regex filters and NER models alike, are built for written text and pass all three straight through to the model. VoiceSafeKit is a privacy filter that sits between speech-to-text and a large language model. It first normalises spoken forms into written ones, runs its detectors on the written form, then maps every finding back to the original words so the redaction lands on what was actually said. Version 0.6 is a Python library with zero runtime dependencies, a browser app that transcribes with Whisper on the user's device, drop-ins for Pipecat, LiveKit Agents, Open WebUI and LiteLLM, and audio bleeping for recordings. On a held-out set of real Whisper transcripts it protects 98% of PII utterances with a 2% false-alarm rate; Microsoft Presidio, run with its defaults, protects 65% and raises false alarms on 42% of ordinary requests. This paper explains the problem, the design, what it detects, how it was measured and where it still fails.
       </p>
     </div>
 
@@ -1740,6 +1740,11 @@
       <p>
         Whisper <code>base.en</code> wrote 92 of the 108 PII utterances fully in digits and symbols. So on this engine, the gap between VoiceSafeKit and Presidio comes as much from false alarms and voice-specific rules (PINs, one-time codes, spoken emails) as from spoken numbers. Engines and settings that write more of the speech as words will look more like the synthetic set.
       </p>
+
+      <div class="callout">
+        <span class="callout-icon">Update in 0.6: a held-out set</span>
+        <p>The 7 misses above were fixed in 0.6 (comma-split digit groups, keywords glued to digits, digits written as decimals, "fin" for PIN), which means this set has now been tuned on: 0.6 scores 108/108 here. To keep an honest number, a second set was transcribed <em>before</em> any 0.6 change, with new scripts, the British voice <code>Daniel</code> and Whisper <code>small.en</code>, and scored once: <strong>VoiceSafeKit 0.6 protects 106/108 (98%) with 1/40 false alarms</strong>, v0.5 102/108, Presidio 70/108 with 17/40. Its three failures (a PIN written as money, a comma before a birth year, a mangled date read as a phone) are tracked publicly in <a href="https://github.com/MohamadKanso/VoiceSafeKit/issues/9" style="color:var(--green)">issue #9</a>.</p>
+      </div>
 
       <div class="callout">
         <span class="callout-icon">Read these numbers honestly</span>

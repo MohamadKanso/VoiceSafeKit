@@ -8,23 +8,17 @@
 - 0.4 Encrypted exports
 - 0.5 Spoken-form detection, reversible placeholders, Pipecat and LiveKit drop-ins,
   SpokenPII benchmark, zero-dependency core
+- 0.6 Whisper number formatting, Pipecat split frames, Open WebUI and LiteLLM adapters,
+  audio bleeping, held-out real-speech benchmark, PyPI release workflow
 
 ## Next
 
-- **Whisper punctuation in numbers** (found by SpokenPII-ASR): join comma-separated digit
-  groups after a sensitive keyword, keywords glued to digits (`SSN609507896`), digits that
-  Whisper writes as decimals, and common mishearings ("fin" for PIN). [#6](https://github.com/MohamadKanso/VoiceSafeKit/issues/6)
-- **Pipecat multi-frame turns:** catch a number split across two final transcription frames.
-  [#7](https://github.com/MohamadKanso/VoiceSafeKit/issues/7)
+- **Held-out failures** from the 0.6 benchmark: PIN written as money, comma before a
+  birth year, a mangled date read as a phone. [#9](https://github.com/MohamadKanso/VoiceSafeKit/issues/9)
+- **Audio in the browser demo:** play back your recording with the PII bleeped.
 - **More STT engines in SpokenPII-ASR** (help wanted). [#8](https://github.com/MohamadKanso/VoiceSafeKit/issues/8)
-
-- **Audio redaction:** map findings to STT word timestamps and bleep or mute those spans
-  in recordings (`bleep_spans()`), plus a PCI "pause recording" signal.
-- **Streaming input guard:** hold back interim transcripts that end in an unfinished number
-  so a card split across STT chunks is still caught.
 - **Home Assistant:** a redacting conversation agent (HACS) that wraps any cloud LLM agent,
   and a Wyoming proxy for `Transcript` events ([#2](https://github.com/MohamadKanso/VoiceSafeKit/issues/2)).
-- **Gateways:** a LiteLLM custom guardrail and an Open WebUI filter function.
 - **LiveKit `Redactor` backend** once livekit/agents#6342 lands.
 - **Spelled-out letters and NATO alphabet** ("a for alpha"), and spoken postcodes.
 - **Multilingual spoken numbers:** French, German, Spanish, Arabic.

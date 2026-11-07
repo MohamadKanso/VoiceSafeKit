@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "voicesafekit"
-version = "0.5.0"
+version = "0.6.0"
 description = "Catch spoken PII (card numbers, SSNs, emails said out loud) before voice transcripts reach an LLM. Zero dependencies, Pipecat and LiveKit drop-ins."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -27,6 +27,9 @@ keywords = [
   "livekit",
   "voice-agents",
   "guardrails",
+  "open-webui",
+  "litellm",
+  "audio-redaction",
 ]
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -54,6 +57,9 @@ voicesafekit = "voicesafekit.cli:main"
 crypto = ["cryptography>=42"]
 pipecat = ["pipecat-ai>=1.0"]
 livekit = ["livekit-agents>=1.0"]
+audio = ["faster-whisper>=1.0", "numpy"]
+openwebui = ["pydantic>=2"]
+litellm = ["litellm[proxy]>=1.80"]
 dev = ["build>=1.2", "pytest>=8.0", "ruff>=0.6", "cryptography>=42"]
 
 [tool.setuptools.packages.find]

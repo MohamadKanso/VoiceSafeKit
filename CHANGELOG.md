@@ -3,6 +3,67 @@
 This file records the visible phases of VoiceSafeKit so the project history is
 easy to follow.
 
+## Phase 0.5 - Voice-Native Detection (7 November 2026)
+
+Speech-to-text engines often write what people say, not what they mean:
+"four two four two ...", "alex dot rivera at gmail dot com", "oh seven seven double oh".
+Before this release VoiceSafeKit, like every regex or NER PII tool, returned SAFE for all of
+them. This release makes spoken-form PII the core of the project.
+
+### Detection
+
+- **Spoken-form normaliser** (`voicesafekit/spoken.py`): spoken digits, "oh/zero/nought",
+  "double/triple", "plus four four", "nine hundred", tens ("forty two"), spoken emails
+  ("dot", "at", "underscore"), and spoken dates ("march fourth", "the twenty first of may").
+  Detection runs on the written form; redaction maps back to the original words.
+- `Finding.spoken` marks findings that were only caught in spoken form.
+- New detectors: PIN, one-time/verification code, passport number, UK National Insurance
+  number, SSN without dashes after "social"/"SSN", API key formats (OpenAI, AWS, GitHub,
+  Slack, Google), self-introduced names, UK postcodes.
+- Value-only redaction for the new detectors: "my pin is [PIN removed]" keeps the context.
+
+### Fixes
+
+- Payment card pattern was lazy and could stop after 13 digits, leaving the last digits of
+  some card numbers unredacted. It now matches the full number.
+- "my password for netflix is hunter22" was missed. It is now caught.
+- False alarms removed: "emergency fund" (was BLOCK), "call Sue" (was legal), "secret
+  ingredient" and "password reset" (were secrets), ISO dates and passport numbers read as
+  phone numbers.
+
+### Reversible redaction
+
+- `PrivacySession.protect()` swaps personal data for numbered placeholders (`[EMAIL_1]`),
+  consistent across turns and across spoken/written forms of the same value.
+- `restore()` and `stream()` put real values back into model output, including streamed
+  tokens that split a placeholder. `reprotect()` swaps them out again for stored context.
+- Credentials (passwords, PINs, CVVs, one-time codes, API keys) are never stored and can
+  never be restored into a reply.
+
+### Integrations
+
+- **Pipecat**: `VoiceSafeInputProcessor`, `VoiceSafeOutputProcessor`,
+  `VoiceSafeContextGuard` and `voicesafe_processors()`, with `on_decision` / `on_block`
+  events and a spoken refusal on BLOCK. Tested against Pipecat 1.15.
+- **LiveKit Agents**: `VoiceSafeAgent` (protects the user turn, restores values in
+  `tts_node`, stops blocked turns) and an idempotent `VoiceSafeRedactor`. Tested against
+  LiveKit Agents 1.8.
+
+### Benchmark
+
+- **SpokenPII** (`benchmarks/`): 540 labelled PII sentences in written and spoken form plus
+  40 tricky no-PII sentences, with a runner that compares against Microsoft Presidio.
+- **SpokenPII-ASR**: the spoken scripts read aloud by a TTS voice and transcribed by
+  Whisper, so the transcripts come from a real STT engine.
+
+### Packaging and tooling
+
+- Zero runtime dependencies. Encrypted exports moved to the `crypto` extra.
+- New extras: `pipecat`, `livekit`.
+- New CLI command: `voicesafekit redact` (stdin-friendly, `--placeholders`), `check -`
+  reads stdin, `--no-spoken` turns normalisation off.
+- GitHub Actions CI: Python 3.10-3.13, a zero-dependency job and an integrations job.
+
 ## Phase 0.4 - Saved Export Protection (15 June 2026)
 
 Saved VoiceSafeKit results now have a safer default. The filter still reads the

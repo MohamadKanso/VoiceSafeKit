@@ -1,0 +1,89 @@
+[
+  {
+    "name": "VoiceSafeKit 0.5",
+    "recall": {
+      "written": 1.0,
+      "spoken": 1.0
+    },
+    "by_type": {
+      "spoken/card": 1.0,
+      "spoken/dob": 1.0,
+      "spoken/email": 1.0,
+      "spoken/name": 1.0,
+      "spoken/otp": 1.0,
+      "spoken/passport": 1.0,
+      "spoken/phone": 1.0,
+      "spoken/pin": 1.0,
+      "spoken/ssn": 1.0,
+      "written/card": 1.0,
+      "written/dob": 1.0,
+      "written/email": 1.0,
+      "written/name": 1.0,
+      "written/otp": 1.0,
+      "written/passport": 1.0,
+      "written/phone": 1.0,
+      "written/pin": 1.0,
+      "written/ssn": 1.0
+    },
+    "false_alarm_rate": 0.0,
+    "median_ms": 0.06387499161064625
+  },
+  {
+    "name": "VoiceSafeKit 0.5 (spoken mode off)",
+    "recall": {
+      "written": 1.0,
+      "spoken": 0.1111111111111111
+    },
+    "by_type": {
+      "spoken/card": 0.0,
+      "spoken/dob": 0.0,
+      "spoken/email": 0.0,
+      "spoken/name": 1.0,
+      "spoken/otp": 0.0,
+      "spoken/passport": 0.0,
+      "spoken/phone": 0.0,
+      "spoken/pin": 0.0,
+      "spoken/ssn": 0.0,
+      "written/card": 1.0,
+      "written/dob": 1.0,
+      "written/email": 1.0,
+      "written/name": 1.0,
+      "written/otp": 1.0,
+      "written/passport": 1.0,
+      "written/phone": 1.0,
+      "written/pin": 1.0,
+      "written/ssn": 1.0
+    },
+    "false_alarm_rate": 0.0,
+    "median_ms": 0.03952049883082509
+  },
+  {
+    "name": "Microsoft Presidio",
+    "recall": {
+      "written": 0.8592592592592593,
+      "spoken": 0.21481481481481482
+    },
+    "by_type": {
+      "spoken/card": 0.0,
+      "spoken/dob": 0.7666666666666667,
+      "spoken/email": 0.0,
+      "spoken/name": 0.9666666666666667,
+      "spoken/otp": 0.03333333333333333,
+      "spoken/passport": 0.0,
+      "spoken/phone": 0.0,
+      "spoken/pin": 0.13333333333333333,
+      "spoken/ssn": 0.03333333333333333,
+      "written/card": 1.0,
+      "written/dob": 1.0,
+      "written/email": 1.0,
+      "written/name": 1.0,
+      "written/otp": 0.5,
+      "written/passport": 1.0,
+      "written/phone": 1.0,
+      "written/pin": 0.23333333333333334,
+      "written/ssn": 1.0
+    },
+    "false_alarm_rate": 0.45,
+    "median_ms": 3.0625835061073303
+  }
+]

@@ -1,7 +1,11 @@
 import json
 
-from voicesafekit.cli import main
-from voicesafekit.encryption import decrypt_json_payload
+import pytest
+
+pytest.importorskip("cryptography")
+
+from voicesafekit.cli import main  # noqa: E402
+from voicesafekit.encryption import decrypt_json_payload  # noqa: E402
 
 
 def test_cli_out_is_encrypted_by_default(tmp_path, monkeypatch) -> None:

@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "voicesafekit"
-version = "0.4.0"
-description = "A privacy and safety checker for local voice assistant transcripts."
+version = "0.5.0"
+description = "Catch spoken PII (card numbers, SSNs, emails said out loud) before voice transcripts reach an LLM. Zero dependencies, Pipecat and LiveKit drop-ins."
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["cryptography>=42"]
+dependencies = []
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Mohamad Kanso" }]
@@ -21,6 +21,12 @@ keywords = [
   "wyoming",
   "pii-detection",
   "conversation-safety",
+  "pii-redaction",
+  "speech-to-text",
+  "pipecat",
+  "livekit",
+  "voice-agents",
+  "guardrails",
 ]
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -31,6 +37,7 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Topic :: Security",
+  "Topic :: Multimedia :: Sound/Audio :: Speech",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
@@ -38,12 +45,16 @@ classifiers = [
 Homepage = "https://github.com/MohamadKanso/VoiceSafeKit"
 Repository = "https://github.com/MohamadKanso/VoiceSafeKit"
 Demo = "https://mohamadkanso.github.io/VoiceSafeKit/"
+Changelog = "https://github.com/MohamadKanso/VoiceSafeKit/blob/main/CHANGELOG.md"
 
 [project.scripts]
 voicesafekit = "voicesafekit.cli:main"
 
 [project.optional-dependencies]
-dev = ["build>=1.2", "pytest>=8.0", "ruff>=0.6"]
+crypto = ["cryptography>=42"]
+pipecat = ["pipecat-ai>=1.0"]
+livekit = ["livekit-agents>=1.0"]
+dev = ["build>=1.2", "pytest>=8.0", "ruff>=0.6", "cryptography>=42"]
 
 [tool.setuptools.packages.find]
 include = ["voicesafekit*"]

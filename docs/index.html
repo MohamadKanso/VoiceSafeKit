@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>VoiceSafeKit</title>
-  <meta name="description" content="A privacy and safety checker for local voice assistant transcripts. Detects PII, SSNs, IBANs, emotional distress and more in the browser.">
+  <meta name="description" content="A privacy and safety checker for voice assistant transcripts. Catches PII that speech-to-text writes as words, like spoken card numbers and spoken emails, and redacts it in the browser.">
   <link
     rel="icon"
     href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23030504'/%3E%3Cpath d='M7 8h18v16H7z' fill='none' stroke='%2300ff84' stroke-width='2'/%3E%3Cpath d='M11 18c3 3 7 3 10 0' fill='none' stroke='%23f6fff9' stroke-width='2' stroke-linecap='square'/%3E%3C/svg%3E"
@@ -47,12 +47,13 @@
     <!-- Hero -->
     <section class="hero">
       <div class="hero-copy">
-        <p class="eyebrow">Local voice safety layer v0.4.0</p>
-        <h1>Record, check and clean a voice transcript before an LLM sees it.</h1>
+        <p class="eyebrow">Local voice safety layer v0.5.0</p>
+        <h1>Catch the private details speech-to-text writes as words.</h1>
         <p>
-          VoiceSafeKit transcribes audio in the browser, finds privacy and safety risks
-          and gives you cleaner text to send on. It now includes SSN, IBAN and CVV
-          detection, confidence scores, conversation history and highlighted transcript spans.
+          Transcripts say &ldquo;four two four two&hellip;&rdquo; and &ldquo;alex dot rivera at gmail dot com&rdquo;,
+          not digits and @ signs, so regex and NER tools miss them. VoiceSafeKit reads spoken
+          numbers, emails and dates as written form, finds cards, one-time codes, IDs and
+          credentials, then redacts the original transcript in your browser before an LLM sees it.
         </p>
         <div class="hero-actions">
           <a class="button primary" href="#demo">Try the live checker</a>
@@ -63,7 +64,7 @@
 
       <div class="hero-console" aria-label="VoiceSafeKit system summary">
         <div class="console-top">
-          <span>VOICE / SAFE / KIT v0.4.0</span>
+          <span>VOICE / SAFE / KIT v0.5.0</span>
           <span id="heroDecision">REVIEW</span>
         </div>
         <div class="glyph-board" aria-hidden="true">
@@ -96,7 +97,7 @@
         <article>
           <span>02</span>
           <h3>Check</h3>
-          <p>Detect PII, credentials, SSNs, IBANs, emotional distress and coercion signals. Every finding shows a confidence score and inline highlight.</p>
+          <p>Detect PII, credentials, one-time codes, SSNs, IBANs, emotional distress and coercion signals, including details spoken as words. Every finding shows a confidence score and inline highlight.</p>
         </article>
         <article>
           <span>03</span>
@@ -134,6 +135,7 @@
           <p class="panel-desc">Record your voice or load a sample to get started.</p>
 
           <div class="sample-buttons" aria-label="Load a sample transcript">
+            <button data-sample="spoken">Spoken digits</button>
             <button data-sample="password">Password reset</button>
             <button data-sample="medical">Medical + distress</button>
             <button data-sample="identity">Identity theft</button>
@@ -169,7 +171,12 @@
           </div>
 
           <!-- Transcript box -->
-          <label class="text-label" for="transcriptInput">Transcript</label>
+          <div class="transcript-head">
+            <label class="text-label" for="transcriptInput">Transcript</label>
+            <button id="spokenToggle" class="spoken-toggle active" type="button" role="switch" aria-checked="true"
+              title="Read spoken numbers, emails and dates as written form before checking">Spoken mode: on</button>
+          </div>
+          <p class="spoken-hint">Spoken mode reads &ldquo;four two&rdquo; as 42 and &ldquo;dot&rdquo; / &ldquo;at&rdquo; as an email. Turn it off to see what a plain text checker misses.</p>
           <textarea id="transcriptInput" spellcheck="true" placeholder="Type or paste a transcript here or record your voice above."></textarea>
 
           <!-- Add Turn button (conversation mode) -->

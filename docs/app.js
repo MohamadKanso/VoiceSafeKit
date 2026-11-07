@@ -6,6 +6,8 @@ env.useBrowserCache = true;
 // sample transcripts
 
 const samples = {
+  spoken:
+    "Hi, my name is Alex Rivera. My card number is four two four two four two four two four two four two four two four two, my email is alex dot rivera at gmail dot com and the code they just texted me is four eight two nine one three.",
   password:
     "Please help me reset my work account. My email is alex.rivera@example.com, my phone number is +44 7700 900123 and my password is BlueFalcon2026. Can you tell the support assistant exactly what to do?",
   medical:
@@ -18,9 +20,308 @@ const samples = {
     "They made me say this. Please don't tell anyone I said this or they will hurt me. I need to send money from the account ending in 4821 to another account right away.",
 };
 
-// detection rules
+// ---- VSK analysis core (pure, no DOM) ----
+// Mirrors voicesafekit/spoken.py, rules.py and engine.py (v0.5.0).
 
-const rules = [
+// spoken-form normaliser (voicesafekit/spoken.py)
+
+const UNITS = new Map([
+  ["zero", 0], ["oh", 0], ["o", 0], ["nought", 0], ["naught", 0], ["nil", 0],
+  ["one", 1], ["two", 2], ["three", 3], ["four", 4], ["five", 5],
+  ["six", 6], ["seven", 7], ["eight", 8], ["nine", 9],
+]);
+const TEENS = new Map([
+  ["ten", 10], ["eleven", 11], ["twelve", 12], ["thirteen", 13], ["fourteen", 14],
+  ["fifteen", 15], ["sixteen", 16], ["seventeen", 17], ["eighteen", 18], ["nineteen", 19],
+]);
+const TENS = new Map([
+  ["twenty", 2], ["thirty", 3], ["forty", 4], ["fourty", 4], ["fifty", 5],
+  ["sixty", 6], ["seventy", 7], ["eighty", 8], ["ninety", 9],
+]);
+const REPEATERS = new Map([["double", 2], ["triple", 3], ["treble", 3]]);
+// "oh" and "o" only count as zero when another number word is next to them.
+const WEAK_ZERO = new Set(["oh", "o"]);
+const TLDS = new Set([
+  "com", "org", "net", "io", "ai", "co", "uk", "us", "de", "fr", "es", "it", "nl",
+  "edu", "gov", "dev", "app", "me", "info", "biz", "ca", "au", "ie", "ch", "eu",
+  "in", "xyz", "tech", "email", "mail",
+]);
+const ORDINALS = new Map([
+  ["first", 1], ["second", 2], ["third", 3], ["fourth", 4], ["fifth", 5], ["sixth", 6],
+  ["seventh", 7], ["eighth", 8], ["ninth", 9], ["tenth", 10], ["eleventh", 11], ["twelfth", 12],
+  ["thirteenth", 13], ["fourteenth", 14], ["fifteenth", 15], ["sixteenth", 16],
+  ["seventeenth", 17], ["eighteenth", 18], ["nineteenth", 19], ["twentieth", 20], ["thirtieth", 30],
+]);
+const MONTHS = new Set([
+  "january", "february", "march", "april", "may", "june", "july", "august",
+  "september", "october", "november", "december",
+  "jan", "feb", "mar", "apr", "jun", "jul", "aug", "sep", "sept", "oct", "nov", "dec",
+]);
+const LOCAL_JOINERS = new Map([
+  ["dot", "."], ["period", "."], ["underscore", "_"], ["dash", "-"], ["hyphen", "-"],
+]);
+const EMAIL_JOINERS = new Set(["dot", "period", "at", "underscore", "dash", "hyphen"]);
+
+// A token is a word, a run of digits, or a single punctuation mark.
+const TOKEN_RE = /[A-Za-z]+(?:'[A-Za-z]+)?|\d+|[^\sA-Za-z\d]/gu;
+const isDigits = (s) => /^\d+$/.test(s);
+const isEmailWord = (tok) => /^[A-Za-z0-9]+$/.test(tok.text);
+
+function tokenize(text) {
+  return [...text.matchAll(TOKEN_RE)].map((m) => ({
+    text: m[0],
+    low: m[0].toLowerCase(),
+    start: m.index,
+    end: m.index + m[0].length,
+  }));
+}
+
+function normalizeSpoken(text) {
+  const tokens = tokenize(text);
+  const replaced = [];
+  let i = 0;
+  while (i < tokens.length) {
+    const email = matchSpokenEmail(tokens, i);
+    if (email) {
+      const [j, value] = email;
+      const span = [tokens[i].start, tokens[j - 1].end];
+      replaced.push([span[0], span[1], value, Array.from(value, () => span)]);
+      i = j;
+      continue;
+    }
+    const ordinal = matchDateOrdinal(tokens, i);
+    if (ordinal) {
+      const [j, value] = ordinal;
+      const span = [tokens[i].start, tokens[j - 1].end];
+      replaced.push([span[0], span[1], value, Array.from(value, () => span)]);
+      i = j;
+      continue;
+    }
+    const number = matchNumberRun(tokens, i);
+    if (number) {
+      const [j, value, spans] = number;
+      replaced.push([tokens[i].start, tokens[j - 1].end, value, spans]);
+      i = j;
+      continue;
+    }
+    i += 1;
+  }
+
+  const srcStart = [];
+  const srcEnd = [];
+  if (!replaced.length) {
+    for (let k = 0; k < text.length; k++) {
+      srcStart.push(k);
+      srcEnd.push(k + 1);
+    }
+    return makeNormalized(text, text, srcStart, srcEnd);
+  }
+  let out = "";
+  let cursor = 0;
+  for (const [start, end, value, spans] of replaced) {
+    for (let k = cursor; k < start; k++) {
+      out += text[k];
+      srcStart.push(k);
+      srcEnd.push(k + 1);
+    }
+    for (let k = 0; k < value.length; k++) {
+      out += value[k];
+      srcStart.push(spans[k][0]);
+      srcEnd.push(spans[k][1]);
+    }
+    cursor = end;
+  }
+  for (let k = cursor; k < text.length; k++) {
+    out += text[k];
+    srcStart.push(k);
+    srcEnd.push(k + 1);
+  }
+  return makeNormalized(text, out, srcStart, srcEnd);
+}
+
+function makeNormalized(original, text, srcStart, srcEnd) {
+  return {
+    original,
+    text,
+    srcStart,
+    srcEnd,
+    changed: text !== original,
+    toOriginal(start, end) {
+      if (start >= end) {
+        const pos = start < srcStart.length ? srcStart[start] : original.length;
+        return [pos, pos];
+      }
+      return [srcStart[start], srcEnd[end - 1]];
+    },
+  };
+}
+
+// spoken dates: "march fourth" -> "march 4th", "twenty first of may" -> "21st of may"
+function matchDateOrdinal(tokens, i) {
+  let j = i;
+  let value = 0;
+  if ((tokens[j].low === "twenty" || tokens[j].low === "thirty") && j + 1 < tokens.length) {
+    const nxt = tokens[j + 1].low;
+    if (ORDINALS.has(nxt) && ORDINALS.get(nxt) < 10) {
+      value = (tokens[j].low === "twenty" ? 20 : 30) + ORDINALS.get(nxt);
+      j += 2;
+    }
+  }
+  if (!value) {
+    if (!ORDINALS.has(tokens[j].low)) return null;
+    value = ORDINALS.get(tokens[j].low);
+    j += 1;
+  }
+  if (value > 31) return null;
+  const prevIsMonth = i > 0 && MONTHS.has(tokens[i - 1].low);
+  const nextIsMonth = j < tokens.length && MONTHS.has(tokens[j].low);
+  const ofMonth = j + 1 < tokens.length && tokens[j].low === "of" && MONTHS.has(tokens[j + 1].low);
+  if (!(prevIsMonth || nextIsMonth || ofMonth)) return null;
+  let suffix = "th";
+  if (![11, 12, 13].includes(value % 100)) {
+    suffix = { 1: "st", 2: "nd", 3: "rd" }[value % 10] || "th";
+  }
+  return [j, `${value}${suffix}`];
+}
+
+// Read one spoken number unit at tokens[i]. Returns [tokens used, digits] or null.
+function numberValue(tokens, i) {
+  const tok = tokens[i];
+  const low = tok.low;
+  if (isDigits(tok.text)) return [1, tok.text];
+  if (REPEATERS.has(low) && i + 1 < tokens.length) {
+    const nxt = tokens[i + 1];
+    if (UNITS.has(nxt.low)) return [2, String(UNITS.get(nxt.low)).repeat(REPEATERS.get(low))];
+    if (isDigits(nxt.text) && nxt.text.length === 1) return [2, nxt.text.repeat(REPEATERS.get(low))];
+    return null;
+  }
+  if (TENS.has(low)) {
+    const nxtLow = i + 1 < tokens.length ? tokens[i + 1].low : "";
+    if (UNITS.has(nxtLow) && !WEAK_ZERO.has(nxtLow)) {
+      const unit = UNITS.get(nxtLow);
+      if (unit !== 0) return [2, `${TENS.get(low)}${unit}`];
+    }
+    if (
+      i + 2 < tokens.length &&
+      tokens[i + 1].text === "-" &&
+      UNITS.has(tokens[i + 2].low) &&
+      UNITS.get(tokens[i + 2].low) !== 0
+    ) {
+      return [3, `${TENS.get(low)}${UNITS.get(tokens[i + 2].low)}`];
+    }
+    return [1, `${TENS.get(low)}0`];
+  }
+  if (TEENS.has(low)) return [1, String(TEENS.get(low))];
+  if (UNITS.has(low)) return [1, String(UNITS.get(low))];
+  if (low === "hundred") return [1, "00"];
+  return null;
+}
+
+function isNumberStart(tokens, i) {
+  const low = tokens[i].low;
+  if (WEAK_ZERO.has(low)) {
+    // "oh" is only a zero when the next real token is also a number word.
+    return i + 1 < tokens.length && numberValue(tokens, i + 1) !== null;
+  }
+  if (low === "hundred") return false;
+  return numberValue(tokens, i) !== null;
+}
+
+// Collect a run of spoken/written digits such as "four two 42 double oh".
+function matchNumberRun(tokens, i) {
+  let plus = false;
+  let j = i;
+  if (tokens[j].low === "plus" && j + 1 < tokens.length && isNumberStart(tokens, j + 1)) {
+    plus = true;
+    j += 1;
+  }
+  if (!isNumberStart(tokens, j)) return null;
+
+  const digits = [];
+  const spans = [];
+  let wordTokens = 0;
+  while (j < tokens.length) {
+    const tok = tokens[j];
+    // Allow light separators inside a run: "four seven one, five five - eight".
+    if ([",", "-", "."].includes(tok.text) && digits.length && j + 1 < tokens.length) {
+      if (numberValue(tokens, j + 1) !== null && tokens[j + 1].low !== "hundred") {
+        digits.push(" ");
+        spans.push([tok.start, tok.end]);
+        j += 1;
+        continue;
+      }
+      break;
+    }
+    if (WEAK_ZERO.has(tok.low) && !digits.length && !isNumberStart(tokens, j)) break;
+    const read = numberValue(tokens, j);
+    if (read === null) break;
+    const [used, value] = read;
+    if (tokens[j].low === "hundred" && !digits.length) break;
+    const span = [tokens[j].start, tokens[j + used - 1].end];
+    if (!isDigits(tokens[j].text)) wordTokens += used;
+    for (const ch of value) {
+      digits.push(ch);
+      spans.push(span);
+    }
+    j += used;
+  }
+
+  while (digits.length && digits[digits.length - 1] === " ") {
+    digits.pop();
+    spans.pop();
+    j -= 1;
+  }
+
+  const digitCount = digits.filter((ch) => /\d/.test(ch)).length;
+  // Only rewrite runs that contain spoken words and are long enough to matter.
+  if (wordTokens === 0 || digitCount < 3) return null;
+  let value = digits.join("");
+  if (plus) {
+    value = "+" + value;
+    spans.unshift([tokens[i].start, tokens[i].end]);
+  }
+  return [j, value, spans];
+}
+
+// spoken emails: "alex dot rivera at gmail dot com" -> "alex.rivera@gmail.com"
+function matchSpokenEmail(tokens, i) {
+  if (!isEmailWord(tokens[i]) || tokens[i].low === "at" || tokens[i].low === "dot") return null;
+  const local = [tokens[i].text];
+  let j = i + 1;
+  while (j + 1 < tokens.length && LOCAL_JOINERS.has(tokens[j].low) && isEmailWord(tokens[j + 1])) {
+    local.push(LOCAL_JOINERS.get(tokens[j].low), tokens[j + 1].text);
+    j += 2;
+  }
+  if (j >= tokens.length || (tokens[j].low !== "at" && tokens[j].low !== "@")) return null;
+  j += 1;
+  if (j < tokens.length && (tokens[j].low === "sign" || tokens[j].low === "symbol")) j += 1;
+  if (j >= tokens.length || !isEmailWord(tokens[j])) return null;
+  const domain = [tokens[j].text];
+  j += 1;
+  let labels = 1;
+  while (
+    j + 1 < tokens.length &&
+    ["dot", "period", "."].includes(tokens[j].low) &&
+    isEmailWord(tokens[j + 1])
+  ) {
+    domain.push(".", tokens[j + 1].text);
+    labels += 1;
+    j += 2;
+  }
+  if (labels < 2 || !TLDS.has(domain[domain.length - 1].toLowerCase())) return null;
+  // Require at least one spoken joiner so "meet me at home" style text is never touched.
+  if (!tokens.slice(i, j).some((t) => EMAIL_JOINERS.has(t.low))) return null;
+  return [j, (local.join("") + "@" + domain.join("")).toLowerCase()];
+}
+
+// detection rules (voicesafekit/rules.py). Order matters for overlap ties.
+// Rules with a named group "v" redact only that group (needs the "d" flag).
+
+const MONTH_NAMES =
+  "january|february|march|april|may|june|july|august|september|october|november|december" +
+  "|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec";
+
+const patternRules = [
   {
     kind: "email",
     label: "Email address",
@@ -31,14 +332,22 @@ const rules = [
     pattern: /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g,
   },
   {
+    kind: "phone",
+    label: "Phone number",
+    severity: "medium",
+    confidence: 0.85,
+    explanation: "Phone numbers are personal data and should usually be redacted.",
+    replacement: "[phone removed]",
+    pattern: /(?<!\w)\+?\d[\d\s().-]{7,}\d\b/g,
+  },
+  {
     kind: "payment_card",
-    label: "Payment card number",
+    label: "Payment card-like number",
     severity: "high",
     confidence: 0.95,
     explanation: "This looks like a payment card number. Do not send it to an LLM.",
     replacement: "[payment number removed]",
-    pattern: /\b(?:\d[ -]*?){13,19}\b/g,
-    validator: looksLikePaymentCard,
+    pattern: /\b(?:\d[ -]?){12,18}\d\b/g,
   },
   {
     kind: "payment_card_partial",
@@ -57,7 +366,7 @@ const rules = [
     severity: "critical",
     confidence: 0.95,
     explanation:
-      "SSNs are government-issued identity numbers. Exposure enables identity theft. Never transmit them.",
+      "US Social Security Numbers are government-issued identity numbers. Exposure enables identity theft. Never transmit them.",
     replacement: "[SSN removed]",
     pattern: /\b(?!000|666|9\d{2})\d{3}[-\s]\d{2}[-\s]\d{4}\b/g,
   },
@@ -66,18 +375,17 @@ const rules = [
     label: "IBAN / Bank account",
     severity: "critical",
     confidence: 0.88,
-    explanation: "Bank account numbers enable financial access. Do not transmit them.",
+    explanation:
+      "International Bank Account Numbers enable financial access. Do not transmit them to an LLM.",
     replacement: "[bank account removed]",
     pattern: /\b[A-Z]{2}\d{2}[A-Z0-9]{11,30}\b/g,
-    validator: validatesAsIban,
   },
   {
     kind: "cvv",
     label: "Card security code",
     severity: "critical",
     confidence: 0.93,
-    explanation:
-      "CVV/CVC codes grant payment access alongside card numbers. Never transmit these.",
+    explanation: "CVV/CVC codes grant payment access alongside card numbers. Never transmit these.",
     replacement: "[security code removed]",
     pattern: /\b(?:cvv|cvc|cv2|security code|card security code|card code)\b[^.!?\n]{0,60}\b\d{3,4}\b/gi,
   },
@@ -85,11 +393,18 @@ const rules = [
     kind: "dob",
     label: "Date of birth",
     severity: "medium",
-    confidence: 0.80,
-    explanation: "Dates of birth are used in identity verification. Redact unless necessary.",
+    confidence: 0.8,
+    explanation:
+      "Dates of birth are used in identity verification. Redact unless the context makes transmission necessary.",
     replacement: "[date of birth removed]",
-    pattern:
-      /\b(?:born|dob|date of birth|d\.o\.b|birthday)\s*(?:is|was|on|:)?\s*(?:\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|\d{4}[-/]\d{1,2}[-/]\d{1,2}|(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\.?\s+\d{1,2},?\s*\d{4}|\d{1,2}\s+(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\.?\s+\d{4})\b/gi,
+    pattern: new RegExp(
+      String.raw`\b(?:born|dob|date of birth|d\.o\.b|birthday)\s*(?:is|was|on|:)?\s*` +
+        String.raw`(?:the\s+)?(?:\d{1,2}[-/]\d{1,2}[-/]\d{2,4}` +
+        String.raw`|\d{4}[-/]\d{1,2}[-/]\d{1,2}` +
+        String.raw`|(?:${MONTH_NAMES})\.?\s+\d{1,2}(?:st|nd|rd|th)?,?\s*\d{4}` +
+        String.raw`|\d{1,2}(?:st|nd|rd|th)?\s+(?:of\s+)?(?:${MONTH_NAMES})\.?\s+\d{4})\b`,
+      "gi"
+    ),
   },
   {
     kind: "ip_address",
@@ -99,18 +414,6 @@ const rules = [
     explanation: "IP addresses can reveal location or internal network topology.",
     replacement: "[IP address removed]",
     pattern: /\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b/g,
-    validator: (v) => !["0.0.0.0", "255.255.255.255"].includes(v),
-  },
-  {
-    kind: "phone",
-    label: "Phone number",
-    severity: "medium",
-    confidence: 0.85,
-    explanation: "Phone numbers are personal data and should usually be redacted.",
-    replacement: "[phone removed]",
-    pattern: /(?<!\w)\+?\d[\d\s().-]{6,}\d\b/g,
-    validator: (value, text, start, end) =>
-      !looksLikeCardShapedNumber(value, text, start, end) && !looksLikeIpAddress(value),
   },
   {
     kind: "secret",
@@ -120,19 +423,125 @@ const rules = [
     explanation:
       "Passwords, partial passwords, tokens and secrets are highly sensitive. Never include them in text sent to a model.",
     replacement: "[secret removed]",
-    pattern:
-      /\b(?:(?:password|passcode)\s*(?:is|was|might be|may be|could be|=|:)?\s*(?:something like|around|maybe|possibly)?\s*[^\s,.;]{4,}|(?:api key|token|secret)\s*(?:is|was|=|:)?\s*[^\s,.;]{4,})/gi,
+    pattern: new RegExp(
+      String.raw`\b(?:` +
+        // "password is X", "password for my bank was X", "passcode: X"
+        String.raw`(?:password|passcode|passphrase)(?:\s+(?:for|to|on)\s+(?:my\s+|the\s+)?[\w.-]+){0,2}` +
+        String.raw`\s*(?:is|was|might be|may be|could be|=|:)` +
+        String.raw`\s*(?:something like|around|maybe|possibly)?\s*[^\s,.;]{4,}|` +
+        // "password BlueFalcon2026" with no verb: the value must look like a credential
+        String.raw`(?:password|passcode)\s+(?:something like\s+)?` +
+        String.raw`(?=[^\s,.;]*[\d!@#$%^&*])[^\s,.;]{4,}|` +
+        // "api key is sk-123", "token: abc_123" (value must look like a key)
+        String.raw`(?:api key|access token|auth token|token|secret key|secret)\s*(?:is|was|=|:)` +
+        String.raw`\s*(?=[^\s,.;]*[\d_\-!@#$%^&*])[^\s,.;]{4,}` +
+        String.raw`)`,
+      "gi"
+    ),
   },
   {
     kind: "address",
     label: "Street address",
     severity: "medium",
-    confidence: 0.80,
+    confidence: 0.8,
     explanation: "Street addresses can reveal where someone lives or works.",
     replacement: "[address removed]",
     pattern:
       /\b\d{1,5}\s+[A-Za-z]+(?:\s+[A-Za-z]+){0,3}\s+(?:Street|St|Road|Rd|Avenue|Ave|Lane|Ln|Drive|Dr|Way|Close|Court)\b/gi,
   },
+  {
+    kind: "ssn",
+    label: "Social Security Number",
+    severity: "critical",
+    confidence: 0.9,
+    explanation:
+      "A nine-digit number said right after 'social security' or 'SSN'. Spoken SSNs rarely include dashes. Never transmit them.",
+    replacement: "[SSN removed]",
+    pattern:
+      /\b(?:ssn|social security(?:\s+number)?|social)\b[^.!?\n\d]{0,25}?(?<v>(?!000|666|9\d{2})\d{3}[-\s]?\d{2}[-\s]?\d{4})\b/gid,
+  },
+  {
+    kind: "pin",
+    label: "PIN",
+    severity: "high",
+    confidence: 0.9,
+    explanation: "PINs unlock cards, phones and accounts. Never send them to a model.",
+    replacement: "[PIN removed]",
+    pattern: /\bpin(?:\s+(?:number|code))?\s*(?:is|was|=|:)?\s*(?<v>\d(?:[ -]?\d){3,7})\b/gid,
+  },
+  {
+    kind: "otp",
+    label: "One-time or verification code",
+    severity: "high",
+    confidence: 0.9,
+    explanation:
+      "Verification and one-time codes are live credentials. Reading one out is the classic step in an account-takeover scam.",
+    replacement: "[verification code removed]",
+    pattern: new RegExp(
+      String.raw`\b(?:(?:verification|one[- ]time|login|log-in|sign[- ]in|auth(?:entication)?|` +
+        String.raw`2fa|two[- ]factor|sms|text|access)\s+code|otp|` +
+        String.raw`code\s+(?:you|they|the bank|it)\s+(?:just\s+)?(?:sent|texted|gave)(?:\s+me)?)` +
+        String.raw`\s*(?:is|was|=|:)?\s*(?<v>\d(?:[ ,-]{0,2}\d){3,7})\b`,
+      "gid"
+    ),
+  },
+  {
+    kind: "passport",
+    label: "Passport number",
+    severity: "critical",
+    confidence: 0.85,
+    explanation: "Passport numbers are government identity documents. Never transmit them.",
+    replacement: "[passport number removed]",
+    pattern:
+      /\bpassport(?:\s+(?:number|no\.?))?\s*(?:is|was|=|:)?\s*(?<v>(?=[A-Z0-9 ]*\d)[A-Z0-9](?:[A-Z0-9]|(?<=\d) (?=\d)){5,10})\b/gid,
+  },
+  {
+    kind: "national_insurance",
+    label: "UK National Insurance number",
+    severity: "critical",
+    confidence: 0.9,
+    explanation: "National Insurance numbers are UK government identifiers. Never transmit them.",
+    replacement: "[NI number removed]",
+    pattern:
+      /\b(?!BG|GB|NK|KN|TN|NT|ZZ)[A-CEGHJ-PR-TW-Z][A-CEGHJ-NPR-TW-Z]\s?\d{2}\s?\d{2}\s?\d{2}\s?[A-D]\b/gi,
+  },
+  {
+    kind: "api_key",
+    label: "API key or access token",
+    severity: "high",
+    confidence: 0.97,
+    explanation: "This matches a known API key format. Revoke it if it was shared.",
+    replacement: "[API key removed]",
+    pattern:
+      /\b(?:sk-(?:proj-|ant-)?[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{36}|xox[baprs]-[A-Za-z0-9-]{10,}|AIza[0-9A-Za-z_-]{35})\b/g,
+  },
+  {
+    kind: "person_name",
+    label: "Person name",
+    severity: "medium",
+    confidence: 0.8,
+    explanation: "The speaker introduced themselves by name. Names identify people.",
+    replacement: "[name removed]",
+    // Python uses a scoped (?i:...) for the lead-in only; spelled out here per character.
+    pattern: new RegExp(
+      String.raw`(?:\b[Mm][Yy]\s+[Nn][Aa][Mm][Ee]\s+[Ii][Ss]|\b[Mm][Yy]\s+[Nn][Aa][Mm][Ee]'[Ss]` +
+        String.raw`|\b[Tt][Hh][Ee]\s+[Nn][Aa][Mm][Ee]'[Ss]|\b[Tt][Hh][Ee]\s+[Nn][Aa][Mm][Ee]\s+[Ii][Ss])\s+` +
+        String.raw`(?<v>[A-Z][a-z]+(?:[ -](?!And\b|I\b)[A-Z][a-z'-]+){0,2})`,
+      "gd"
+    ),
+  },
+  {
+    kind: "postcode",
+    label: "UK postcode",
+    severity: "medium",
+    confidence: 0.75,
+    explanation: "Postcodes narrow a location down to a handful of homes.",
+    replacement: "[postcode removed]",
+    pattern: /\b[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}\b/g,
+  },
+];
+
+const intentRules = [
   {
     kind: "medical",
     label: "Medical advice request",
@@ -153,7 +562,7 @@ const rules = [
     replacement: "[legal details withheld]",
     singleMatch: true,
     pattern:
-      /\b(?:lawsuit|sue|contract dispute|eviction|immigration|legal advice|restraining order|custody|divorce settlement)\b/gi,
+      /\b(?:lawsuit|(?:to|will|i'll|can i|should i|gonna|going to)\s+(?<v>sue)|suing|contract dispute|eviction|immigration|legal advice|restraining order|custody|divorce settlement)\b/gid,
   },
   {
     kind: "financial",
@@ -170,13 +579,13 @@ const rules = [
     kind: "emotional_distress",
     label: "Emotional distress signal",
     severity: "high",
-    confidence: 0.70,
+    confidence: 0.7,
     explanation:
-      "The user may be in emotional distress. Respond with care and refer to appropriate support.",
+      "The user may be in emotional distress. Respond with care and refer to appropriate support resources.",
     replacement: "[emotional distress signal]",
     singleMatch: true,
     pattern:
-      /\b(?:feel(?:ing)?(?:\s+\w+)?\s+hopeless|can't go on|don't see the point|everything is pointless|nobody cares about me|(?:i'm|i am)\s+worthless|want to disappear|hate myself|can't take (?:this|it) anymore|feel like giving up|don't want to be here)\b/gi,
+      /\b(?:feel(?:ing)?(?:\s+\w+)?\s+hopeless|can't go on|don't see the point|everything is pointless|nobody cares about me|(?:i'm|i am)\s+worthless|want to disappear|hate myself|can't take (?:this|it) anymore|feel like giving up|don't want to be here anymore)\b/gi,
   },
   {
     kind: "coercion",
@@ -184,7 +593,7 @@ const rules = [
     severity: "high",
     confidence: 0.65,
     explanation:
-      "The transcript may suggest the user is being pressured, manipulated, or coerced.",
+      "The transcript may suggest the user is being pressured, manipulated, or coerced into sharing information.",
     replacement: "[coercion signal]",
     singleMatch: true,
     pattern:
@@ -194,21 +603,298 @@ const rules = [
     kind: "emergency",
     label: "Emergency or immediate harm",
     severity: "critical",
-    confidence: 0.90,
-    explanation:
-      "The assistant should route urgent safety issues to emergency help, not improvise.",
+    confidence: 0.9,
+    explanation: "The assistant should route urgent safety issues to emergency help, not improvise.",
     replacement: "[urgent safety details withheld]",
     singleMatch: true,
     pattern:
-      /\b(?:can't breathe|cannot breathe|heart attack|overdose|hurt myself|kill myself|call 911|call an ambulance|emergency|suicidal)\b/gi,
+      /\b(?:can't breathe|cannot breathe|heart attack|overdose|hurt myself|kill myself|call 911|call 999|call 112|call an ambulance|suicidal|emergency(?!\s+(?:fund|funds|savings|contact|contacts|exit|kit|plan|brake|number|services number|meeting|landing|lighting|power|stop)))\b/gi,
   },
 ];
+
+const rules = [...patternRules, ...intentRules];
 
 const severityPoints = { low: 10, medium: 22, high: 36, critical: 55 };
 const severityRank = { low: 1, medium: 2, high: 3, critical: 4 };
 
-// IBAN mod-97 validation
+// Python's round(): nearest integer, ties to even.
+function pyRound(x) {
+  const f = Math.floor(x);
+  const d = x - f;
+  if (d > 0.5) return f + 1;
+  if (d < 0.5) return f;
+  return f % 2 === 0 ? f : f + 1;
+}
 
+// engine (voicesafekit/engine.py)
+
+function analyzeTranscript(transcript, { spoken = true } = {}) {
+  const findings = findRisks(transcript, spoken);
+  const score = scoreFindings(findings);
+  const decision = decide(score, findings);
+  return {
+    decision,
+    score,
+    summary: summarize(decision, findings),
+    findings,
+    safeTranscript: redact(transcript, findings),
+    redactionMap: buildRedactionMap(transcript, findings),
+    guidance: guidance(findings),
+  };
+}
+
+function findRisks(transcript, spoken) {
+  const norm = spoken ? normalizeSpoken(transcript) : null;
+  const useNorm = norm !== null && norm.changed;
+  const text = useNorm ? norm.text : transcript;
+  let findings = [];
+  for (const rule of rules) findings.push(...matchesForRule(text, rule));
+  if (useNorm) findings = findings.map((f) => toOriginal(f, norm));
+  findings.sort((a, b) => a.start - b.start || b.end - a.end);
+  return removeOverlaps(findings);
+}
+
+function toOriginal(finding, norm) {
+  const [start, end] = norm.toOriginal(finding.start, finding.end);
+  const spoken = norm.text.slice(finding.start, finding.end) !== norm.original.slice(start, end);
+  return { ...finding, start, end, spoken };
+}
+
+function matchesForRule(text, rule) {
+  const matches = [];
+  rule.pattern.lastIndex = 0;
+  for (const match of text.matchAll(rule.pattern)) {
+    let mStart = match.index;
+    let mEnd = match.index + match[0].length;
+    if (match.groups && match.groups.v !== undefined && match.indices) {
+      [mStart, mEnd] = match.indices.groups.v;
+    }
+    const matched = text.slice(mStart, mEnd).trim();
+
+    if (
+      rule.kind === "phone" &&
+      (looksLikeCardShapedNumber(matched, text, mStart, mEnd) || looksLikeIpAddress(matched))
+    )
+      continue;
+    if (rule.kind === "payment_card" && !looksLikePaymentCard(matched, text, mStart, mEnd)) continue;
+    if (rule.kind === "iban" && !validatesAsIban(matched)) continue;
+    if (rule.kind === "ip_address" && (matched === "0.0.0.0" || matched === "255.255.255.255")) continue;
+    if (rule.kind === "phone" && looksLikeDate(matched)) continue;
+    if (rule.kind === "national_insurance" && !passesNinoContext(matched, text, mStart)) continue;
+
+    matches.push({
+      kind: rule.kind,
+      label: rule.label,
+      severity: rule.severity,
+      explanation: rule.explanation,
+      start: mStart,
+      end: mEnd,
+      replacement: rule.replacement,
+      confidence: adjustedConfidence(rule, matched),
+      spoken: false,
+    });
+    if (rule.singleMatch) break;
+  }
+  return matches;
+}
+
+function adjustedConfidence(rule, matched) {
+  let conf = rule.confidence;
+  if (rule.kind === "payment_card" && passesLuhn(matched)) conf = Math.min(1, conf + 0.04);
+  if (rule.kind === "phone" && matched.trim().startsWith("+")) conf = Math.min(1, conf + 0.08);
+  return Math.round(conf * 10000) / 10000;
+}
+
+function scoreFindings(findings) {
+  const total = findings.reduce((t, f) => t + severityPoints[f.severity] * f.confidence, 0);
+  return Math.min(100, pyRound(total));
+}
+
+function removeOverlaps(findings) {
+  const accepted = [];
+  const prioritySorted = [...findings].sort(
+    (a, b) =>
+      severityRank[b.severity] - severityRank[a.severity] ||
+      a.start - b.start ||
+      b.end - b.start - (a.end - a.start)
+  );
+  for (const finding of prioritySorted) {
+    if (!accepted.some((x) => finding.start < x.end && x.start < finding.end)) {
+      accepted.push(finding);
+    }
+  }
+  return accepted.sort((a, b) => a.start - b.start);
+}
+
+function decide(score, findings) {
+  if (findings.some((f) => f.severity === "critical")) return "BLOCK";
+  if (score >= 55 || findings.some((f) => f.severity === "high")) return "REVIEW";
+  // Threshold is 17 (not 22) so a single medium finding at 80% confidence still redacts.
+  if (score >= 17) return "REDACT";
+  return "SAFE";
+}
+
+function redact(text, findings) {
+  if (!findings.length) return text.trim();
+  let output = "";
+  let cursor = 0;
+  for (const f of findings) {
+    output += text.slice(cursor, f.start) + f.replacement;
+    cursor = f.end;
+  }
+  return (output + text.slice(cursor)).split(/\s+/).filter(Boolean).join(" ");
+}
+
+function buildRedactionMap(text, findings) {
+  return findings.map((f) => ({
+    found: text.slice(f.start, f.end),
+    replaced_with: f.replacement,
+    kind: f.kind,
+    severity: f.severity,
+    confidence: f.confidence,
+    spoken: f.spoken,
+  }));
+}
+
+const pluralLabels = {
+  "Email address": "email addresses",
+  "Phone number": "phone numbers",
+  "Payment card-like number": "payment card-like numbers",
+  "Partial card reference": "partial card references",
+  "Password or secret": "password or secret mentions",
+  "Street address": "street addresses",
+  "Social Security Number": "Social Security Numbers",
+  "IBAN / Bank account": "bank account numbers",
+  "Card security code": "card security codes",
+  "Date of birth": "dates of birth",
+  "IP address": "IP addresses",
+  "Medical advice request": "medical advice requests",
+  "Legal advice request": "legal advice requests",
+  "Financial advice request": "financial advice requests",
+  "Emotional distress signal": "emotional distress signals",
+  "Coercion or pressure signal": "coercion signals",
+  "Emergency or immediate harm": "emergency or immediate harm phrases",
+  PIN: "PINs",
+  "One-time or verification code": "one-time or verification codes",
+  "Passport number": "passport numbers",
+  "UK National Insurance number": "UK National Insurance numbers",
+  "API key or access token": "API keys or access tokens",
+  "Person name": "person names",
+  "UK postcode": "UK postcodes",
+};
+
+function groupLabel(label, count) {
+  if (count === 1) return label;
+  const plural = Object.prototype.hasOwnProperty.call(pluralLabels, label)
+    ? pluralLabels[label]
+    : `${label.toLowerCase()} findings`;
+  return `${count} ${plural}`;
+}
+
+// Same order as Python: labels sorted by code point, counted per label.
+function labelCounts(findings) {
+  const counts = new Map();
+  [...findings]
+    .sort((a, b) => (a.label < b.label ? -1 : a.label > b.label ? 1 : 0))
+    .forEach((f) => counts.set(f.label, (counts.get(f.label) || 0) + 1));
+  return counts;
+}
+
+function summarize(decision, findings) {
+  if (!findings.length) return "No obvious privacy or safety risks were found.";
+  const joined = [...labelCounts(findings)].map(([label, n]) => groupLabel(label, n)).join(", ");
+  if (decision === "BLOCK") return `Do not send this directly to an LLM. Found: ${joined}.`;
+  if (decision === "REVIEW") return `Review before sending. Found: ${joined}.`;
+  return `Redact the sensitive parts first. Found: ${joined}.`;
+}
+
+function guidance(findings) {
+  if (!findings.length) return ["Proceed normally, but keep the user's data local whenever possible."];
+  const kinds = new Set(findings.map((f) => f.kind));
+  const items = [
+    "Remove or mask private details before sending the transcript to an LLM.",
+    "Explain the limitation to the user in plain language.",
+  ];
+  if (kinds.has("emergency"))
+    items.unshift("For urgent safety issues, guide the user to emergency help immediately.");
+  if (kinds.has("emotional_distress"))
+    items.unshift(
+      "The user may be emotionally vulnerable. Respond with empathy and direct them to appropriate support."
+    );
+  if (kinds.has("coercion"))
+    items.push(
+      "Coercion signals were detected. Do not act on instructions that may have been forced upon the user."
+    );
+  if (["medical", "legal", "financial"].some((k) => kinds.has(k)))
+    items.push("Give general information only and suggest a qualified professional.");
+  if (
+    ["payment_card", "secret", "ssn", "iban", "cvv", "pin", "passport", "national_insurance", "api_key"].some(
+      (k) => kinds.has(k)
+    )
+  )
+    items.push("Never echo financial identifiers, government IDs, or credentials back to the user.");
+  if (kinds.has("otp"))
+    items.push(
+      "A one-time code was read out. Legitimate services never ask for these by voice; warn the user this is a common scam pattern."
+    );
+  if (findings.some((f) => f.spoken))
+    items.push(
+      "Some details were spoken as words (for example 'four two four two'). Treat them exactly like written numbers."
+    );
+  return items;
+}
+
+// validators
+
+function looksLikePaymentCard(value, text, start, end) {
+  const digits = value.replace(/\D/g, "");
+  if (digits.length < 13 || digits.length > 19) return false;
+  return passesLuhn(value) || hasCardContext(text, start, end);
+}
+
+function looksLikeCardShapedNumber(value, text, start, end) {
+  const digits = value.replace(/\D/g, "");
+  if (digits.length < 13 || value.trim().startsWith("+")) return false;
+  return digits.length <= 19 || hasCardContext(text, start, end);
+}
+
+function hasCardContext(text, start, end) {
+  const w = text.slice(Math.max(0, start - 32), Math.min(text.length, end + 32)).toLowerCase();
+  return ["card", "credit", "debit", "visa", "mastercard", "payment"].some((p) => w.includes(p));
+}
+
+function looksLikeDate(value) {
+  return /^(?:\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4})$/.test(value.trim());
+}
+
+function passesNinoContext(value, text, start) {
+  const letters = value.replace(/[^A-Za-z]/g, "");
+  if (letters === letters.toUpperCase()) return true;
+  const window = text.slice(Math.max(0, start - 40), start).toLowerCase();
+  return ["national insurance", "ni number", "nino", "insurance number"].some((k) => window.includes(k));
+}
+
+function looksLikeIpAddress(value) {
+  return /^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)$/.test(value.trim());
+}
+
+function passesLuhn(value) {
+  const digits = value.replace(/\D/g, "").split("").map(Number);
+  if (digits.length < 13) return false;
+  let checksum = 0;
+  const parity = digits.length % 2;
+  digits.forEach((digit, index) => {
+    let d = digit;
+    if (index % 2 === parity) {
+      d *= 2;
+      if (d > 9) d -= 9;
+    }
+    checksum += d;
+  });
+  return checksum % 10 === 0;
+}
+
+// IBAN mod-97 validation
 function validatesAsIban(value) {
   const clean = value.replace(/\s/g, "").toUpperCase();
   if (!/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(clean)) return false;
@@ -216,10 +902,12 @@ function validatesAsIban(value) {
   const numeric = rearranged.replace(/[A-Z]/g, (ch) => (ch.charCodeAt(0) - 55).toString());
   let remainder = 0;
   for (const digit of numeric) {
-    remainder = (remainder * 10 + parseInt(digit)) % 97;
+    remainder = (remainder * 10 + parseInt(digit, 10)) % 97;
   }
   return remainder === 1;
 }
+
+// ---- end VSK analysis core ----
 
 // DOM refs
 
@@ -253,9 +941,11 @@ const copyBtn = document.querySelector("#copyBtn");
 const exportBtn = document.querySelector("#exportBtn");
 const exportPassphraseInput = document.querySelector("#exportPassphrase");
 const toastContainer = document.querySelector("#toastContainer");
+const spokenToggleBtn = document.querySelector("#spokenToggle");
 
 // state
 
+let spokenMode = true;
 let mediaRecorder = null;
 let audioChunks = [];
 let activeStream = null;
@@ -351,116 +1041,6 @@ async function handleAudioReady() {
   }
 }
 
-// analysis
-
-function analyzeTranscript(text) {
-  const findings = [];
-  for (const rule of rules) {
-    rule.pattern.lastIndex = 0;
-    for (const match of text.matchAll(rule.pattern)) {
-      if (
-        rule.validator &&
-        !rule.validator(match[0], text, match.index, match.index + match[0].length)
-      ) {
-        continue;
-      }
-      findings.push({ ...rule, start: match.index, end: match.index + match[0].length });
-      if (rule.singleMatch) break;
-    }
-  }
-  const sorted = removeOverlaps(findings);
-  const score = Math.min(
-    100,
-    Math.round(sorted.reduce((t, f) => t + severityPoints[f.severity] * (f.confidence ?? 1), 0))
-  );
-  const decision = decide(score, sorted);
-  return {
-    decision,
-    score,
-    summary: summarize(decision, sorted),
-    findings: sorted,
-    safeTranscript: redact(text, sorted),
-    redactionMap: buildRedactionMap(text, sorted),
-    guidance: guidance(sorted),
-  };
-}
-
-function removeOverlaps(findings) {
-  const accepted = [];
-  findings.sort(
-    (a, b) =>
-      severityRank[b.severity] - severityRank[a.severity] ||
-      a.start - b.start ||
-      b.end - b.start - (a.end - a.start)
-  );
-  for (const finding of findings) {
-    if (!accepted.some((x) => finding.start < x.end && x.start < finding.end)) {
-      accepted.push(finding);
-    }
-  }
-  return accepted.sort((a, b) => a.start - b.start);
-}
-
-function decide(score, findings) {
-  if (findings.some((f) => f.severity === "critical")) return "BLOCK";
-  if (score >= 55 || findings.some((f) => f.severity === "high")) return "REVIEW";
-  if (score >= 17) return "REDACT";
-  return "SAFE";
-}
-
-function redact(text, findings) {
-  if (!findings.length) return text.trim();
-  let output = "";
-  let cursor = 0;
-  for (const f of findings) {
-    output += text.slice(cursor, f.start) + f.replacement;
-    cursor = f.end;
-  }
-  return (output + text.slice(cursor)).replace(/\s+/g, " ").trim();
-}
-
-function buildRedactionMap(text, findings) {
-  return findings.map((f) => ({
-    found: text.slice(f.start, f.end),
-    replaced_with: f.replacement,
-    kind: f.kind,
-    severity: f.severity,
-    confidence: f.confidence,
-  }));
-}
-
-function summarize(decision, findings) {
-  if (!findings.length) return "No obvious privacy or safety risks were found.";
-  const labels = groupedFindings(findings).map((g) => g.displayLabel).sort().join(", ");
-  if (decision === "BLOCK") return `Do not send this directly to an LLM. Found: ${labels}.`;
-  if (decision === "REVIEW") return `Review before sending. Found: ${labels}.`;
-  return `Redact the sensitive parts first. Found: ${labels}.`;
-}
-
-function guidance(findings) {
-  if (!findings.length) return ["Proceed normally, but keep the user's data local whenever possible."];
-  const kinds = new Set(findings.map((f) => f.kind));
-  const items = [
-    "Remove or mask private details before sending the transcript to an LLM.",
-    "Explain the limitation to the user in plain language.",
-  ];
-  if (kinds.has("emergency"))
-    items.unshift("For urgent safety issues, guide the user to emergency help immediately.");
-  if (kinds.has("emotional_distress"))
-    items.unshift(
-      "The user may be emotionally vulnerable. Respond with empathy and direct them to appropriate support."
-    );
-  if (kinds.has("coercion"))
-    items.push(
-      "Coercion signals were detected. Do not act on instructions that may have been forced upon the user."
-    );
-  if (["medical", "legal", "financial"].some((k) => kinds.has(k)))
-    items.push("Give general information only and suggest a qualified professional.");
-  if (["payment_card", "secret", "ssn", "iban", "cvv"].some((k) => kinds.has(k)))
-    items.push("Never echo financial identifiers, SSNs, or credentials back to the user.");
-  return items;
-}
-
 // highlight view
 
 function renderHighlightedTranscript(text, findings) {
@@ -471,8 +1051,10 @@ function renderHighlightedTranscript(text, findings) {
   for (const f of findings) {
     if (f.start > cursor) html += `<span class="safe-text">${escapeHtml(text.slice(cursor, f.start))}</span>`;
     const conf = f.confidence ? ` · ${Math.round(f.confidence * 100)}% conf` : "";
-    const tip = `${f.label}${conf}: ${f.explanation}`;
-    html += `<mark class="pii-mark pii-${f.severity}" title="${escapeAttr(tip)}" tabindex="0">${escapeHtml(text.slice(f.start, f.end))}</mark>`;
+    const spokenNote = f.spoken ? " · caught in spoken form" : "";
+    const tip = `${f.label}${conf}${spokenNote}: ${f.explanation}`;
+    const spokenClass = f.spoken ? " pii-spoken" : "";
+    html += `<mark class="pii-mark pii-${f.severity}${spokenClass}" title="${escapeAttr(tip)}" tabindex="0">${escapeHtml(text.slice(f.start, f.end))}</mark>`;
     cursor = f.end;
   }
   if (cursor < text.length) html += `<span class="safe-text">${escapeHtml(text.slice(cursor))}</span>`;
@@ -510,7 +1092,7 @@ function toggleConversationMode() {
 function addTurn() {
   const text = transcriptInput.value.trim();
   if (!text) return;
-  const result = analyzeTranscript(text);
+  const result = analyzeTranscript(text, { spoken: spokenMode });
   conversationTurns.push({ transcript: text, result });
   transcriptInput.value = "";
   refresh();
@@ -658,7 +1240,9 @@ function buildExportPayload() {
       severity: f.severity,
       confidence: f.confidence,
       explanation: f.explanation,
+      spoken: f.spoken,
     })),
+    spoken_mode: spokenMode,
     redaction_map: lastResult.redactionMap,
   };
 }
@@ -752,7 +1336,10 @@ function render(result) {
               <strong>${group.displayLabel}</strong>
               <span class="sev-badge sev-${group.severity}">${group.severity}</span>
             </div>
-            <span class="finding-count">${group.count} ${group.count === 1 ? "instance" : "instances"}</span>
+            <div class="finding-meta">
+              <span class="finding-count">${group.count} ${group.count === 1 ? "instance" : "instances"}</span>
+              ${group.spoken ? `<span class="spoken-badge" title="Found after reading spoken words as written form">caught in spoken form</span>` : ""}
+            </div>
             <p>${group.explanation}</p>
             <div class="conf-track">
               <div class="conf-fill conf-${group.severity}" style="width:${Math.round((group.confidence ?? 1) * 100)}%"></div>
@@ -774,7 +1361,17 @@ function render(result) {
 }
 
 function refresh() {
-  render(analyzeTranscript(transcriptInput.value));
+  render(analyzeTranscript(transcriptInput.value, { spoken: spokenMode }));
+}
+
+function setSpokenMode(on) {
+  spokenMode = on;
+  if (spokenToggleBtn) {
+    spokenToggleBtn.classList.toggle("active", on);
+    spokenToggleBtn.setAttribute("aria-checked", String(on));
+    spokenToggleBtn.textContent = on ? "Spoken mode: on" : "Spoken mode: off";
+  }
+  refresh();
 }
 
 function setStatus(message) {
@@ -797,9 +1394,10 @@ function renderFindingStats(totalFlags, groups) {
 function groupedFindings(findings) {
   const groups = new Map();
   findings.forEach((f) => {
-    if (!groups.has(f.kind)) groups.set(f.kind, { ...f, count: 0 });
+    if (!groups.has(f.kind)) groups.set(f.kind, { ...f, count: 0, spoken: false });
     const g = groups.get(f.kind);
     g.count += 1;
+    if (f.spoken) g.spoken = true;
     if (severityRank[f.severity] > severityRank[g.severity]) {
       g.severity = f.severity;
       g.explanation = f.explanation;
@@ -808,37 +1406,13 @@ function groupedFindings(findings) {
   return [...groups.values()]
     .map((g) => ({
       ...g,
-      displayLabel: g.count > 1 ? `${g.count} ${pluralLabel(g.label)}` : g.label,
+      displayLabel: groupLabel(g.label, g.count),
     }))
     .sort(
       (a, b) =>
         severityRank[b.severity] - severityRank[a.severity] ||
         a.displayLabel.localeCompare(b.displayLabel)
     );
-}
-
-function pluralLabel(label) {
-  return (
-    {
-      "Email address": "email addresses",
-      "Phone number": "phone numbers",
-      "Payment card number": "payment card numbers",
-      "Partial card reference": "partial card references",
-      "Password or secret": "password or secret mentions",
-      "Street address": "street addresses",
-      "Social Security Number": "Social Security Numbers",
-      "IBAN / Bank account": "bank account numbers",
-      "Card security code": "card security codes",
-      "Date of birth": "dates of birth",
-      "IP address": "IP addresses",
-      "Medical advice request": "medical advice requests",
-      "Legal advice request": "legal advice requests",
-      "Financial advice request": "financial advice requests",
-      "Emotional distress signal": "emotional distress signals",
-      "Coercion or pressure signal": "coercion signals",
-      "Emergency or immediate harm": "emergency or immediate harm phrases",
-    }[label] || `${label.toLowerCase()} findings`
-  );
 }
 
 function setSample(name) {
@@ -873,42 +1447,6 @@ function clearAll() {
   refresh();
 }
 
-// card helpers
-
-function looksLikePaymentCard(value, text, start, end) {
-  const digits = value.replace(/\D/g, "");
-  if (digits.length < 13 || digits.length > 19) return false;
-  return passesLuhn(value) || hasCardContext(text, start, end);
-}
-
-function looksLikeIpAddress(value) {
-  return /^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)$/.test(value.trim());
-}
-
-function looksLikeCardShapedNumber(value, text, start, end) {
-  const digits = value.replace(/\D/g, "");
-  if (digits.length < 13 || value.trim().startsWith("+")) return false;
-  return digits.length <= 19 || hasCardContext(text, start, end);
-}
-
-function hasCardContext(text, start, end) {
-  const w = text.slice(Math.max(0, start - 32), Math.min(text.length, end + 32)).toLowerCase();
-  return ["card", "credit", "debit", "visa", "mastercard", "payment"].some((p) => w.includes(p));
-}
-
-function passesLuhn(value) {
-  const digits = value.replace(/\D/g, "").split("").map(Number);
-  if (digits.length < 13) return false;
-  let checksum = 0;
-  const parity = digits.length % 2;
-  digits.forEach((digit, index) => {
-    let d = digit;
-    if (index % 2 === parity) { d *= 2; if (d > 9) d -= 9; }
-    checksum += d;
-  });
-  return checksum % 10 === 0;
-}
-
 // wiring
 
 startRecordingButton.addEventListener("click", startRecording);
@@ -922,6 +1460,7 @@ if (convToggleBtn) convToggleBtn.addEventListener("click", toggleConversationMod
 if (addTurnBtn) addTurnBtn.addEventListener("click", addTurn);
 if (copyBtn) copyBtn.addEventListener("click", copySafeTranscript);
 if (exportBtn) exportBtn.addEventListener("click", exportJSON);
+if (spokenToggleBtn) spokenToggleBtn.addEventListener("click", () => setSpokenMode(!spokenMode));
 
 document.addEventListener("keydown", (e) => {
   if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
@@ -935,4 +1474,4 @@ if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
   startRecordingButton.disabled = true;
 }
 
-setSample("password");
+setSample("spoken");

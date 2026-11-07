@@ -5,9 +5,15 @@ import json
 import os
 from typing import Any
 
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+try:
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+except ImportError as exc:  # pragma: no cover - exercised only without the extra
+    raise ImportError(
+        "Encrypted exports need the 'cryptography' package. "
+        'Install it with: pip install "voicesafekit[crypto]"'
+    ) from exc
 
 FORMAT = "voicesafekit.encrypted_export"
 VERSION = 1

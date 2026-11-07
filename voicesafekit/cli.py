@@ -7,12 +7,10 @@ import sys
 from pathlib import Path
 
 from voicesafekit import __version__
-from voicesafekit.encryption import (
-    MIN_PASSPHRASE_LENGTH,
-    decrypt_json_payload,
-    encrypt_json_payload,
-)
 from voicesafekit.engine import analyze_conversation, analyze_transcript
+from voicesafekit.session import PrivacySession
+
+MIN_PASSPHRASE_LENGTH = 12
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -33,7 +31,12 @@ def _parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command")
 
     check = sub.add_parser("check", help="Analyze a single transcript file.")
-    check.add_argument("transcript", help="Text file containing the voice transcript.")
+    check.add_argument("transcript", help="Transcript file, or - to read stdin.")
+    check.add_argument(
+        "--no-spoken",
+        action="store_true",
+        help="Skip spoken-form normalisation (four two four two -> 4242).",
+    )
     check.add_argument("--out", help="Optional JSON output path.")
     check.add_argument(
         "--plain-out",
@@ -75,6 +78,19 @@ def _parser() -> argparse.ArgumentParser:
     )
     conversation.set_defaults(func=_cmd_conversation)
 
+    redact = sub.add_parser(
+        "redact",
+        help="Print a redacted transcript. Reads a file or stdin; pipe-friendly.",
+    )
+    redact.add_argument("transcript", nargs="?", default="-", help="File, or - for stdin.")
+    redact.add_argument(
+        "--placeholders",
+        action="store_true",
+        help="Use numbered placeholders ([EMAIL_1]) instead of [email removed].",
+    )
+    redact.add_argument("--no-spoken", action="store_true", help="Skip spoken-form normalisation.")
+    redact.set_defaults(func=_cmd_redact)
+
     decrypt = sub.add_parser("decrypt", help="Decrypt an encrypted VoiceSafeKit JSON export.")
     decrypt.add_argument("encrypted_export", help="Encrypted VoiceSafeKit export file.")
     decrypt.add_argument("--out", help="Optional plaintext JSON output path.")
@@ -88,9 +104,15 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _read(path: str) -> str:
+    if path == "-":
+        return sys.stdin.read()
+    return Path(path).read_text(encoding="utf-8")
+
+
 def _cmd_check(args: argparse.Namespace) -> int:
-    transcript = Path(args.transcript).read_text(encoding="utf-8")
-    result = analyze_transcript(transcript)
+    transcript = _read(args.transcript)
+    result = analyze_transcript(transcript, spoken=not args.no_spoken)
     payload = result.to_dict()
     _write_or_print(payload, args)
     if args.pretty:
@@ -108,7 +130,20 @@ def _cmd_conversation(args: argparse.Namespace) -> int:
     return 1 if result.peak_decision == "BLOCK" else 0
 
 
+def _cmd_redact(args: argparse.Namespace) -> int:
+    transcript = _read(args.transcript)
+    if args.placeholders:
+        protected = PrivacySession(spoken=not args.no_spoken).protect(transcript)
+        print(protected.text.strip())
+        return 1 if protected.blocked else 0
+    result = analyze_transcript(transcript, spoken=not args.no_spoken)
+    print(result.safe_transcript)
+    return 1 if result.decision == "BLOCK" else 0
+
+
 def _cmd_decrypt(args: argparse.Namespace) -> int:
+    from voicesafekit.encryption import decrypt_json_payload
+
     encrypted = json.loads(Path(args.encrypted_export).read_text(encoding="utf-8"))
     passphrase = os.environ.get(args.passphrase_env, "")
     if not passphrase:
@@ -134,6 +169,10 @@ def _write_or_print(payload: dict, args: argparse.Namespace) -> None:
 
 
 def _encrypted_output_payload(payload: dict, args: argparse.Namespace) -> dict[str, object]:
+    try:
+        from voicesafekit.encryption import encrypt_json_payload
+    except ImportError as exc:
+        raise SystemExit(f"{exc} Or pass --plain-out for a plaintext debug export.") from exc
     passphrase_env = args.passphrase_env
     passphrase = os.environ.get(passphrase_env, "")
     if not passphrase:
@@ -160,9 +199,10 @@ def _print_pretty_single(payload: dict) -> None:
     print("\nFindings:")
     for finding in payload["findings"]:
         conf = round(finding["confidence"] * 100)
+        spoken = " [spoken]" if finding.get("spoken") else ""
         print(
             f"  - {finding['label']} ({finding['severity']}, "
-            f"{conf}% confidence): {finding['explanation']}"
+            f"{conf}% confidence){spoken}: {finding['explanation']}"
         )
 
 

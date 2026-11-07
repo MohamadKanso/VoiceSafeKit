@@ -15,6 +15,7 @@ class Finding:
     end: int
     replacement: str
     confidence: float = 1.0  # 0.0-1.0 detection confidence
+    spoken: bool = False  # True when caught only after spoken-form normalisation
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)

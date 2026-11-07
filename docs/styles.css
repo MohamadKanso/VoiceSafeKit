@@ -221,6 +221,52 @@ h2 { margin: 0; font-size: 40px; font-weight: 300; line-height: 1; }
 .conv-toggle.active { color: #020804; background: var(--green); border-color: var(--green); }
 .conv-toggle:hover:not(.active) { color: var(--green); border-color: var(--green); }
 
+/* spoken mode toggle (sits beside the transcript label) */
+
+.transcript-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: -12px;
+}
+.transcript-head .text-label { margin-bottom: 0; }
+
+.spoken-toggle {
+  padding: 5px 12px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.spoken-toggle.active { color: #020804; background: var(--green); border-color: var(--green); }
+.spoken-toggle:hover:not(.active) { color: var(--green); border-color: var(--green); }
+.spoken-toggle:focus-visible { outline: 1px solid var(--green); outline-offset: 2px; }
+
+.spoken-hint { color: var(--dim); font-size: 12px; line-height: 1.5; margin: 0 0 -8px; }
+
+/* "caught in spoken form" badge on findings */
+
+.finding-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+
+.spoken-badge {
+  color: var(--green);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border: 1px dashed var(--green);
+}
+
 /* turn history */
 
 .turn-history {
@@ -525,6 +571,7 @@ button:focus-visible, .upload-button:focus-visible { outline: 1px solid var(--gr
   color: #ff8888;
   font-weight: 600;
 }
+.pii-mark.pii-spoken { outline: 1px dashed var(--green); outline-offset: 1px; }
 
 /* protect panel */
 

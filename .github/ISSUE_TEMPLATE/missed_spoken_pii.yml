@@ -1,0 +1,28 @@
+name: Missed spoken PII
+description: Speech-to-text wrote something sensitive in a way VoiceSafeKit did not catch.
+title: "[missed] "
+labels: ["detector", "spoken-form"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        These reports are the most valuable contribution you can make. Every one becomes a
+        test case and a SpokenPII benchmark row. **Use fake data only.**
+  - type: textarea
+    id: transcript
+    attributes:
+      label: Transcript exactly as your STT wrote it
+      placeholder: "my card is four two four two, four two four two ..."
+    validations:
+      required: true
+  - type: input
+    id: stt
+    attributes:
+      label: Speech-to-text engine and model
+      placeholder: "Whisper base.en / Deepgram nova-3 / Vosk ..."
+  - type: input
+    id: expected
+    attributes:
+      label: What should have been redacted?
+    validations:
+      required: true

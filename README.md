@@ -3,202 +3,253 @@
 </p>
 
 <p align="center">
-  <a href="https://mohamadkanso.github.io/VoiceSafeKit/"><strong>Open the live app</strong></a>
+  <a href="https://github.com/MohamadKanso/VoiceSafeKit/actions/workflows/ci.yml"><img src="https://github.com/MohamadKanso/VoiceSafeKit/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <img src="https://img.shields.io/badge/dependencies-0-00ff84" alt="Zero dependencies">
+  <img src="https://img.shields.io/badge/python-3.10%E2%80%933.13-00ff84" alt="Python 3.10-3.13">
+  <img src="https://img.shields.io/badge/license-MIT-00ff84" alt="MIT">
+</p>
+
+<p align="center">
+  <a href="https://mohamadkanso.github.io/VoiceSafeKit/"><strong>Try it in your browser</strong></a>
   ·
-  <a href="https://mohamadkanso.github.io/VoiceSafeKit/paper.html"><strong>How it was built</strong></a>
+  <a href="#spokenpii-benchmark"><strong>Benchmark</strong></a>
   ·
-  <a href="https://mohamadkanso.github.io/VoiceSafeKit/progress.html"><strong>Progress</strong></a>
+  <a href="#pipecat">Pipecat</a>
+  ·
+  <a href="#livekit-agents">LiveKit</a>
   ·
   <a href="CHANGELOG.md">Changelog</a>
 </p>
 
 # VoiceSafeKit
 
-VoiceSafeKit is a privacy and safety filter for voice assistant transcripts.
+**Your voice agent is sending card numbers to the LLM, and your PII filter can't see them.**
 
-It records or accepts a voice transcript, checks the text for sensitive content
-and returns a cleaner version before that text reaches an LLM. As of 15 June 2026,
-the project includes encrypted saved exports, confidence scoring, multi-turn
-conversation analysis, seven new detectors (SSN, IBAN, CVV, date of birth, IP
-address, emotional distress and coercion signals) and a redesigned web app with
-inline transcript highlighting.
+Speech-to-text writes what people *say*, not what they *mean*:
 
-## What It Does
+```text
+my card is four two four two four two four two four two four two four two four two
+email me at alex dot rivera at gmail dot com
+call me on oh seven seven double oh nine double oh one two three
+```
 
-VoiceSafeKit returns:
+Regex filters and NER models (Presidio, most guardrail libraries) are built for written
+text, so they pass all three straight through. VoiceSafeKit reads speech the way STT
+writes it, redacts the sensitive parts, and gives the values back when the agent needs
+to say them. Zero dependencies, about 0.06 ms per utterance, and drop-in processors for
+**Pipecat** and **LiveKit Agents**.
 
-| Field | Description |
+```text
+User says    : Hi, my name is Alex Rivera. My card number is four two four two four two four two
+               four two four two four two four two and my email is alex dot rivera at gmail dot com.
+LLM receives : Hi, my name is [NAME_1]. My card number is [CARD_1] and my email is [EMAIL_1].
+TTS says     : Thanks Alex Rivera. I'll send the receipt to alex dot rivera at gmail dot com.
+```
+
+<sub>Output of `examples/pipecat/offline_demo.py`, which runs without API keys.</sub>
+
+## Install
+
+```bash
+pip install git+https://github.com/MohamadKanso/VoiceSafeKit
+# extras: [pipecat]  [livekit]  [crypto] (encrypted exports)
+```
+
+```bash
+echo "my pin is four eight two one" | voicesafekit redact
+# my pin is [PIN removed]
+```
+
+## SpokenPII benchmark
+
+No public benchmark measures PII *as speech-to-text writes it*, so this repo ships one.
+
+**SpokenPII-ASR (real speech-to-text).** Spoken scripts are read aloud by a TTS voice,
+digit by digit the way people say them, and transcribed by Whisper. A sample counts as
+protected only if the value can't be recovered from the redacted transcript.
+
+108 PII utterances + 40 no-PII utterances, macOS voice `Samantha`, transcribed by
+faster-whisper `base.en` on CPU.
+
+| Detector | PII protected (not leaked) | False alarms on no-PII |
+|---|---:|---:|
+| **VoiceSafeKit 0.5** | **94%** (101/108) | **0%** (0/40) |
+| VoiceSafeKit 0.5, spoken mode off | 88% (95/108) | 0% (0/40) |
+| Microsoft Presidio 2.2 | 73% (79/108) | 42% (17/40) |
+
+Whisper `base.en` wrote 92 of the 108 utterances fully in digits, so on this engine the
+gap comes as much from false alarms and voice-specific rules (PINs, one-time codes,
+spoken emails) as from spoken numbers. The 7 misses show how real STT breaks PII,
+and they are the next things to fix:
+digit groups split by commas (`3790, 4339, 7110, 7181`), a keyword glued to the number
+(`SSN609507896`), digits turned into decimals (`073, 49.95, 3022`) and a misheard keyword
+(`my fin is 96-28`). These numbers come from the first run; nothing was tuned on this set.
+
+**SpokenPII (synthetic).** 540 labelled sentences, the same values written two ways, plus
+40 tricky no-PII requests ("emergency fund", "call Sue", "twenty five minutes"). A span
+counts as protected only if at least 90% of it is masked.
+
+| Detector | Written PII protected | Spoken PII protected | False alarms on no-PII | Median latency |
+|---|---:|---:|---:|---:|
+| **VoiceSafeKit 0.5** | **100%** | **100%** | **0%** | **0.06 ms** |
+| VoiceSafeKit 0.5, spoken mode off | 100% | 11% | 0% | 0.04 ms |
+| Microsoft Presidio 2.2 (spaCy `en_core_web_lg`) | 86% | 21% | 45% | 3.06 ms |
+
+Spoken PII protected, by type:
+
+| Type | VoiceSafeKit | Presidio |
+|---|---:|---:|
+| Card number | 100% | 0% |
+| SSN | 100% | 3% |
+| Phone | 100% | 0% |
+| Email | 100% | 0% |
+| PIN | 100% | 13% |
+| One-time code | 100% | 3% |
+| Passport | 100% | 0% |
+| Date of birth | 100% | 77% |
+| Name | 100% | 97% |
+
+**Read these numbers honestly.** I wrote the synthetic set and the detector, so 100% there
+mostly shows the templates are covered; the ASR set is the fairer test. Presidio is a
+general-purpose tool configured with its defaults, not tuned for speech. Its false alarms
+are mostly `DATE_TIME` and `PERSON` hits on ordinary requests. Reproduce everything with
+`python benchmarks/run.py --presidio` and `python benchmarks/asr.py score --presidio`.
+Better still, add transcripts from your own STT engine.
+
+## What it catches
+
+| Category | Detectors |
 |---|---|
-| `decision` | `SAFE`, `REDACT`, `REVIEW`, or `BLOCK` |
-| `score` | 0-100 confidence-weighted risk score |
-| `summary` | Plain-English summary of what was found |
-| `findings` | Each finding with severity and detection confidence |
-| `safe_transcript` | The transcript with sensitive parts replaced |
-| `redaction_map` | Ordered list of what was found and what replaced it |
-| `assistant_guidance` | What the downstream assistant should do |
+| Spoken forms | digits as words, "oh" / "double" / "triple", "plus four four", tens and hundreds, spoken emails, spoken dates |
+| Payment | card number (Luhn + context), partial card ("ends in 4821"), CVV, PIN, IBAN (mod-97) |
+| Identity | SSN (with or without dashes), passport, UK National Insurance, date of birth, self-introduced name |
+| Contact | email, phone, street address, UK postcode, IP address |
+| Credentials | passwords and secrets in speech, one-time / verification codes, API keys (OpenAI, AWS, GitHub, Slack, Google) |
+| Safety signals | emergency, emotional distress, coercion, medical / legal / financial advice requests |
 
-Saved exports can now be encrypted on disk. Browser exports and CLI `--out`
-files use AES-256-GCM with a key made from your export passphrase. That means
-the raw values in the redaction map do not sit in a readable JSON file. TLS/HTTPS
-is still the right layer when data moves over a network.
-
-## Detectors
-
-### PII (pattern + validation)
-
-| Detector | Severity | Confidence | Notes |
-|---|---|---|---|
-| Email address | Medium | 98% | RFC-compliant pattern |
-| Phone number | Medium | 85% | International formats |
-| Payment card | High | 95% | Luhn + context check |
-| Partial card reference | Medium | 92% | "card ends in XXXX" |
-| Social Security Number | **Critical** | 95% | Range filter for invalid SSNs |
-| IBAN / Bank account | **Critical** | 88% | mod-97 checksum validation |
-| Card security code (CVV) | **Critical** | 93% | Keyword-triggered |
-| Date of birth | Medium | 80% | Natural language dates |
-| IP address | Medium | 88% | Full octet validation |
-| Street address | Medium | 80% | Street suffix patterns |
-| Password or secret | High | 88% | Spoken credential phrases |
-
-### Intent and context
-
-| Detector | Severity | Confidence | Notes |
-|---|---|---|---|
-| Medical advice request | High | 75% | Clinical keywords |
-| Legal advice request | High | 75% | Legal topic keywords |
-| Financial advice request | High | 75% | Financial action keywords |
-| Emotional distress signal | High | 70% | Hopelessness and self-worth language |
-| Coercion or pressure signal | High | 65% | Language suggesting the user is being forced |
-| Emergency or immediate harm | **Critical** | 90% | Immediate crisis language |
-
-## Quick Start
-
-```bash
-git clone https://github.com/MohamadKanso/VoiceSafeKit
-cd VoiceSafeKit
-python3 -m pip install -e ".[dev]"
-```
-
-Check a single transcript:
-
-```bash
-python3 -m voicesafekit check examples/transcripts/password_reset.txt --pretty
-python3 -m voicesafekit check examples/transcripts/identity_theft.txt --pretty
-```
-
-Write an encrypted result file:
-
-```bash
-export VOICESAFEKIT_EXPORT_KEY="use-a-long-local-passphrase"
-python3 -m voicesafekit check examples/transcripts/identity_theft.txt \
-  --out result.encrypted.json
-```
-
-Decrypt an encrypted result when you intentionally need to inspect it:
-
-```bash
-python3 -m voicesafekit decrypt result.encrypted.json --out result.json
-```
-
-Plaintext JSON output is still available for local debugging:
-
-```bash
-python3 -m voicesafekit check examples/transcripts/password_reset.txt \
-  --out result.json --plain-out
-```
-
-Analyze a multi-turn conversation:
-
-```bash
-python3 -m voicesafekit conversation \
-  examples/transcripts/safe_reminder.txt \
-  examples/transcripts/identity_theft.txt \
-  --pretty
-```
+Every result has a `decision` (`SAFE`, `REDACT`, `REVIEW`, `BLOCK`), a 0-100 `score`,
+per-finding `confidence` and `spoken` flags, a `safe_transcript`, a `redaction_map` and
+plain-English `assistant_guidance`.
 
 ## Python API
 
 ```python
-from voicesafekit import analyze_transcript, analyze_conversation
+from voicesafekit import analyze_transcript
 
-# Single transcript
-result = analyze_transcript("My SSN is 471-55-8843 and my password is hunter2.")
-print(result.decision)          # BLOCK
-print(result.score)             # 100
-print(result.safe_transcript)   # "My [SSN removed] and my [secret removed]."
-print(result.redaction_map)     # (("471-55-8843", "[SSN removed]"), ...)
-
-# Per-finding confidence
-for finding in result.findings:
-    print(f"{finding.label}: {finding.severity} ({finding.confidence:.0%} confidence)")
-
-# Multi-turn conversation
-conv = analyze_conversation([
-    "Set a timer for ten minutes.",
-    "My bank IBAN is GB29NWBK60161331926819.",
-    "Thank you.",
-])
-print(conv.peak_decision)   # BLOCK
-print(conv.seen_kinds)      # ('iban',)
-print(len(conv.turns))      # 3
+result = analyze_transcript("my social is four seven one, five five, eight eight four three")
+result.decision            # "BLOCK"
+result.safe_transcript     # "my social is [SSN removed]"
+result.findings[0].spoken  # True
 ```
 
-## OpenVoiceOS Integration
+### Reversible placeholders
+
+Plain redaction breaks agents that need to say "I've sent it to your email". A
+`PrivacySession` swaps values for placeholders, keeps the map in memory, and restores
+them in the reply, including streamed tokens:
+
+```python
+from voicesafekit import PrivacySession
+
+session = PrivacySession()
+safe = session.protect("email me at alex dot rivera at gmail dot com")
+safe.text                       # "email me at [EMAIL_1]"
+reply = llm(safe.text)          # "Done, I've emailed [EMAIL_1]."
+session.restore(reply)          # "Done, I've emailed alex dot rivera at gmail dot com."
+
+stream = session.stream()       # for token streams: "[EMA" + "IL_1]" restores correctly
+```
+
+The same value gets the same placeholder for the whole conversation, whether it was
+spoken or written. **Passwords, PINs, CVVs, one-time codes and API keys are never stored,**
+so the model can't make the voice read them back.
+
+## Pipecat
+
+```python
+from voicesafekit.integrations.pipecat import voicesafe_processors
+
+guard_in, restore_out, guard_context = voicesafe_processors()
+
+pipeline = Pipeline([
+    transport.input(), stt,
+    guard_in,             # spoken PII -> [CARD_1], [EMAIL_1] before the LLM
+    user_aggregator, llm,
+    restore_out,          # real values back for the voice only
+    tts, transport.output(),
+    guard_context,        # stored assistant replies keep the placeholders
+    assistant_aggregator,
+])
+
+@guard_in.event_handler("on_block")
+async def on_block(processor, protected):
+    ...  # emergencies, government IDs, CVVs: never forwarded, refusal is spoken
+```
+
+## LiveKit Agents
+
+```python
+from voicesafekit.integrations.livekit import VoiceSafeAgent
+
+class Assistant(VoiceSafeAgent):          # instead of Agent
+    def __init__(self):
+        super().__init__(instructions="You are a helpful voice assistant.")
+```
+
+`VoiceSafeAgent` protects each user turn in `on_user_turn_completed`, restores values in
+`tts_node`, and stops blocked turns. `VoiceSafeRedactor().redact(text)` is a stateless,
+idempotent redactor for transcript and log hooks. Full example: `examples/livekit/agent.py`.
+
+## OpenVoiceOS
 
 ```python
 from voicesafekit.integrations.openvoiceos import protect_utterance
 
-result = protect_utterance("My email is alex@example.com and my password is hunter2.")
+result = protect_utterance(utterance)
 if result.should_continue:
     send_to_llm(result.safe_transcript)
-if result.should_review:
-    log_for_audit(result.finding_details)
 ```
 
-## Web App
-
-The live app runs entirely in the browser. No server, no API key, no data sent anywhere.
-
-**New in v0.4.0:**
-- **Encrypted JSON export**: download the full result as an AES-256-GCM encrypted file.
-- **Encrypted CLI output**: `--out` writes encrypted files by default when `VOICESAFEKIT_EXPORT_KEY` is set.
-- **Decrypt command**: `voicesafekit decrypt` restores an encrypted export when needed.
-
-**Added in v0.2.0:**
-- **Conversation mode**: chain multiple turns and see cumulative risk plus peak decision.
-- **Inspect tab**: see which parts of the original text were flagged.
-- **Confidence bars**: each finding card shows detection confidence.
-- **Copy safe transcript**: one click, or Cmd+Enter.
+## CLI
 
 ```bash
-# Run locally
-python3 -m http.server 8124 --directory docs
-# Open http://127.0.0.1:8124
+voicesafekit check examples/transcripts/identity_theft.txt --pretty
+voicesafekit redact --placeholders < transcript.txt
+voicesafekit conversation turn1.txt turn2.txt --pretty
+voicesafekit check transcript.txt --out result.enc.json   # AES-256-GCM, needs [crypto]
 ```
 
-## Run The Tests
+## Browser app
+
+The [live app](https://mohamadkanso.github.io/VoiceSafeKit/) records your voice,
+transcribes it with Whisper on your device and runs the same rules in the browser. No
+server and no API key, and nothing leaves the page. Say a card number out loud and watch
+it disappear.
 
 ```bash
-python3 -m pytest
-python3 -m ruff check voicesafekit tests
+python3 -m http.server 8124 --directory docs   # run it locally
 ```
 
-## Design Principles
+## Design principles
 
-- **Client-side first.** The browser app does not send audio or transcripts to any server.
-- **Encrypted saves.** Saved analysis files are encrypted with AES-256-GCM. TLS/HTTPS covers transport, not local storage.
-- **Confidence over silence.** Every finding exposes a confidence score. Uncertain detections are not hidden.
-- **Auditable.** The redaction map shows exactly what was removed and what replaced it.
-- **Not a replacement for security reviews.** This is a practical first layer, not a complete privacy solution.
+- **Speech first.** Rules run on what STT actually produces, not on tidy written text.
+- **Local and tiny.** Pure Python, no dependencies, no network, no model download.
+- **Auditable.** Every finding has a confidence score and maps to exact spans.
+- **Fail toward privacy.** Credentials are never stored, blocked turns never reach the model.
+- **Honest scope.** It is a fast first layer, not a full privacy programme or a
+  compliance certification. Pair it with your own review for PCI DSS, HIPAA or GDPR work.
 
-## Ethical Position
+## Contributing
 
-VoiceSafeKit is intentionally transparent. It does not claim to solve every voice
-AI safety problem. It is a starting point that developers can understand, copy
-and improve.
+The most valuable contribution is a transcript your STT engine produced that VoiceSafeKit
+missed (fake data only). Use the
+[Missed spoken PII](https://github.com/MohamadKanso/VoiceSafeKit/issues/new?template=missed_spoken_pii.yml)
+template. See [CONTRIBUTING.md](CONTRIBUTING.md) and the [roadmap](ROADMAP.md).
 
-It should not be used as a replacement for medical advice, legal advice, financial advice, emergency services, or a full security review.
+```bash
+pip install -e ".[dev]" && pytest && python benchmarks/run.py
+```
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE). Not legal, medical or security advice.

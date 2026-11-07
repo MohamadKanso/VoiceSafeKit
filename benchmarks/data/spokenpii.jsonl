@@ -1,0 +1,580 @@
+{"form": "written", "text": "Charge it to my visa, 6011 7029 4331 8415.", "entities": [{"type": "card", "start": 22, "end": 41}], "id": "sp-0000"}
+{"form": "written", "text": "The long number on my card is 6011 1425 2834 2698.", "entities": [{"type": "card", "start": 30, "end": 49}], "id": "sp-0001"}
+{"form": "written", "text": "The long number on my card is 5130 9680 7829 2281 please.", "entities": [{"type": "card", "start": 30, "end": 49}], "id": "sp-0002"}
+{"form": "written", "text": "Charge it to my visa, 6011 9817 9632 1979.", "entities": [{"type": "card", "start": 22, "end": 41}], "id": "sp-0003"}
+{"form": "written", "text": "Charge it to my visa, 4455 5970 4540 0337", "entities": [{"type": "card", "start": 22, "end": 41}], "id": "sp-0004"}
+{"form": "written", "text": "The long number on my card is 5176 2437 0109 4545 please.", "entities": [{"type": "card", "start": 30, "end": 49}], "id": "sp-0005"}
+{"form": "written", "text": "The long number on my card is 6011 5399 1036 9595", "entities": [{"type": "card", "start": 30, "end": 49}], "id": "sp-0006"}
+{"form": "written", "text": "The long number on my card is 3789 0459 9067 4992.", "entities": [{"type": "card", "start": 30, "end": 49}], "id": "sp-0007"}
+{"form": "written", "text": "Use card 4382 9816 9744 3142", "entities": [{"type": "card", "start": 9, "end": 28}], "id": "sp-0008"}
+{"form": "written", "text": "The long number on my card is 4963 8325 5724 8351", "entities": [{"type": "card", "start": 30, "end": 49}], "id": "sp-0009"}
+{"form": "written", "text": "My debit card number is 4962 4386 1666 8638 please.", "entities": [{"type": "card", "start": 24, "end": 43}], "id": "sp-0010"}
+{"form": "written", "text": "The long number on my card is 3752 1555 6731 4261", "entities": [{"type": "card", "start": 30, "end": 49}], "id": "sp-0011"}
+{"form": "written", "text": "My debit card number is 6011 0059 4023 3748 please.", "entities": [{"type": "card", "start": 24, "end": 43}], "id": "sp-0012"}
+{"form": "written", "text": "Use card 3751 7942 3316 3016 please.", "entities": [{"type": "card", "start": 9, "end": 28}], "id": "sp-0013"}
+{"form": "written", "text": "The long number on my card is 4111 7198 9411 8226.", "entities": [{"type": "card", "start": 30, "end": 49}], "id": "sp-0014"}
+{"form": "written", "text": "Use card 6011 0851 8298 7086 please.", "entities": [{"type": "card", "start": 9, "end": 28}], "id": "sp-0015"}
+{"form": "written", "text": "Charge it to my visa, 5167 8659 8013 5739 please.", "entities": [{"type": "card", "start": 22, "end": 41}], "id": "sp-0016"}
+{"form": "written", "text": "Charge it to my visa, 4000 7966 5663 1186.", "entities": [{"type": "card", "start": 22, "end": 41}], "id": "sp-0017"}
+{"form": "written", "text": "Use card 6011 4654 9142 4049.", "entities": [{"type": "card", "start": 9, "end": 28}], "id": "sp-0018"}
+{"form": "written", "text": "Charge it to my visa, 3790 5743 7233 2371.", "entities": [{"type": "card", "start": 22, "end": 41}], "id": "sp-0019"}
+{"form": "written", "text": "Use card 4943 3328 8909 5773 please.", "entities": [{"type": "card", "start": 9, "end": 28}], "id": "sp-0020"}
+{"form": "written", "text": "Charge it to my visa, 6011 8608 3596 7580 please.", "entities": [{"type": "card", "start": 22, "end": 41}], "id": "sp-0021"}
+{"form": "written", "text": "The long number on my card is 5166 9086 3480 7047.", "entities": [{"type": "card", "start": 30, "end": 49}], "id": "sp-0022"}
+{"form": "written", "text": "My debit card number is 5130 1814 3991 6396 please.", "entities": [{"type": "card", "start": 24, "end": 43}], "id": "sp-0023"}
+{"form": "written", "text": "The long number on my card is 6011 0177 1469 7933 please.", "entities": [{"type": "card", "start": 30, "end": 49}], "id": "sp-0024"}
+{"form": "written", "text": "The long number on my card is 3700 0805 6196 3942.", "entities": [{"type": "card", "start": 30, "end": 49}], "id": "sp-0025"}
+{"form": "written", "text": "Use card 5162 5682 2707 3425", "entities": [{"type": "card", "start": 9, "end": 28}], "id": "sp-0026"}
+{"form": "written", "text": "Use card 4693 5458 0378 6902 please.", "entities": [{"type": "card", "start": 9, "end": 28}], "id": "sp-0027"}
+{"form": "written", "text": "Use card 6011 4938 9782 5312", "entities": [{"type": "card", "start": 9, "end": 28}], "id": "sp-0028"}
+{"form": "written", "text": "Use card 5157 3024 4294 2181", "entities": [{"type": "card", "start": 9, "end": 28}], "id": "sp-0029"}
+{"form": "written", "text": "SSN 220-41-2975.", "entities": [{"type": "ssn", "start": 4, "end": 15}], "id": "sp-0030"}
+{"form": "written", "text": "My social security number is 296-83-5985.", "entities": [{"type": "ssn", "start": 29, "end": 40}], "id": "sp-0031"}
+{"form": "written", "text": "My social security number is 345-73-4000.", "entities": [{"type": "ssn", "start": 29, "end": 40}], "id": "sp-0032"}
+{"form": "written", "text": "For verification my social security is 651-22-2043.", "entities": [{"type": "ssn", "start": 39, "end": 50}], "id": "sp-0033"}
+{"form": "written", "text": "My social security number is 107-79-3090.", "entities": [{"type": "ssn", "start": 29, "end": 40}], "id": "sp-0034"}
+{"form": "written", "text": "SSN 601-51-2945.", "entities": [{"type": "ssn", "start": 4, "end": 15}], "id": "sp-0035"}
+{"form": "written", "text": "For verification my social security is 422-78-9368.", "entities": [{"type": "ssn", "start": 39, "end": 50}], "id": "sp-0036"}
+{"form": "written", "text": "For verification my social security is 435-11-7966.", "entities": [{"type": "ssn", "start": 39, "end": 50}], "id": "sp-0037"}
+{"form": "written", "text": "SSN 407-61-1927.", "entities": [{"type": "ssn", "start": 4, "end": 15}], "id": "sp-0038"}
+{"form": "written", "text": "My social security number is 445-20-3022.", "entities": [{"type": "ssn", "start": 29, "end": 40}], "id": "sp-0039"}
+{"form": "written", "text": "My social security number is 488-86-7956.", "entities": [{"type": "ssn", "start": 29, "end": 40}], "id": "sp-0040"}
+{"form": "written", "text": "For verification my social security is 127-51-3098.", "entities": [{"type": "ssn", "start": 39, "end": 50}], "id": "sp-0041"}
+{"form": "written", "text": "My social security number is 394-54-4669.", "entities": [{"type": "ssn", "start": 29, "end": 40}], "id": "sp-0042"}
+{"form": "written", "text": "For verification my social security is 253-70-5849.", "entities": [{"type": "ssn", "start": 39, "end": 50}], "id": "sp-0043"}
+{"form": "written", "text": "For verification my social security is 528-90-9279.", "entities": [{"type": "ssn", "start": 39, "end": 50}], "id": "sp-0044"}
+{"form": "written", "text": "My social is 517-82-9130.", "entities": [{"type": "ssn", "start": 13, "end": 24}], "id": "sp-0045"}
+{"form": "written", "text": "SSN 382-30-9806.", "entities": [{"type": "ssn", "start": 4, "end": 15}], "id": "sp-0046"}
+{"form": "written", "text": "My social is 354-38-5082.", "entities": [{"type": "ssn", "start": 13, "end": 24}], "id": "sp-0047"}
+{"form": "written", "text": "SSN 461-53-2659.", "entities": [{"type": "ssn", "start": 4, "end": 15}], "id": "sp-0048"}
+{"form": "written", "text": "My social is 409-84-1849.", "entities": [{"type": "ssn", "start": 13, "end": 24}], "id": "sp-0049"}
+{"form": "written", "text": "My social is 654-67-9301.", "entities": [{"type": "ssn", "start": 13, "end": 24}], "id": "sp-0050"}
+{"form": "written", "text": "SSN 173-31-4291.", "entities": [{"type": "ssn", "start": 4, "end": 15}], "id": "sp-0051"}
+{"form": "written", "text": "For verification my social security is 547-75-2673.", "entities": [{"type": "ssn", "start": 39, "end": 50}], "id": "sp-0052"}
+{"form": "written", "text": "SSN 169-79-3251.", "entities": [{"type": "ssn", "start": 4, "end": 15}], "id": "sp-0053"}
+{"form": "written", "text": "SSN 370-87-5522.", "entities": [{"type": "ssn", "start": 4, "end": 15}], "id": "sp-0054"}
+{"form": "written", "text": "SSN 319-96-1465.", "entities": [{"type": "ssn", "start": 4, "end": 15}], "id": "sp-0055"}
+{"form": "written", "text": "SSN 114-76-8422.", "entities": [{"type": "ssn", "start": 4, "end": 15}], "id": "sp-0056"}
+{"form": "written", "text": "My social security number is 237-26-5915.", "entities": [{"type": "ssn", "start": 29, "end": 40}], "id": "sp-0057"}
+{"form": "written", "text": "For verification my social security is 400-52-9791.", "entities": [{"type": "ssn", "start": 39, "end": 50}], "id": "sp-0058"}
+{"form": "written", "text": "For verification my social security is 337-15-9603.", "entities": [{"type": "ssn", "start": 39, "end": 50}], "id": "sp-0059"}
+{"form": "written", "text": "My number is 07574 445548 anytime.", "entities": [{"type": "phone", "start": 13, "end": 25}], "id": "sp-0060"}
+{"form": "written", "text": "My mobile is 07784 256695.", "entities": [{"type": "phone", "start": 13, "end": 25}], "id": "sp-0061"}
+{"form": "written", "text": "My mobile is 07912 416262.", "entities": [{"type": "phone", "start": 13, "end": 25}], "id": "sp-0062"}
+{"form": "written", "text": "You can text me at 07270 582557 anytime.", "entities": [{"type": "phone", "start": 19, "end": 31}], "id": "sp-0063"}
+{"form": "written", "text": "My mobile is (697) 246-2486.", "entities": [{"type": "phone", "start": 13, "end": 27}], "id": "sp-0064"}
+{"form": "written", "text": "You can text me at (934) 446-3270 anytime.", "entities": [{"type": "phone", "start": 19, "end": 33}], "id": "sp-0065"}
+{"form": "written", "text": "My number is (572) 373-3599.", "entities": [{"type": "phone", "start": 13, "end": 27}], "id": "sp-0066"}
+{"form": "written", "text": "You can text me at 07240 679295 anytime.", "entities": [{"type": "phone", "start": 19, "end": 31}], "id": "sp-0067"}
+{"form": "written", "text": "You can text me at (210) 900-3178.", "entities": [{"type": "phone", "start": 19, "end": 33}], "id": "sp-0068"}
+{"form": "written", "text": "You can text me at 07757 389517.", "entities": [{"type": "phone", "start": 19, "end": 31}], "id": "sp-0069"}
+{"form": "written", "text": "You can text me at (866) 316-3580.", "entities": [{"type": "phone", "start": 19, "end": 33}], "id": "sp-0070"}
+{"form": "written", "text": "Call me back on 07968 979516 anytime.", "entities": [{"type": "phone", "start": 16, "end": 28}], "id": "sp-0071"}
+{"form": "written", "text": "Call me back on (734) 970-2013.", "entities": [{"type": "phone", "start": 16, "end": 30}], "id": "sp-0072"}
+{"form": "written", "text": "You can text me at 07280 908618.", "entities": [{"type": "phone", "start": 19, "end": 31}], "id": "sp-0073"}
+{"form": "written", "text": "My number is 07125 270070 anytime.", "entities": [{"type": "phone", "start": 13, "end": 25}], "id": "sp-0074"}
+{"form": "written", "text": "My mobile is (582) 592-5793.", "entities": [{"type": "phone", "start": 13, "end": 27}], "id": "sp-0075"}
+{"form": "written", "text": "My number is 07428 007813 anytime.", "entities": [{"type": "phone", "start": 13, "end": 25}], "id": "sp-0076"}
+{"form": "written", "text": "My mobile is 07250 435210.", "entities": [{"type": "phone", "start": 13, "end": 25}], "id": "sp-0077"}
+{"form": "written", "text": "My number is (588) 629-5670.", "entities": [{"type": "phone", "start": 13, "end": 27}], "id": "sp-0078"}
+{"form": "written", "text": "Call me back on (515) 626-7144 anytime.", "entities": [{"type": "phone", "start": 16, "end": 30}], "id": "sp-0079"}
+{"form": "written", "text": "My mobile is 07130 081237.", "entities": [{"type": "phone", "start": 13, "end": 25}], "id": "sp-0080"}
+{"form": "written", "text": "My number is (904) 248-1174 anytime.", "entities": [{"type": "phone", "start": 13, "end": 27}], "id": "sp-0081"}
+{"form": "written", "text": "Call me back on 07071 606988.", "entities": [{"type": "phone", "start": 16, "end": 28}], "id": "sp-0082"}
+{"form": "written", "text": "My mobile is (724) 951-6937 anytime.", "entities": [{"type": "phone", "start": 13, "end": 27}], "id": "sp-0083"}
+{"form": "written", "text": "You can text me at 07165 619816.", "entities": [{"type": "phone", "start": 19, "end": 31}], "id": "sp-0084"}
+{"form": "written", "text": "Call me back on (683) 864-8451.", "entities": [{"type": "phone", "start": 16, "end": 30}], "id": "sp-0085"}
+{"form": "written", "text": "You can text me at 07515 515849.", "entities": [{"type": "phone", "start": 19, "end": 31}], "id": "sp-0086"}
+{"form": "written", "text": "My number is (499) 314-2390.", "entities": [{"type": "phone", "start": 13, "end": 27}], "id": "sp-0087"}
+{"form": "written", "text": "You can text me at 07857 100126 anytime.", "entities": [{"type": "phone", "start": 19, "end": 31}], "id": "sp-0088"}
+{"form": "written", "text": "My number is 07832 706989 anytime.", "entities": [{"type": "phone", "start": 13, "end": 25}], "id": "sp-0089"}
+{"form": "written", "text": "Reply to grace.khan@company.io.", "entities": [{"type": "email", "start": 9, "end": 30}], "id": "sp-0090"}
+{"form": "written", "text": "My email is priya.hughes@icloud.com.", "entities": [{"type": "email", "start": 12, "end": 35}], "id": "sp-0091"}
+{"form": "written", "text": "Reply to tomhughes@gmail.com.", "entities": [{"type": "email", "start": 9, "end": 28}], "id": "sp-0092"}
+{"form": "written", "text": "Reply to sarakhan@yahoo.co.uk.", "entities": [{"type": "email", "start": 9, "end": 29}], "id": "sp-0093"}
+{"form": "written", "text": "Reply to omar_khan@yahoo.co.uk.", "entities": [{"type": "email", "start": 9, "end": 30}], "id": "sp-0094"}
+{"form": "written", "text": "My email is meiwalker@outlook.com.", "entities": [{"type": "email", "start": 12, "end": 33}], "id": "sp-0095"}
+{"form": "written", "text": "Send it to alex.patel@proton.me.", "entities": [{"type": "email", "start": 11, "end": 31}], "id": "sp-0096"}
+{"form": "written", "text": "Use the address priya_okafor@gmail.com.", "entities": [{"type": "email", "start": 16, "end": 38}], "id": "sp-0097"}
+{"form": "written", "text": "Reply to tom_khan@proton.me.", "entities": [{"type": "email", "start": 9, "end": 27}], "id": "sp-0098"}
+{"form": "written", "text": "Use the address omar.nguyen@yahoo.co.uk.", "entities": [{"type": "email", "start": 16, "end": 39}], "id": "sp-0099"}
+{"form": "written", "text": "Use the address alexrivera@icloud.com.", "entities": [{"type": "email", "start": 16, "end": 37}], "id": "sp-0100"}
+{"form": "written", "text": "Use the address sarawalker@yahoo.co.uk.", "entities": [{"type": "email", "start": 16, "end": 38}], "id": "sp-0101"}
+{"form": "written", "text": "Send it to gracehughes@company.io.", "entities": [{"type": "email", "start": 11, "end": 33}], "id": "sp-0102"}
+{"form": "written", "text": "My email is sararivera@gmail.com.", "entities": [{"type": "email", "start": 12, "end": 32}], "id": "sp-0103"}
+{"form": "written", "text": "Use the address priyabrennan@company.io.", "entities": [{"type": "email", "start": 16, "end": 39}], "id": "sp-0104"}
+{"form": "written", "text": "My email is priya_patel@outlook.com.", "entities": [{"type": "email", "start": 12, "end": 35}], "id": "sp-0105"}
+{"form": "written", "text": "My email is priya_rivera@gmail.com.", "entities": [{"type": "email", "start": 12, "end": 34}], "id": "sp-0106"}
+{"form": "written", "text": "Send it to danielrivera@proton.me.", "entities": [{"type": "email", "start": 11, "end": 33}], "id": "sp-0107"}
+{"form": "written", "text": "My email is omarrivera@icloud.com.", "entities": [{"type": "email", "start": 12, "end": 33}], "id": "sp-0108"}
+{"form": "written", "text": "Reply to fatima_walker@gmail.com.", "entities": [{"type": "email", "start": 9, "end": 32}], "id": "sp-0109"}
+{"form": "written", "text": "My email is meihughes@company.io.", "entities": [{"type": "email", "start": 12, "end": 32}], "id": "sp-0110"}
+{"form": "written", "text": "Reply to tom_brennan@company.io.", "entities": [{"type": "email", "start": 9, "end": 31}], "id": "sp-0111"}
+{"form": "written", "text": "Send it to sara.khan@icloud.com.", "entities": [{"type": "email", "start": 11, "end": 31}], "id": "sp-0112"}
+{"form": "written", "text": "Send it to sara.okafor@icloud.com.", "entities": [{"type": "email", "start": 11, "end": 33}], "id": "sp-0113"}
+{"form": "written", "text": "Reply to meirivera@yahoo.co.uk.", "entities": [{"type": "email", "start": 9, "end": 30}], "id": "sp-0114"}
+{"form": "written", "text": "Use the address alex_brennan@proton.me.", "entities": [{"type": "email", "start": 16, "end": 38}], "id": "sp-0115"}
+{"form": "written", "text": "Send it to omar_hughes@company.io.", "entities": [{"type": "email", "start": 11, "end": 33}], "id": "sp-0116"}
+{"form": "written", "text": "Reply to mei.nguyen@icloud.com.", "entities": [{"type": "email", "start": 9, "end": 30}], "id": "sp-0117"}
+{"form": "written", "text": "Use the address danielkhan@yahoo.co.uk.", "entities": [{"type": "email", "start": 16, "end": 38}], "id": "sp-0118"}
+{"form": "written", "text": "Reply to alexokafor@icloud.com.", "entities": [{"type": "email", "start": 9, "end": 30}], "id": "sp-0119"}
+{"form": "written", "text": "My card pin is 0090.", "entities": [{"type": "pin", "start": 15, "end": 19}], "id": "sp-0120"}
+{"form": "written", "text": "My pin is 9623.", "entities": [{"type": "pin", "start": 10, "end": 14}], "id": "sp-0121"}
+{"form": "written", "text": "My pin is 5229.", "entities": [{"type": "pin", "start": 10, "end": 14}], "id": "sp-0122"}
+{"form": "written", "text": "My pin is 1344.", "entities": [{"type": "pin", "start": 10, "end": 14}], "id": "sp-0123"}
+{"form": "written", "text": "My pin is 9096.", "entities": [{"type": "pin", "start": 10, "end": 14}], "id": "sp-0124"}
+{"form": "written", "text": "The PIN number is 0531.", "entities": [{"type": "pin", "start": 18, "end": 22}], "id": "sp-0125"}
+{"form": "written", "text": "My pin is 6271.", "entities": [{"type": "pin", "start": 10, "end": 14}], "id": "sp-0126"}
+{"form": "written", "text": "My pin is 4929.", "entities": [{"type": "pin", "start": 10, "end": 14}], "id": "sp-0127"}
+{"form": "written", "text": "My card pin is 2532.", "entities": [{"type": "pin", "start": 15, "end": 19}], "id": "sp-0128"}
+{"form": "written", "text": "The PIN number is 8349.", "entities": [{"type": "pin", "start": 18, "end": 22}], "id": "sp-0129"}
+{"form": "written", "text": "My pin is 2596.", "entities": [{"type": "pin", "start": 10, "end": 14}], "id": "sp-0130"}
+{"form": "written", "text": "The PIN number is 7086.", "entities": [{"type": "pin", "start": 18, "end": 22}], "id": "sp-0131"}
+{"form": "written", "text": "My card pin is 1999.", "entities": [{"type": "pin", "start": 15, "end": 19}], "id": "sp-0132"}
+{"form": "written", "text": "My card pin is 5300.", "entities": [{"type": "pin", "start": 15, "end": 19}], "id": "sp-0133"}
+{"form": "written", "text": "My pin is 4421.", "entities": [{"type": "pin", "start": 10, "end": 14}], "id": "sp-0134"}
+{"form": "written", "text": "My pin is 1320.", "entities": [{"type": "pin", "start": 10, "end": 14}], "id": "sp-0135"}
+{"form": "written", "text": "My pin is 3171.", "entities": [{"type": "pin", "start": 10, "end": 14}], "id": "sp-0136"}
+{"form": "written", "text": "The PIN number is 9838.", "entities": [{"type": "pin", "start": 18, "end": 22}], "id": "sp-0137"}
+{"form": "written", "text": "My pin is 8378.", "entities": [{"type": "pin", "start": 10, "end": 14}], "id": "sp-0138"}
+{"form": "written", "text": "My pin is 9349.", "entities": [{"type": "pin", "start": 10, "end": 14}], "id": "sp-0139"}
+{"form": "written", "text": "My pin is 9603.", "entities": [{"type": "pin", "start": 10, "end": 14}], "id": "sp-0140"}
+{"form": "written", "text": "My card pin is 6719.", "entities": [{"type": "pin", "start": 15, "end": 19}], "id": "sp-0141"}
+{"form": "written", "text": "My card pin is 0959.", "entities": [{"type": "pin", "start": 15, "end": 19}], "id": "sp-0142"}
+{"form": "written", "text": "The PIN number is 0008.", "entities": [{"type": "pin", "start": 18, "end": 22}], "id": "sp-0143"}
+{"form": "written", "text": "My card pin is 0973.", "entities": [{"type": "pin", "start": 15, "end": 19}], "id": "sp-0144"}
+{"form": "written", "text": "The PIN number is 6167.", "entities": [{"type": "pin", "start": 18, "end": 22}], "id": "sp-0145"}
+{"form": "written", "text": "The PIN number is 6625.", "entities": [{"type": "pin", "start": 18, "end": 22}], "id": "sp-0146"}
+{"form": "written", "text": "The PIN number is 3904.", "entities": [{"type": "pin", "start": 18, "end": 22}], "id": "sp-0147"}
+{"form": "written", "text": "My pin is 6303.", "entities": [{"type": "pin", "start": 10, "end": 14}], "id": "sp-0148"}
+{"form": "written", "text": "My pin is 7224.", "entities": [{"type": "pin", "start": 10, "end": 14}], "id": "sp-0149"}
+{"form": "written", "text": "The code they texted me is 421531.", "entities": [{"type": "otp", "start": 27, "end": 33}], "id": "sp-0150"}
+{"form": "written", "text": "The verification code is 960968.", "entities": [{"type": "otp", "start": 25, "end": 31}], "id": "sp-0151"}
+{"form": "written", "text": "The verification code is 971350.", "entities": [{"type": "otp", "start": 25, "end": 31}], "id": "sp-0152"}
+{"form": "written", "text": "The code they texted me is 595918.", "entities": [{"type": "otp", "start": 27, "end": 33}], "id": "sp-0153"}
+{"form": "written", "text": "The verification code is 539583.", "entities": [{"type": "otp", "start": 25, "end": 31}], "id": "sp-0154"}
+{"form": "written", "text": "The verification code is 490704.", "entities": [{"type": "otp", "start": 25, "end": 31}], "id": "sp-0155"}
+{"form": "written", "text": "My one-time code is 069359.", "entities": [{"type": "otp", "start": 20, "end": 26}], "id": "sp-0156"}
+{"form": "written", "text": "The verification code is 515987.", "entities": [{"type": "otp", "start": 25, "end": 31}], "id": "sp-0157"}
+{"form": "written", "text": "The verification code is 340372.", "entities": [{"type": "otp", "start": 25, "end": 31}], "id": "sp-0158"}
+{"form": "written", "text": "The verification code is 390212.", "entities": [{"type": "otp", "start": 25, "end": 31}], "id": "sp-0159"}
+{"form": "written", "text": "The login code is 788779.", "entities": [{"type": "otp", "start": 18, "end": 24}], "id": "sp-0160"}
+{"form": "written", "text": "My one-time code is 439988.", "entities": [{"type": "otp", "start": 20, "end": 26}], "id": "sp-0161"}
+{"form": "written", "text": "The login code is 818400.", "entities": [{"type": "otp", "start": 18, "end": 24}], "id": "sp-0162"}
+{"form": "written", "text": "The verification code is 885385.", "entities": [{"type": "otp", "start": 25, "end": 31}], "id": "sp-0163"}
+{"form": "written", "text": "The verification code is 691119.", "entities": [{"type": "otp", "start": 25, "end": 31}], "id": "sp-0164"}
+{"form": "written", "text": "The code they texted me is 230734.", "entities": [{"type": "otp", "start": 27, "end": 33}], "id": "sp-0165"}
+{"form": "written", "text": "My one-time code is 713868.", "entities": [{"type": "otp", "start": 20, "end": 26}], "id": "sp-0166"}
+{"form": "written", "text": "The verification code is 834594.", "entities": [{"type": "otp", "start": 25, "end": 31}], "id": "sp-0167"}
+{"form": "written", "text": "The login code is 907747.", "entities": [{"type": "otp", "start": 18, "end": 24}], "id": "sp-0168"}
+{"form": "written", "text": "My one-time code is 112967.", "entities": [{"type": "otp", "start": 20, "end": 26}], "id": "sp-0169"}
+{"form": "written", "text": "My one-time code is 295621.", "entities": [{"type": "otp", "start": 20, "end": 26}], "id": "sp-0170"}
+{"form": "written", "text": "The verification code is 154830.", "entities": [{"type": "otp", "start": 25, "end": 31}], "id": "sp-0171"}
+{"form": "written", "text": "My one-time code is 452874.", "entities": [{"type": "otp", "start": 20, "end": 26}], "id": "sp-0172"}
+{"form": "written", "text": "The code they texted me is 315762.", "entities": [{"type": "otp", "start": 27, "end": 33}], "id": "sp-0173"}
+{"form": "written", "text": "The login code is 054369.", "entities": [{"type": "otp", "start": 18, "end": 24}], "id": "sp-0174"}
+{"form": "written", "text": "My one-time code is 614906.", "entities": [{"type": "otp", "start": 20, "end": 26}], "id": "sp-0175"}
+{"form": "written", "text": "The verification code is 324242.", "entities": [{"type": "otp", "start": 25, "end": 31}], "id": "sp-0176"}
+{"form": "written", "text": "The login code is 532280.", "entities": [{"type": "otp", "start": 18, "end": 24}], "id": "sp-0177"}
+{"form": "written", "text": "The login code is 242200.", "entities": [{"type": "otp", "start": 18, "end": 24}], "id": "sp-0178"}
+{"form": "written", "text": "The verification code is 083500.", "entities": [{"type": "otp", "start": 25, "end": 31}], "id": "sp-0179"}
+{"form": "written", "text": "My birthday is 05/11/1955.", "entities": [{"type": "dob", "start": 15, "end": 25}], "id": "sp-0180"}
+{"form": "written", "text": "My date of birth is August 9, 1981.", "entities": [{"type": "dob", "start": 20, "end": 34}], "id": "sp-0181"}
+{"form": "written", "text": "My birthday is September 20, 1990.", "entities": [{"type": "dob", "start": 15, "end": 33}], "id": "sp-0182"}
+{"form": "written", "text": "My date of birth is 16/12/1962.", "entities": [{"type": "dob", "start": 20, "end": 30}], "id": "sp-0183"}
+{"form": "written", "text": "I was born on 25/03/1991.", "entities": [{"type": "dob", "start": 14, "end": 24}], "id": "sp-0184"}
+{"form": "written", "text": "My birthday is July 3, 1965.", "entities": [{"type": "dob", "start": 15, "end": 27}], "id": "sp-0185"}
+{"form": "written", "text": "I was born on July 20, 1982.", "entities": [{"type": "dob", "start": 14, "end": 27}], "id": "sp-0186"}
+{"form": "written", "text": "I was born on August 23, 1990.", "entities": [{"type": "dob", "start": 14, "end": 29}], "id": "sp-0187"}
+{"form": "written", "text": "My date of birth is 08/02/1978.", "entities": [{"type": "dob", "start": 20, "end": 30}], "id": "sp-0188"}
+{"form": "written", "text": "My date of birth is 22/11/2001.", "entities": [{"type": "dob", "start": 20, "end": 30}], "id": "sp-0189"}
+{"form": "written", "text": "I was born on January 2, 1954.", "entities": [{"type": "dob", "start": 14, "end": 29}], "id": "sp-0190"}
+{"form": "written", "text": "I was born on 17/05/1996.", "entities": [{"type": "dob", "start": 14, "end": 24}], "id": "sp-0191"}
+{"form": "written", "text": "My date of birth is 06/04/1990.", "entities": [{"type": "dob", "start": 20, "end": 30}], "id": "sp-0192"}
+{"form": "written", "text": "I was born on 18/02/1969.", "entities": [{"type": "dob", "start": 14, "end": 24}], "id": "sp-0193"}
+{"form": "written", "text": "My date of birth is 21/11/1992.", "entities": [{"type": "dob", "start": 20, "end": 30}], "id": "sp-0194"}
+{"form": "written", "text": "My birthday is June 8, 2001.", "entities": [{"type": "dob", "start": 15, "end": 27}], "id": "sp-0195"}
+{"form": "written", "text": "My date of birth is 04/11/1953.", "entities": [{"type": "dob", "start": 20, "end": 30}], "id": "sp-0196"}
+{"form": "written", "text": "My date of birth is January 22, 1950.", "entities": [{"type": "dob", "start": 20, "end": 36}], "id": "sp-0197"}
+{"form": "written", "text": "My birthday is 19/10/1969.", "entities": [{"type": "dob", "start": 15, "end": 25}], "id": "sp-0198"}
+{"form": "written", "text": "My date of birth is April 19, 2005.", "entities": [{"type": "dob", "start": 20, "end": 34}], "id": "sp-0199"}
+{"form": "written", "text": "I was born on 22/04/2002.", "entities": [{"type": "dob", "start": 14, "end": 24}], "id": "sp-0200"}
+{"form": "written", "text": "I was born on September 4, 1984.", "entities": [{"type": "dob", "start": 14, "end": 31}], "id": "sp-0201"}
+{"form": "written", "text": "My date of birth is 02/07/1971.", "entities": [{"type": "dob", "start": 20, "end": 30}], "id": "sp-0202"}
+{"form": "written", "text": "My birthday is 07/10/1953.", "entities": [{"type": "dob", "start": 15, "end": 25}], "id": "sp-0203"}
+{"form": "written", "text": "I was born on March 17, 1994.", "entities": [{"type": "dob", "start": 14, "end": 28}], "id": "sp-0204"}
+{"form": "written", "text": "My birthday is 02/06/1994.", "entities": [{"type": "dob", "start": 15, "end": 25}], "id": "sp-0205"}
+{"form": "written", "text": "My birthday is January 24, 1963.", "entities": [{"type": "dob", "start": 15, "end": 31}], "id": "sp-0206"}
+{"form": "written", "text": "I was born on 01/11/1990.", "entities": [{"type": "dob", "start": 14, "end": 24}], "id": "sp-0207"}
+{"form": "written", "text": "I was born on March 7, 1996.", "entities": [{"type": "dob", "start": 14, "end": 27}], "id": "sp-0208"}
+{"form": "written", "text": "My birthday is February 23, 1973.", "entities": [{"type": "dob", "start": 15, "end": 32}], "id": "sp-0209"}
+{"form": "written", "text": "My passport number is 109711925.", "entities": [{"type": "passport", "start": 22, "end": 31}], "id": "sp-0210"}
+{"form": "written", "text": "My passport number is 154475849.", "entities": [{"type": "passport", "start": 22, "end": 31}], "id": "sp-0211"}
+{"form": "written", "text": "Passport 990475367.", "entities": [{"type": "passport", "start": 9, "end": 18}], "id": "sp-0212"}
+{"form": "written", "text": "Passport 723952688.", "entities": [{"type": "passport", "start": 9, "end": 18}], "id": "sp-0213"}
+{"form": "written", "text": "Passport 478100039.", "entities": [{"type": "passport", "start": 9, "end": 18}], "id": "sp-0214"}
+{"form": "written", "text": "Passport 093019426.", "entities": [{"type": "passport", "start": 9, "end": 18}], "id": "sp-0215"}
+{"form": "written", "text": "Passport 318263725.", "entities": [{"type": "passport", "start": 9, "end": 18}], "id": "sp-0216"}
+{"form": "written", "text": "My passport number is 786035381.", "entities": [{"type": "passport", "start": 22, "end": 31}], "id": "sp-0217"}
+{"form": "written", "text": "Passport 115311296.", "entities": [{"type": "passport", "start": 9, "end": 18}], "id": "sp-0218"}
+{"form": "written", "text": "Passport 567021021.", "entities": [{"type": "passport", "start": 9, "end": 18}], "id": "sp-0219"}
+{"form": "written", "text": "Passport 269229939.", "entities": [{"type": "passport", "start": 9, "end": 18}], "id": "sp-0220"}
+{"form": "written", "text": "Passport 418585520.", "entities": [{"type": "passport", "start": 9, "end": 18}], "id": "sp-0221"}
+{"form": "written", "text": "My passport number is 788085508.", "entities": [{"type": "passport", "start": 22, "end": 31}], "id": "sp-0222"}
+{"form": "written", "text": "My passport number is 472344101.", "entities": [{"type": "passport", "start": 22, "end": 31}], "id": "sp-0223"}
+{"form": "written", "text": "Passport 710580866.", "entities": [{"type": "passport", "start": 9, "end": 18}], "id": "sp-0224"}
+{"form": "written", "text": "Passport 053786925.", "entities": [{"type": "passport", "start": 9, "end": 18}], "id": "sp-0225"}
+{"form": "written", "text": "My passport number is 308600485.", "entities": [{"type": "passport", "start": 22, "end": 31}], "id": "sp-0226"}
+{"form": "written", "text": "Passport 664427569.", "entities": [{"type": "passport", "start": 9, "end": 18}], "id": "sp-0227"}
+{"form": "written", "text": "My passport number is 508356926.", "entities": [{"type": "passport", "start": 22, "end": 31}], "id": "sp-0228"}
+{"form": "written", "text": "My passport number is 696863018.", "entities": [{"type": "passport", "start": 22, "end": 31}], "id": "sp-0229"}
+{"form": "written", "text": "My passport number is 176528282.", "entities": [{"type": "passport", "start": 22, "end": 31}], "id": "sp-0230"}
+{"form": "written", "text": "My passport number is 033320317.", "entities": [{"type": "passport", "start": 22, "end": 31}], "id": "sp-0231"}
+{"form": "written", "text": "My passport number is 612104640.", "entities": [{"type": "passport", "start": 22, "end": 31}], "id": "sp-0232"}
+{"form": "written", "text": "My passport number is 804312347.", "entities": [{"type": "passport", "start": 22, "end": 31}], "id": "sp-0233"}
+{"form": "written", "text": "Passport 801232409.", "entities": [{"type": "passport", "start": 9, "end": 18}], "id": "sp-0234"}
+{"form": "written", "text": "Passport 552223385.", "entities": [{"type": "passport", "start": 9, "end": 18}], "id": "sp-0235"}
+{"form": "written", "text": "Passport 104981589.", "entities": [{"type": "passport", "start": 9, "end": 18}], "id": "sp-0236"}
+{"form": "written", "text": "My passport number is 851214804.", "entities": [{"type": "passport", "start": 22, "end": 31}], "id": "sp-0237"}
+{"form": "written", "text": "Passport 947899938.", "entities": [{"type": "passport", "start": 9, "end": 18}], "id": "sp-0238"}
+{"form": "written", "text": "My passport number is 322157512.", "entities": [{"type": "passport", "start": 22, "end": 31}], "id": "sp-0239"}
+{"form": "written", "text": "Hi, my name is Tom Patel and I need help.", "entities": [{"type": "name", "start": 15, "end": 24}], "id": "sp-0240"}
+{"form": "written", "text": "Hi, my name is Grace Okafor and I need help.", "entities": [{"type": "name", "start": 15, "end": 27}], "id": "sp-0241"}
+{"form": "written", "text": "Hi, my name is Omar Patel.", "entities": [{"type": "name", "start": 15, "end": 25}], "id": "sp-0242"}
+{"form": "written", "text": "Hi, my name is Omar Nguyen.", "entities": [{"type": "name", "start": 15, "end": 26}], "id": "sp-0243"}
+{"form": "written", "text": "Hi, my name is Tom Patel and I need help.", "entities": [{"type": "name", "start": 15, "end": 24}], "id": "sp-0244"}
+{"form": "written", "text": "The booking is under, my name is Liam Patel and I need help.", "entities": [{"type": "name", "start": 33, "end": 43}], "id": "sp-0245"}
+{"form": "written", "text": "Hello, my name's Fatima Brennan.", "entities": [{"type": "name", "start": 17, "end": 31}], "id": "sp-0246"}
+{"form": "written", "text": "Hi, my name is Liam Khan and I need help.", "entities": [{"type": "name", "start": 15, "end": 24}], "id": "sp-0247"}
+{"form": "written", "text": "Hello, my name's Liam Brennan.", "entities": [{"type": "name", "start": 17, "end": 29}], "id": "sp-0248"}
+{"form": "written", "text": "The booking is under, my name is Omar Walker and I need help.", "entities": [{"type": "name", "start": 33, "end": 44}], "id": "sp-0249"}
+{"form": "written", "text": "Hi, my name is Alex Hughes and I need help.", "entities": [{"type": "name", "start": 15, "end": 26}], "id": "sp-0250"}
+{"form": "written", "text": "The booking is under, my name is Sara Brennan.", "entities": [{"type": "name", "start": 33, "end": 45}], "id": "sp-0251"}
+{"form": "written", "text": "Hello, my name's Sara Nguyen and I need help.", "entities": [{"type": "name", "start": 17, "end": 28}], "id": "sp-0252"}
+{"form": "written", "text": "Hi, my name is Fatima Brennan.", "entities": [{"type": "name", "start": 15, "end": 29}], "id": "sp-0253"}
+{"form": "written", "text": "The booking is under, my name is Alex Walker.", "entities": [{"type": "name", "start": 33, "end": 44}], "id": "sp-0254"}
+{"form": "written", "text": "Hello, my name's Alex Walker.", "entities": [{"type": "name", "start": 17, "end": 28}], "id": "sp-0255"}
+{"form": "written", "text": "The booking is under, my name is Priya Okafor.", "entities": [{"type": "name", "start": 33, "end": 45}], "id": "sp-0256"}
+{"form": "written", "text": "Hi, my name is Omar Nguyen and I need help.", "entities": [{"type": "name", "start": 15, "end": 26}], "id": "sp-0257"}
+{"form": "written", "text": "The booking is under, my name is Sara Rivera.", "entities": [{"type": "name", "start": 33, "end": 44}], "id": "sp-0258"}
+{"form": "written", "text": "Hi, my name is Daniel Hughes.", "entities": [{"type": "name", "start": 15, "end": 28}], "id": "sp-0259"}
+{"form": "written", "text": "Hi, my name is Fatima Rivera.", "entities": [{"type": "name", "start": 15, "end": 28}], "id": "sp-0260"}
+{"form": "written", "text": "Hi, my name is Omar Khan.", "entities": [{"type": "name", "start": 15, "end": 24}], "id": "sp-0261"}
+{"form": "written", "text": "The booking is under, my name is Liam Brennan and I need help.", "entities": [{"type": "name", "start": 33, "end": 45}], "id": "sp-0262"}
+{"form": "written", "text": "Hi, my name is Daniel Hughes.", "entities": [{"type": "name", "start": 15, "end": 28}], "id": "sp-0263"}
+{"form": "written", "text": "The booking is under, my name is Mei Walker and I need help.", "entities": [{"type": "name", "start": 33, "end": 43}], "id": "sp-0264"}
+{"form": "written", "text": "Hello, my name's Priya Okafor and I need help.", "entities": [{"type": "name", "start": 17, "end": 29}], "id": "sp-0265"}
+{"form": "written", "text": "Hello, my name's Liam Walker and I need help.", "entities": [{"type": "name", "start": 17, "end": 28}], "id": "sp-0266"}
+{"form": "written", "text": "The booking is under, my name is Liam Okafor.", "entities": [{"type": "name", "start": 33, "end": 44}], "id": "sp-0267"}
+{"form": "written", "text": "Hello, my name's Sara Nguyen and I need help.", "entities": [{"type": "name", "start": 17, "end": 28}], "id": "sp-0268"}
+{"form": "written", "text": "Hi, my name is Sara Rivera and I need help.", "entities": [{"type": "name", "start": 15, "end": 26}], "id": "sp-0269"}
+{"form": "spoken", "text": "Use card five one seven seven nine two five nine seven oh three seven one two oh three", "entities": [{"type": "card", "start": 9, "end": 86}], "id": "sp-0270"}
+{"form": "spoken", "text": "Use card three seven zero two two one one seven five three seven six zero six nine one.", "entities": [{"type": "card", "start": 9, "end": 86}], "id": "sp-0271"}
+{"form": "spoken", "text": "The long number on my card is four eight five one one four seven eight nine seven three nine three zero six three please.", "entities": [{"type": "card", "start": 30, "end": 113}], "id": "sp-0272"}
+{"form": "spoken", "text": "The long number on my card is six zero one one four nine six three eight three nine five nine two two two please.", "entities": [{"type": "card", "start": 30, "end": 105}], "id": "sp-0273"}
+{"form": "spoken", "text": "My debit card number is six zero double one two zero three eight three five zero eight seven double one nine", "entities": [{"type": "card", "start": 24, "end": 108}], "id": "sp-0274"}
+{"form": "spoken", "text": "Charge it to my visa, four eight six double one seven nine zero one four three one four six two one", "entities": [{"type": "card", "start": 22, "end": 99}], "id": "sp-0275"}
+{"form": "spoken", "text": "Charge it to my visa, three seven two four nine eight nine one nine one zero two seven zero seven zero", "entities": [{"type": "card", "start": 22, "end": 102}], "id": "sp-0276"}
+{"form": "spoken", "text": "The long number on my card is four one six one, seven zero eight eight, seven five four eight, one four three nine please.", "entities": [{"type": "card", "start": 30, "end": 114}], "id": "sp-0277"}
+{"form": "spoken", "text": "Use card four three three three, four six nine oh, four two nine nine, four eight three seven.", "entities": [{"type": "card", "start": 9, "end": 93}], "id": "sp-0278"}
+{"form": "spoken", "text": "Charge it to my visa, three seven nine zero, four double three nine, seven double one zero, seven one eight one please.", "entities": [{"type": "card", "start": 22, "end": 111}], "id": "sp-0279"}
+{"form": "spoken", "text": "My debit card number is five one five eight two eight five four one six one four eight seven eight seven.", "entities": [{"type": "card", "start": 24, "end": 104}], "id": "sp-0280"}
+{"form": "spoken", "text": "My debit card number is five one four three three six nine one one eight two three six three nine three.", "entities": [{"type": "card", "start": 24, "end": 103}], "id": "sp-0281"}
+{"form": "spoken", "text": "Charge it to my visa, five one zero eight nine three four zero eight four double one eight six seven eight.", "entities": [{"type": "card", "start": 22, "end": 106}], "id": "sp-0282"}
+{"form": "spoken", "text": "Charge it to my visa, thirty seven one one, forty one twenty eight, seventy four thirty six, forty five eighty two please.", "entities": [{"type": "card", "start": 22, "end": 114}], "id": "sp-0283"}
+{"form": "spoken", "text": "Charge it to my visa, five one three seven six four five four two seven one four five seven eight one.", "entities": [{"type": "card", "start": 22, "end": 101}], "id": "sp-0284"}
+{"form": "spoken", "text": "Use card three seven three nine seven five oh four two four three three oh four five six please.", "entities": [{"type": "card", "start": 9, "end": 88}], "id": "sp-0285"}
+{"form": "spoken", "text": "My debit card number is four three nine four eight six five nine nine seven seven eight four six nine one", "entities": [{"type": "card", "start": 24, "end": 105}], "id": "sp-0286"}
+{"form": "spoken", "text": "My debit card number is five one four four seven seven one six nine eight two one one oh five one.", "entities": [{"type": "card", "start": 24, "end": 97}], "id": "sp-0287"}
+{"form": "spoken", "text": "Charge it to my visa, thirty seven twenty one, twenty two three zero, sixty nine zero thirty eight, fifty six zero", "entities": [{"type": "card", "start": 22, "end": 114}], "id": "sp-0288"}
+{"form": "spoken", "text": "My debit card number is three seven four one zero three nine two four six eight nine four one seven zero", "entities": [{"type": "card", "start": 24, "end": 104}], "id": "sp-0289"}
+{"form": "spoken", "text": "Use card five one two zero nine nine two five six five seven six five zero five six.", "entities": [{"type": "card", "start": 9, "end": 83}], "id": "sp-0290"}
+{"form": "spoken", "text": "My debit card number is four two one nine, oh eight seven eight, one six oh six, nine five seven five please.", "entities": [{"type": "card", "start": 24, "end": 101}], "id": "sp-0291"}
+{"form": "spoken", "text": "The long number on my card is five one zero three seven two seven eight one nine nine three two zero seven three.", "entities": [{"type": "card", "start": 30, "end": 112}], "id": "sp-0292"}
+{"form": "spoken", "text": "Charge it to my visa, four one four seven eight seven four double one two one three eight double oh seven", "entities": [{"type": "card", "start": 22, "end": 105}], "id": "sp-0293"}
+{"form": "spoken", "text": "The long number on my card is fifty one one six zero forty five one one two zero one zero twenty one five please.", "entities": [{"type": "card", "start": 30, "end": 105}], "id": "sp-0294"}
+{"form": "spoken", "text": "My debit card number is six zero one one eight seven five two seven two four zero seven four one one.", "entities": [{"type": "card", "start": 24, "end": 100}], "id": "sp-0295"}
+{"form": "spoken", "text": "The long number on my card is double four double seven double five nine six five eight zero one two eight four five", "entities": [{"type": "card", "start": 30, "end": 115}], "id": "sp-0296"}
+{"form": "spoken", "text": "Charge it to my visa, six zero one one three nine seven seven zero six three four one three seven one please.", "entities": [{"type": "card", "start": 22, "end": 101}], "id": "sp-0297"}
+{"form": "spoken", "text": "My debit card number is six zero one one, three nine zero three, eight four six nine, seven four five three.", "entities": [{"type": "card", "start": 24, "end": 107}], "id": "sp-0298"}
+{"form": "spoken", "text": "My debit card number is three seven nine zero eight one four one seven zero five zero eight six six nine", "entities": [{"type": "card", "start": 24, "end": 104}], "id": "sp-0299"}
+{"form": "spoken", "text": "For verification my social security is two nine nine five four three eight five five.", "entities": [{"type": "ssn", "start": 39, "end": 84}], "id": "sp-0300"}
+{"form": "spoken", "text": "My social is four nine eight six six five six zero nine.", "entities": [{"type": "ssn", "start": 13, "end": 55}], "id": "sp-0301"}
+{"form": "spoken", "text": "My social security number is two zero thirty five zero forty four eighty five.", "entities": [{"type": "ssn", "start": 29, "end": 77}], "id": "sp-0302"}
+{"form": "spoken", "text": "SSN three three five five seven six four three six.", "entities": [{"type": "ssn", "start": 4, "end": 50}], "id": "sp-0303"}
+{"form": "spoken", "text": "My social security number is four five nine seven eight five three one five.", "entities": [{"type": "ssn", "start": 29, "end": 75}], "id": "sp-0304"}
+{"form": "spoken", "text": "For verification my social security is one four three five one nine three nine three.", "entities": [{"type": "ssn", "start": 39, "end": 84}], "id": "sp-0305"}
+{"form": "spoken", "text": "My social is twenty nine thirty three forty three zero twenty nine.", "entities": [{"type": "ssn", "start": 13, "end": 66}], "id": "sp-0306"}
+{"form": "spoken", "text": "SSN six zero nine five zero seven eight nine six.", "entities": [{"type": "ssn", "start": 4, "end": 48}], "id": "sp-0307"}
+{"form": "spoken", "text": "SSN five one nine, three five eight, zero zero five.", "entities": [{"type": "ssn", "start": 4, "end": 51}], "id": "sp-0308"}
+{"form": "spoken", "text": "SSN three one seven nine four three three eight one.", "entities": [{"type": "ssn", "start": 4, "end": 51}], "id": "sp-0309"}
+{"form": "spoken", "text": "SSN six five four two four four six seven five.", "entities": [{"type": "ssn", "start": 4, "end": 46}], "id": "sp-0310"}
+{"form": "spoken", "text": "For verification my social security is twenty one twenty two, one forty two, seventy four.", "entities": [{"type": "ssn", "start": 39, "end": 89}], "id": "sp-0311"}
+{"form": "spoken", "text": "SSN four five three two four nine three zero three.", "entities": [{"type": "ssn", "start": 4, "end": 50}], "id": "sp-0312"}
+{"form": "spoken", "text": "SSN sixty one one twenty seven seventy seven zero six.", "entities": [{"type": "ssn", "start": 4, "end": 53}], "id": "sp-0313"}
+{"form": "spoken", "text": "My social security number is three two six eight three seven double eight three.", "entities": [{"type": "ssn", "start": 29, "end": 79}], "id": "sp-0314"}
+{"form": "spoken", "text": "SSN forty eight twenty nine fifty nine forty seven two.", "entities": [{"type": "ssn", "start": 4, "end": 54}], "id": "sp-0315"}
+{"form": "spoken", "text": "For verification my social security is one oh six, eight five eight, two eight nine.", "entities": [{"type": "ssn", "start": 39, "end": 83}], "id": "sp-0316"}
+{"form": "spoken", "text": "SSN six zero six, five three four, six one five.", "entities": [{"type": "ssn", "start": 4, "end": 47}], "id": "sp-0317"}
+{"form": "spoken", "text": "For verification my social security is two four two nine nine one six one nine.", "entities": [{"type": "ssn", "start": 39, "end": 78}], "id": "sp-0318"}
+{"form": "spoken", "text": "SSN three three seven, one two six, six five zero.", "entities": [{"type": "ssn", "start": 4, "end": 49}], "id": "sp-0319"}
+{"form": "spoken", "text": "SSN one four six nine seven four seven seven four.", "entities": [{"type": "ssn", "start": 4, "end": 49}], "id": "sp-0320"}
+{"form": "spoken", "text": "My social is three two four two three double five two five.", "entities": [{"type": "ssn", "start": 13, "end": 58}], "id": "sp-0321"}
+{"form": "spoken", "text": "My social is six one zero one nine four eight nine eight.", "entities": [{"type": "ssn", "start": 13, "end": 56}], "id": "sp-0322"}
+{"form": "spoken", "text": "SSN sixty five thirty eight twenty three twenty two two.", "entities": [{"type": "ssn", "start": 4, "end": 55}], "id": "sp-0323"}
+{"form": "spoken", "text": "For verification my social security is two four six three five six three five seven.", "entities": [{"type": "ssn", "start": 39, "end": 83}], "id": "sp-0324"}
+{"form": "spoken", "text": "SSN five seven eight six zero seven eight three six.", "entities": [{"type": "ssn", "start": 4, "end": 51}], "id": "sp-0325"}
+{"form": "spoken", "text": "My social security number is three zero ninety six, twenty five twenty three, seven.", "entities": [{"type": "ssn", "start": 29, "end": 83}], "id": "sp-0326"}
+{"form": "spoken", "text": "My social security number is three eight nine eight nine nine nine zero seven.", "entities": [{"type": "ssn", "start": 29, "end": 77}], "id": "sp-0327"}
+{"form": "spoken", "text": "My social security number is twenty three twenty two eighty nine forty three seven.", "entities": [{"type": "ssn", "start": 29, "end": 82}], "id": "sp-0328"}
+{"form": "spoken", "text": "For verification my social security is one seven six, seven zero two, four seven one.", "entities": [{"type": "ssn", "start": 39, "end": 84}], "id": "sp-0329"}
+{"form": "spoken", "text": "You can text me at two six one eight two six eight nine one five anytime.", "entities": [{"type": "phone", "start": 19, "end": 64}], "id": "sp-0330"}
+{"form": "spoken", "text": "My mobile is zero seventy three, forty nine ninety five, three zero twenty two.", "entities": [{"type": "phone", "start": 13, "end": 78}], "id": "sp-0331"}
+{"form": "spoken", "text": "Call me back on zero seven three four nine seven eight two four two eight anytime.", "entities": [{"type": "phone", "start": 16, "end": 73}], "id": "sp-0332"}
+{"form": "spoken", "text": "Call me back on four six five four six eight one one oh one.", "entities": [{"type": "phone", "start": 16, "end": 59}], "id": "sp-0333"}
+{"form": "spoken", "text": "My mobile is zero seven two, one zero six, one seven five, one seven.", "entities": [{"type": "phone", "start": 13, "end": 68}], "id": "sp-0334"}
+{"form": "spoken", "text": "You can text me at oh seven nine one nine four six seven seven one nine anytime.", "entities": [{"type": "phone", "start": 19, "end": 71}], "id": "sp-0335"}
+{"form": "spoken", "text": "Call me back on four eight two four eight one five four six three anytime.", "entities": [{"type": "phone", "start": 16, "end": 65}], "id": "sp-0336"}
+{"form": "spoken", "text": "You can text me at nine two seven double nine double two five three four.", "entities": [{"type": "phone", "start": 19, "end": 72}], "id": "sp-0337"}
+{"form": "spoken", "text": "My mobile is zero seven three seven four six nine one two one four.", "entities": [{"type": "phone", "start": 13, "end": 66}], "id": "sp-0338"}
+{"form": "spoken", "text": "My number is zero seven two two one six nine eight two one two anytime.", "entities": [{"type": "phone", "start": 13, "end": 62}], "id": "sp-0339"}
+{"form": "spoken", "text": "Call me back on zero seven four, six five two, five eight nine, two four anytime.", "entities": [{"type": "phone", "start": 16, "end": 72}], "id": "sp-0340"}
+{"form": "spoken", "text": "Call me back on zero seven nine, seven five zero, six one two, two eight anytime.", "entities": [{"type": "phone", "start": 16, "end": 72}], "id": "sp-0341"}
+{"form": "spoken", "text": "You can text me at zero seven eight seven zero five two two zero nine one.", "entities": [{"type": "phone", "start": 19, "end": 73}], "id": "sp-0342"}
+{"form": "spoken", "text": "Call me back on zero seventy five sixty four seventy eight forty one one seven anytime.", "entities": [{"type": "phone", "start": 16, "end": 78}], "id": "sp-0343"}
+{"form": "spoken", "text": "My number is seven one nine six three five one one seven one.", "entities": [{"type": "phone", "start": 13, "end": 60}], "id": "sp-0344"}
+{"form": "spoken", "text": "My number is thirty five forty five seventy six thirty two seventy two.", "entities": [{"type": "phone", "start": 13, "end": 70}], "id": "sp-0345"}
+{"form": "spoken", "text": "My number is seven eight double five four double three double four eight.", "entities": [{"type": "phone", "start": 13, "end": 72}], "id": "sp-0346"}
+{"form": "spoken", "text": "Call me back on zero seven one six four five seven six three three two anytime.", "entities": [{"type": "phone", "start": 16, "end": 70}], "id": "sp-0347"}
+{"form": "spoken", "text": "My mobile is seven eight five, seven nine four, three two double four.", "entities": [{"type": "phone", "start": 13, "end": 69}], "id": "sp-0348"}
+{"form": "spoken", "text": "You can text me at zero seven eight two zero six three nine four three eight.", "entities": [{"type": "phone", "start": 19, "end": 76}], "id": "sp-0349"}
+{"form": "spoken", "text": "My mobile is zero seven five five seven three four four two two three anytime.", "entities": [{"type": "phone", "start": 13, "end": 69}], "id": "sp-0350"}
+{"form": "spoken", "text": "You can text me at eight one zero seven four five two five two six.", "entities": [{"type": "phone", "start": 19, "end": 66}], "id": "sp-0351"}
+{"form": "spoken", "text": "You can text me at zero seven one seven one six eight zero double six two.", "entities": [{"type": "phone", "start": 19, "end": 73}], "id": "sp-0352"}
+{"form": "spoken", "text": "My mobile is zero seven three zero six nine seven nine four nine eight anytime.", "entities": [{"type": "phone", "start": 13, "end": 70}], "id": "sp-0353"}
+{"form": "spoken", "text": "Call me back on zero seven one eight two eight five seven nine five three anytime.", "entities": [{"type": "phone", "start": 16, "end": 73}], "id": "sp-0354"}
+{"form": "spoken", "text": "You can text me at zero seven four one four zero zero five four two four anytime.", "entities": [{"type": "phone", "start": 19, "end": 72}], "id": "sp-0355"}
+{"form": "spoken", "text": "My mobile is three one two three seven one one three three six.", "entities": [{"type": "phone", "start": 13, "end": 62}], "id": "sp-0356"}
+{"form": "spoken", "text": "My number is zero seven one two seven zero two zero five four four.", "entities": [{"type": "phone", "start": 13, "end": 66}], "id": "sp-0357"}
+{"form": "spoken", "text": "You can text me at three nine oh, two one three, two three six, one.", "entities": [{"type": "phone", "start": 19, "end": 67}], "id": "sp-0358"}
+{"form": "spoken", "text": "My number is five two two six four two seven eight two five.", "entities": [{"type": "phone", "start": 13, "end": 59}], "id": "sp-0359"}
+{"form": "spoken", "text": "My email is tom underscore okafor at gmail dot com.", "entities": [{"type": "email", "start": 12, "end": 50}], "id": "sp-0360"}
+{"form": "spoken", "text": "Reply to gracepatel at gmail dot com.", "entities": [{"type": "email", "start": 9, "end": 36}], "id": "sp-0361"}
+{"form": "spoken", "text": "Send it to grace underscore rivera at company dot io.", "entities": [{"type": "email", "start": 11, "end": 52}], "id": "sp-0362"}
+{"form": "spoken", "text": "My email is grace underscore walker at icloud dot com.", "entities": [{"type": "email", "start": 12, "end": 53}], "id": "sp-0363"}
+{"form": "spoken", "text": "Send it to fatima dot walker at yahoo dot co dot uk.", "entities": [{"type": "email", "start": 11, "end": 51}], "id": "sp-0364"}
+{"form": "spoken", "text": "Send it to omarhughes at company dot io.", "entities": [{"type": "email", "start": 11, "end": 39}], "id": "sp-0365"}
+{"form": "spoken", "text": "Use the address sara underscore okafor at yahoo dot co dot uk.", "entities": [{"type": "email", "start": 16, "end": 61}], "id": "sp-0366"}
+{"form": "spoken", "text": "Send it to fatimaokafor at outlook dot com.", "entities": [{"type": "email", "start": 11, "end": 42}], "id": "sp-0367"}
+{"form": "spoken", "text": "Reply to fatimapatel at icloud dot com.", "entities": [{"type": "email", "start": 9, "end": 38}], "id": "sp-0368"}
+{"form": "spoken", "text": "Send it to grace dot hughes at yahoo dot co dot uk.", "entities": [{"type": "email", "start": 11, "end": 50}], "id": "sp-0369"}
+{"form": "spoken", "text": "Send it to tom underscore brennan at outlook dot com.", "entities": [{"type": "email", "start": 11, "end": 52}], "id": "sp-0370"}
+{"form": "spoken", "text": "Reply to tom underscore walker at yahoo dot co dot uk.", "entities": [{"type": "email", "start": 9, "end": 53}], "id": "sp-0371"}
+{"form": "spoken", "text": "My email is sara underscore khan at company dot io.", "entities": [{"type": "email", "start": 12, "end": 50}], "id": "sp-0372"}
+{"form": "spoken", "text": "Reply to mei dot rivera at company dot io.", "entities": [{"type": "email", "start": 9, "end": 41}], "id": "sp-0373"}
+{"form": "spoken", "text": "Send it to sarapatel at proton dot me.", "entities": [{"type": "email", "start": 11, "end": 37}], "id": "sp-0374"}
+{"form": "spoken", "text": "Use the address daniel underscore khan at yahoo dot co dot uk.", "entities": [{"type": "email", "start": 16, "end": 61}], "id": "sp-0375"}
+{"form": "spoken", "text": "Use the address danielkhan at proton dot me.", "entities": [{"type": "email", "start": 16, "end": 43}], "id": "sp-0376"}
+{"form": "spoken", "text": "My email is alexnguyen at proton dot me.", "entities": [{"type": "email", "start": 12, "end": 39}], "id": "sp-0377"}
+{"form": "spoken", "text": "My email is meipatel at yahoo dot co dot uk.", "entities": [{"type": "email", "start": 12, "end": 43}], "id": "sp-0378"}
+{"form": "spoken", "text": "Send it to grace dot khan at outlook dot com.", "entities": [{"type": "email", "start": 11, "end": 44}], "id": "sp-0379"}
+{"form": "spoken", "text": "My email is sara underscore okafor at gmail dot com.", "entities": [{"type": "email", "start": 12, "end": 51}], "id": "sp-0380"}
+{"form": "spoken", "text": "Send it to alex dot nguyen at company dot io.", "entities": [{"type": "email", "start": 11, "end": 44}], "id": "sp-0381"}
+{"form": "spoken", "text": "Reply to liambrennan at yahoo dot co dot uk.", "entities": [{"type": "email", "start": 9, "end": 43}], "id": "sp-0382"}
+{"form": "spoken", "text": "Use the address mei underscore brennan at proton dot me.", "entities": [{"type": "email", "start": 16, "end": 55}], "id": "sp-0383"}
+{"form": "spoken", "text": "My email is fatimanguyen at gmail dot com.", "entities": [{"type": "email", "start": 12, "end": 41}], "id": "sp-0384"}
+{"form": "spoken", "text": "Send it to alex underscore brennan at yahoo dot co dot uk.", "entities": [{"type": "email", "start": 11, "end": 57}], "id": "sp-0385"}
+{"form": "spoken", "text": "Reply to fatima underscore rivera at icloud dot com.", "entities": [{"type": "email", "start": 9, "end": 51}], "id": "sp-0386"}
+{"form": "spoken", "text": "Reply to tom underscore rivera at proton dot me.", "entities": [{"type": "email", "start": 9, "end": 47}], "id": "sp-0387"}
+{"form": "spoken", "text": "Send it to omarkhan at icloud dot com.", "entities": [{"type": "email", "start": 11, "end": 37}], "id": "sp-0388"}
+{"form": "spoken", "text": "Send it to omar underscore okafor at gmail dot com.", "entities": [{"type": "email", "start": 11, "end": 50}], "id": "sp-0389"}
+{"form": "spoken", "text": "My card pin is four one oh two.", "entities": [{"type": "pin", "start": 15, "end": 30}], "id": "sp-0390"}
+{"form": "spoken", "text": "My pin is ninety six twenty eight.", "entities": [{"type": "pin", "start": 10, "end": 33}], "id": "sp-0391"}
+{"form": "spoken", "text": "The PIN number is four one two four.", "entities": [{"type": "pin", "start": 18, "end": 35}], "id": "sp-0392"}
+{"form": "spoken", "text": "My card pin is five one five seven.", "entities": [{"type": "pin", "start": 15, "end": 34}], "id": "sp-0393"}
+{"form": "spoken", "text": "My card pin is zero eight one nine.", "entities": [{"type": "pin", "start": 15, "end": 34}], "id": "sp-0394"}
+{"form": "spoken", "text": "My card pin is six zero forty six.", "entities": [{"type": "pin", "start": 15, "end": 33}], "id": "sp-0395"}
+{"form": "spoken", "text": "The PIN number is five one zero five.", "entities": [{"type": "pin", "start": 18, "end": 36}], "id": "sp-0396"}
+{"form": "spoken", "text": "The PIN number is zero double four three.", "entities": [{"type": "pin", "start": 18, "end": 40}], "id": "sp-0397"}
+{"form": "spoken", "text": "The PIN number is nine one seven zero.", "entities": [{"type": "pin", "start": 18, "end": 37}], "id": "sp-0398"}
+{"form": "spoken", "text": "My pin is two zero two nine.", "entities": [{"type": "pin", "start": 10, "end": 27}], "id": "sp-0399"}
+{"form": "spoken", "text": "The PIN number is seven eight eight one.", "entities": [{"type": "pin", "start": 18, "end": 39}], "id": "sp-0400"}
+{"form": "spoken", "text": "My card pin is six one one three.", "entities": [{"type": "pin", "start": 15, "end": 32}], "id": "sp-0401"}
+{"form": "spoken", "text": "The PIN number is double three double three.", "entities": [{"type": "pin", "start": 18, "end": 43}], "id": "sp-0402"}
+{"form": "spoken", "text": "My card pin is six five three one.", "entities": [{"type": "pin", "start": 15, "end": 33}], "id": "sp-0403"}
+{"form": "spoken", "text": "My card pin is nine nine three nine.", "entities": [{"type": "pin", "start": 15, "end": 35}], "id": "sp-0404"}
+{"form": "spoken", "text": "My pin is seven nine seven four.", "entities": [{"type": "pin", "start": 10, "end": 31}], "id": "sp-0405"}
+{"form": "spoken", "text": "My card pin is four nine nine oh.", "entities": [{"type": "pin", "start": 15, "end": 32}], "id": "sp-0406"}
+{"form": "spoken", "text": "The PIN number is three five two five.", "entities": [{"type": "pin", "start": 18, "end": 37}], "id": "sp-0407"}
+{"form": "spoken", "text": "My card pin is nine seven five three.", "entities": [{"type": "pin", "start": 15, "end": 36}], "id": "sp-0408"}
+{"form": "spoken", "text": "My pin is double six six zero.", "entities": [{"type": "pin", "start": 10, "end": 29}], "id": "sp-0409"}
+{"form": "spoken", "text": "The PIN number is zero nine three five.", "entities": [{"type": "pin", "start": 18, "end": 38}], "id": "sp-0410"}
+{"form": "spoken", "text": "My card pin is one three six three.", "entities": [{"type": "pin", "start": 15, "end": 34}], "id": "sp-0411"}
+{"form": "spoken", "text": "My pin is one seven two three.", "entities": [{"type": "pin", "start": 10, "end": 29}], "id": "sp-0412"}
+{"form": "spoken", "text": "The PIN number is three zero seven seven.", "entities": [{"type": "pin", "start": 18, "end": 40}], "id": "sp-0413"}
+{"form": "spoken", "text": "My pin is ninety three three zero.", "entities": [{"type": "pin", "start": 10, "end": 33}], "id": "sp-0414"}
+{"form": "spoken", "text": "My card pin is seven six nine six.", "entities": [{"type": "pin", "start": 15, "end": 33}], "id": "sp-0415"}
+{"form": "spoken", "text": "My pin is zero six zero one.", "entities": [{"type": "pin", "start": 10, "end": 27}], "id": "sp-0416"}
+{"form": "spoken", "text": "My pin is two six four five.", "entities": [{"type": "pin", "start": 10, "end": 27}], "id": "sp-0417"}
+{"form": "spoken", "text": "The PIN number is seventy seven zero eight.", "entities": [{"type": "pin", "start": 18, "end": 42}], "id": "sp-0418"}
+{"form": "spoken", "text": "My card pin is four seven three five.", "entities": [{"type": "pin", "start": 15, "end": 36}], "id": "sp-0419"}
+{"form": "spoken", "text": "The code they texted me is zero forty eight seven zero four.", "entities": [{"type": "otp", "start": 27, "end": 59}], "id": "sp-0420"}
+{"form": "spoken", "text": "The verification code is seven five seven nine zero one.", "entities": [{"type": "otp", "start": 25, "end": 55}], "id": "sp-0421"}
+{"form": "spoken", "text": "The verification code is two four seven two five four.", "entities": [{"type": "otp", "start": 25, "end": 53}], "id": "sp-0422"}
+{"form": "spoken", "text": "The login code is two zero twenty four eighty four.", "entities": [{"type": "otp", "start": 18, "end": 50}], "id": "sp-0423"}
+{"form": "spoken", "text": "My one-time code is zero one fifty seven zero nine.", "entities": [{"type": "otp", "start": 20, "end": 50}], "id": "sp-0424"}
+{"form": "spoken", "text": "My one-time code is seventy five one, sixty five three.", "entities": [{"type": "otp", "start": 20, "end": 54}], "id": "sp-0425"}
+{"form": "spoken", "text": "The code they texted me is one seventy eight, eight zero one.", "entities": [{"type": "otp", "start": 27, "end": 60}], "id": "sp-0426"}
+{"form": "spoken", "text": "The verification code is zero three one eight three seven.", "entities": [{"type": "otp", "start": 25, "end": 57}], "id": "sp-0427"}
+{"form": "spoken", "text": "My one-time code is three two seven seven seven three.", "entities": [{"type": "otp", "start": 20, "end": 53}], "id": "sp-0428"}
+{"form": "spoken", "text": "My one-time code is eight three three, one eight six.", "entities": [{"type": "otp", "start": 20, "end": 52}], "id": "sp-0429"}
+{"form": "spoken", "text": "The login code is three seven seven, three two one.", "entities": [{"type": "otp", "start": 18, "end": 50}], "id": "sp-0430"}
+{"form": "spoken", "text": "The login code is four oh one three seven eight.", "entities": [{"type": "otp", "start": 18, "end": 47}], "id": "sp-0431"}
+{"form": "spoken", "text": "My one-time code is nine oh one, four oh nine.", "entities": [{"type": "otp", "start": 20, "end": 45}], "id": "sp-0432"}
+{"form": "spoken", "text": "My one-time code is six eight four four four nine.", "entities": [{"type": "otp", "start": 20, "end": 49}], "id": "sp-0433"}
+{"form": "spoken", "text": "The login code is fifty one ninety two zero four.", "entities": [{"type": "otp", "start": 18, "end": 48}], "id": "sp-0434"}
+{"form": "spoken", "text": "My one-time code is eight zero nine, zero nine seven.", "entities": [{"type": "otp", "start": 20, "end": 52}], "id": "sp-0435"}
+{"form": "spoken", "text": "The code they texted me is three one zero eight six seven.", "entities": [{"type": "otp", "start": 27, "end": 57}], "id": "sp-0436"}
+{"form": "spoken", "text": "The verification code is nine one six five seven six.", "entities": [{"type": "otp", "start": 25, "end": 52}], "id": "sp-0437"}
+{"form": "spoken", "text": "The verification code is nine two double three, double nine.", "entities": [{"type": "otp", "start": 25, "end": 59}], "id": "sp-0438"}
+{"form": "spoken", "text": "The login code is eight six eight, seven three nine.", "entities": [{"type": "otp", "start": 18, "end": 51}], "id": "sp-0439"}
+{"form": "spoken", "text": "The code they texted me is seven three one, nine six five.", "entities": [{"type": "otp", "start": 27, "end": 57}], "id": "sp-0440"}
+{"form": "spoken", "text": "The login code is forty five forty one ninety five.", "entities": [{"type": "otp", "start": 18, "end": 50}], "id": "sp-0441"}
+{"form": "spoken", "text": "The code they texted me is one one oh two five six.", "entities": [{"type": "otp", "start": 27, "end": 50}], "id": "sp-0442"}
+{"form": "spoken", "text": "My one-time code is three seven seven six eight two.", "entities": [{"type": "otp", "start": 20, "end": 51}], "id": "sp-0443"}
+{"form": "spoken", "text": "The login code is thirty two one one forty two.", "entities": [{"type": "otp", "start": 18, "end": 46}], "id": "sp-0444"}
+{"form": "spoken", "text": "The code they texted me is nine five two four one four.", "entities": [{"type": "otp", "start": 27, "end": 54}], "id": "sp-0445"}
+{"form": "spoken", "text": "The verification code is fifty five one seventy six three.", "entities": [{"type": "otp", "start": 25, "end": 57}], "id": "sp-0446"}
+{"form": "spoken", "text": "The verification code is four six four, four seven zero.", "entities": [{"type": "otp", "start": 25, "end": 55}], "id": "sp-0447"}
+{"form": "spoken", "text": "The verification code is double six five two nine one.", "entities": [{"type": "otp", "start": 25, "end": 53}], "id": "sp-0448"}
+{"form": "spoken", "text": "The code they texted me is four five two four two four.", "entities": [{"type": "otp", "start": 27, "end": 54}], "id": "sp-0449"}
+{"form": "spoken", "text": "I was born on august twenty first nineteen sixty three.", "entities": [{"type": "dob", "start": 14, "end": 54}], "id": "sp-0450"}
+{"form": "spoken", "text": "My date of birth is june twenty seventh nineteen eighty four.", "entities": [{"type": "dob", "start": 20, "end": 60}], "id": "sp-0451"}
+{"form": "spoken", "text": "My date of birth is the fourteenth of august nineteen seventy three.", "entities": [{"type": "dob", "start": 20, "end": 67}], "id": "sp-0452"}
+{"form": "spoken", "text": "My birthday is february twenty fourth nineteen fifty two.", "entities": [{"type": "dob", "start": 15, "end": 56}], "id": "sp-0453"}
+{"form": "spoken", "text": "My date of birth is the fourteenth of january nineteen seventy four.", "entities": [{"type": "dob", "start": 20, "end": 67}], "id": "sp-0454"}
+{"form": "spoken", "text": "My date of birth is the fifteenth of november nineteen eighty five.", "entities": [{"type": "dob", "start": 20, "end": 66}], "id": "sp-0455"}
+{"form": "spoken", "text": "My birthday is the first of october nineteen sixty nine.", "entities": [{"type": "dob", "start": 15, "end": 55}], "id": "sp-0456"}
+{"form": "spoken", "text": "My birthday is the seventh of july nineteen seventy three.", "entities": [{"type": "dob", "start": 15, "end": 57}], "id": "sp-0457"}
+{"form": "spoken", "text": "My date of birth is the twenty third of july twenty oh five.", "entities": [{"type": "dob", "start": 20, "end": 59}], "id": "sp-0458"}
+{"form": "spoken", "text": "My date of birth is the twelfth of june nineteen sixty four.", "entities": [{"type": "dob", "start": 20, "end": 59}], "id": "sp-0459"}
+{"form": "spoken", "text": "My birthday is the second of september nineteen fifty.", "entities": [{"type": "dob", "start": 15, "end": 53}], "id": "sp-0460"}
+{"form": "spoken", "text": "My birthday is march first nineteen eighty four.", "entities": [{"type": "dob", "start": 15, "end": 47}], "id": "sp-0461"}
+{"form": "spoken", "text": "I was born on may ninth nineteen sixty.", "entities": [{"type": "dob", "start": 14, "end": 38}], "id": "sp-0462"}
+{"form": "spoken", "text": "I was born on december twenty first nineteen sixty five.", "entities": [{"type": "dob", "start": 14, "end": 55}], "id": "sp-0463"}
+{"form": "spoken", "text": "My date of birth is the fifth of june nineteen eighty seven.", "entities": [{"type": "dob", "start": 20, "end": 59}], "id": "sp-0464"}
+{"form": "spoken", "text": "My date of birth is the twenty sixth of july nineteen ninety.", "entities": [{"type": "dob", "start": 20, "end": 60}], "id": "sp-0465"}
+{"form": "spoken", "text": "My date of birth is may sixteenth twenty oh one.", "entities": [{"type": "dob", "start": 20, "end": 47}], "id": "sp-0466"}
+{"form": "spoken", "text": "I was born on the seventeenth of march nineteen eighty two.", "entities": [{"type": "dob", "start": 14, "end": 58}], "id": "sp-0467"}
+{"form": "spoken", "text": "I was born on the tenth of august nineteen seventy two.", "entities": [{"type": "dob", "start": 14, "end": 54}], "id": "sp-0468"}
+{"form": "spoken", "text": "My date of birth is june twelfth nineteen seventy four.", "entities": [{"type": "dob", "start": 20, "end": 54}], "id": "sp-0469"}
+{"form": "spoken", "text": "I was born on december twenty fifth nineteen sixty four.", "entities": [{"type": "dob", "start": 14, "end": 55}], "id": "sp-0470"}
+{"form": "spoken", "text": "My birthday is the twenty eighth of may twenty oh one.", "entities": [{"type": "dob", "start": 15, "end": 53}], "id": "sp-0471"}
+{"form": "spoken", "text": "I was born on january twenty first nineteen ninety one.", "entities": [{"type": "dob", "start": 14, "end": 54}], "id": "sp-0472"}
+{"form": "spoken", "text": "I was born on the sixteenth of october twenty oh five.", "entities": [{"type": "dob", "start": 14, "end": 53}], "id": "sp-0473"}
+{"form": "spoken", "text": "I was born on february twenty eighth twenty oh one.", "entities": [{"type": "dob", "start": 14, "end": 50}], "id": "sp-0474"}
+{"form": "spoken", "text": "I was born on the second of january nineteen ninety three.", "entities": [{"type": "dob", "start": 14, "end": 57}], "id": "sp-0475"}
+{"form": "spoken", "text": "My birthday is the eleventh of may nineteen eighty.", "entities": [{"type": "dob", "start": 15, "end": 50}], "id": "sp-0476"}
+{"form": "spoken", "text": "I was born on the twenty first of april nineteen sixty eight.", "entities": [{"type": "dob", "start": 14, "end": 60}], "id": "sp-0477"}
+{"form": "spoken", "text": "My date of birth is october fourth nineteen fifty nine.", "entities": [{"type": "dob", "start": 20, "end": 54}], "id": "sp-0478"}
+{"form": "spoken", "text": "I was born on may twenty sixth nineteen fifty three.", "entities": [{"type": "dob", "start": 14, "end": 51}], "id": "sp-0479"}
+{"form": "spoken", "text": "Passport seven two double oh four double one one six.", "entities": [{"type": "passport", "start": 9, "end": 52}], "id": "sp-0480"}
+{"form": "spoken", "text": "Passport six one seven eight four six eight four five.", "entities": [{"type": "passport", "start": 9, "end": 53}], "id": "sp-0481"}
+{"form": "spoken", "text": "My passport number is seven five eight, seven seven one, six eight nine.", "entities": [{"type": "passport", "start": 22, "end": 71}], "id": "sp-0482"}
+{"form": "spoken", "text": "Passport ninety seven zero, one seventy two, thirty four nine.", "entities": [{"type": "passport", "start": 9, "end": 61}], "id": "sp-0483"}
+{"form": "spoken", "text": "My passport number is seven double eight, five one double eight, one five.", "entities": [{"type": "passport", "start": 22, "end": 73}], "id": "sp-0484"}
+{"form": "spoken", "text": "Passport nine eight six six eight six two four zero.", "entities": [{"type": "passport", "start": 9, "end": 51}], "id": "sp-0485"}
+{"form": "spoken", "text": "My passport number is four zero three two seven four zero nine two.", "entities": [{"type": "passport", "start": 22, "end": 66}], "id": "sp-0486"}
+{"form": "spoken", "text": "My passport number is three four nine one nine one four two two.", "entities": [{"type": "passport", "start": 22, "end": 63}], "id": "sp-0487"}
+{"form": "spoken", "text": "My passport number is zero one nine six six two two two five.", "entities": [{"type": "passport", "start": 22, "end": 60}], "id": "sp-0488"}
+{"form": "spoken", "text": "My passport number is zero one zero one thirty two thirty three zero.", "entities": [{"type": "passport", "start": 22, "end": 68}], "id": "sp-0489"}
+{"form": "spoken", "text": "Passport eight zero six, eight two two, three four nine.", "entities": [{"type": "passport", "start": 9, "end": 55}], "id": "sp-0490"}
+{"form": "spoken", "text": "Passport seven five six three six one nine zero five.", "entities": [{"type": "passport", "start": 9, "end": 52}], "id": "sp-0491"}
+{"form": "spoken", "text": "My passport number is eight eight eight, one seven oh, four two three.", "entities": [{"type": "passport", "start": 22, "end": 69}], "id": "sp-0492"}
+{"form": "spoken", "text": "Passport nine eight seven seven three six seven four three.", "entities": [{"type": "passport", "start": 9, "end": 58}], "id": "sp-0493"}
+{"form": "spoken", "text": "Passport forty eight one sixty three eighty four twenty five.", "entities": [{"type": "passport", "start": 9, "end": 60}], "id": "sp-0494"}
+{"form": "spoken", "text": "My passport number is zero three four one three double eight one three.", "entities": [{"type": "passport", "start": 22, "end": 70}], "id": "sp-0495"}
+{"form": "spoken", "text": "Passport five six zero zero six seven six four seven.", "entities": [{"type": "passport", "start": 9, "end": 52}], "id": "sp-0496"}
+{"form": "spoken", "text": "My passport number is fifty nine ninety four forty four sixty six two.", "entities": [{"type": "passport", "start": 22, "end": 69}], "id": "sp-0497"}
+{"form": "spoken", "text": "My passport number is eighty nine zero, zero thirty seven, ninety two three.", "entities": [{"type": "passport", "start": 22, "end": 75}], "id": "sp-0498"}
+{"form": "spoken", "text": "Passport zero eight six, two four nine, nine six six.", "entities": [{"type": "passport", "start": 9, "end": 52}], "id": "sp-0499"}
+{"form": "spoken", "text": "Passport twenty one one twenty four twenty four eighty seven.", "entities": [{"type": "passport", "start": 9, "end": 60}], "id": "sp-0500"}
+{"form": "spoken", "text": "Passport one eight five eight five seven three nine two.", "entities": [{"type": "passport", "start": 9, "end": 55}], "id": "sp-0501"}
+{"form": "spoken", "text": "Passport five seven seven two one three one one four.", "entities": [{"type": "passport", "start": 9, "end": 52}], "id": "sp-0502"}
+{"form": "spoken", "text": "Passport five four two seven five five eight seven five.", "entities": [{"type": "passport", "start": 9, "end": 55}], "id": "sp-0503"}
+{"form": "spoken", "text": "My passport number is six five four eight seven five four eight six.", "entities": [{"type": "passport", "start": 22, "end": 67}], "id": "sp-0504"}
+{"form": "spoken", "text": "My passport number is one sixty three seventy six sixty seven twenty two.", "entities": [{"type": "passport", "start": 22, "end": 72}], "id": "sp-0505"}
+{"form": "spoken", "text": "My passport number is two seven eight eight six oh six eight seven.", "entities": [{"type": "passport", "start": 22, "end": 66}], "id": "sp-0506"}
+{"form": "spoken", "text": "Passport four double five eight three two nine double one.", "entities": [{"type": "passport", "start": 9, "end": 57}], "id": "sp-0507"}
+{"form": "spoken", "text": "My passport number is three five four, eight seven five, seven seven eight.", "entities": [{"type": "passport", "start": 22, "end": 74}], "id": "sp-0508"}
+{"form": "spoken", "text": "Passport six two three, six one one, five three six.", "entities": [{"type": "passport", "start": 9, "end": 51}], "id": "sp-0509"}
+{"form": "spoken", "text": "Hi, my name is Fatima Hughes.", "entities": [{"type": "name", "start": 15, "end": 28}], "id": "sp-0510"}
+{"form": "spoken", "text": "Hi, my name is Mei Khan.", "entities": [{"type": "name", "start": 15, "end": 23}], "id": "sp-0511"}
+{"form": "spoken", "text": "The booking is under, my name is Fatima Okafor and I need help.", "entities": [{"type": "name", "start": 33, "end": 46}], "id": "sp-0512"}
+{"form": "spoken", "text": "The booking is under, my name is Liam Patel and I need help.", "entities": [{"type": "name", "start": 33, "end": 43}], "id": "sp-0513"}
+{"form": "spoken", "text": "Hello, my name's Tom Rivera.", "entities": [{"type": "name", "start": 17, "end": 27}], "id": "sp-0514"}
+{"form": "spoken", "text": "Hello, my name's Daniel Walker and I need help.", "entities": [{"type": "name", "start": 17, "end": 30}], "id": "sp-0515"}
+{"form": "spoken", "text": "Hi, my name is Mei Patel.", "entities": [{"type": "name", "start": 15, "end": 24}], "id": "sp-0516"}
+{"form": "spoken", "text": "Hi, my name is Daniel Patel and I need help.", "entities": [{"type": "name", "start": 15, "end": 27}], "id": "sp-0517"}
+{"form": "spoken", "text": "Hello, my name's Daniel Patel and I need help.", "entities": [{"type": "name", "start": 17, "end": 29}], "id": "sp-0518"}
+{"form": "spoken", "text": "Hello, my name's Sara Hughes.", "entities": [{"type": "name", "start": 17, "end": 28}], "id": "sp-0519"}
+{"form": "spoken", "text": "Hello, my name's Grace Nguyen.", "entities": [{"type": "name", "start": 17, "end": 29}], "id": "sp-0520"}
+{"form": "spoken", "text": "Hello, my name's Mei Brennan and I need help.", "entities": [{"type": "name", "start": 17, "end": 28}], "id": "sp-0521"}
+{"form": "spoken", "text": "Hi, my name is Daniel Rivera and I need help.", "entities": [{"type": "name", "start": 15, "end": 28}], "id": "sp-0522"}
+{"form": "spoken", "text": "The booking is under, my name is Sara Rivera and I need help.", "entities": [{"type": "name", "start": 33, "end": 44}], "id": "sp-0523"}
+{"form": "spoken", "text": "Hello, my name's Sara Hughes.", "entities": [{"type": "name", "start": 17, "end": 28}], "id": "sp-0524"}
+{"form": "spoken", "text": "Hello, my name's Omar Okafor.", "entities": [{"type": "name", "start": 17, "end": 28}], "id": "sp-0525"}
+{"form": "spoken", "text": "Hello, my name's Omar Khan.", "entities": [{"type": "name", "start": 17, "end": 26}], "id": "sp-0526"}
+{"form": "spoken", "text": "The booking is under, my name is Fatima Brennan.", "entities": [{"type": "name", "start": 33, "end": 47}], "id": "sp-0527"}
+{"form": "spoken", "text": "The booking is under, my name is Fatima Walker.", "entities": [{"type": "name", "start": 33, "end": 46}], "id": "sp-0528"}
+{"form": "spoken", "text": "Hello, my name's Mei Rivera and I need help.", "entities": [{"type": "name", "start": 17, "end": 27}], "id": "sp-0529"}
+{"form": "spoken", "text": "The booking is under, my name is Priya Patel and I need help.", "entities": [{"type": "name", "start": 33, "end": 44}], "id": "sp-0530"}
+{"form": "spoken", "text": "The booking is under, my name is Omar Brennan and I need help.", "entities": [{"type": "name", "start": 33, "end": 45}], "id": "sp-0531"}
+{"form": "spoken", "text": "The booking is under, my name is Alex Patel.", "entities": [{"type": "name", "start": 33, "end": 43}], "id": "sp-0532"}
+{"form": "spoken", "text": "The booking is under, my name is Liam Khan.", "entities": [{"type": "name", "start": 33, "end": 42}], "id": "sp-0533"}
+{"form": "spoken", "text": "Hi, my name is Alex Walker.", "entities": [{"type": "name", "start": 15, "end": 26}], "id": "sp-0534"}
+{"form": "spoken", "text": "The booking is under, my name is Tom Nguyen and I need help.", "entities": [{"type": "name", "start": 33, "end": 43}], "id": "sp-0535"}
+{"form": "spoken", "text": "Hello, my name's Mei Hughes and I need help.", "entities": [{"type": "name", "start": 17, "end": 27}], "id": "sp-0536"}
+{"form": "spoken", "text": "Hi, my name is Grace Hughes and I need help.", "entities": [{"type": "name", "start": 15, "end": 27}], "id": "sp-0537"}
+{"form": "spoken", "text": "Hi, my name is Grace Khan and I need help.", "entities": [{"type": "name", "start": 15, "end": 25}], "id": "sp-0538"}
+{"form": "spoken", "text": "The booking is under, my name is Sara Nguyen and I need help.", "entities": [{"type": "name", "start": 33, "end": 44}], "id": "sp-0539"}
+{"form": "negative", "text": "Set a timer for twenty five minutes.", "entities": [], "id": "sp-0540"}
+{"form": "negative", "text": "I need to build an emergency fund this year.", "entities": [], "id": "sp-0541"}
+{"form": "negative", "text": "Remind me to call Sue about dinner on Friday.", "entities": [], "id": "sp-0542"}
+{"form": "negative", "text": "What is the secret ingredient in a good carbonara?", "entities": [], "id": "sp-0543"}
+{"form": "negative", "text": "Help me reset my password please.", "entities": [], "id": "sp-0544"}
+{"form": "negative", "text": "Add a meeting on 2026-11-07 at the office.", "entities": [], "id": "sp-0545"}
+{"form": "negative", "text": "How many tokens does the model use?", "entities": [], "id": "sp-0546"}
+{"form": "negative", "text": "I have two kids and one dog.", "entities": [], "id": "sp-0547"}
+{"form": "negative", "text": "Oh no, I forgot my keys again.", "entities": [], "id": "sp-0548"}
+{"form": "negative", "text": "Play the top forty from nineteen ninety nine.", "entities": [], "id": "sp-0549"}
+{"form": "negative", "text": "Turn the heating up to twenty one degrees.", "entities": [], "id": "sp-0550"}
+{"form": "negative", "text": "Book a table for four at seven thirty.", "entities": [], "id": "sp-0551"}
+{"form": "negative", "text": "What is three hundred and twenty times four?", "entities": [], "id": "sp-0552"}
+{"form": "negative", "text": "My flight leaves at six fifteen tomorrow morning.", "entities": [], "id": "sp-0553"}
+{"form": "negative", "text": "Order two pizzas and a large coke.", "entities": [], "id": "sp-0554"}
+{"form": "negative", "text": "How far is it to the airport from here?", "entities": [], "id": "sp-0555"}
+{"form": "negative", "text": "Read me the news headlines.", "entities": [], "id": "sp-0556"}
+{"form": "negative", "text": "What year did the Berlin Wall fall?", "entities": [], "id": "sp-0557"}
+{"form": "negative", "text": "Convert one hundred dollars to pounds.", "entities": [], "id": "sp-0558"}
+{"form": "negative", "text": "Is it going to rain on the twenty first of may?", "entities": [], "id": "sp-0559"}
+{"form": "negative", "text": "I came first in the race last Sunday.", "entities": [], "id": "sp-0560"}
+{"form": "negative", "text": "Meet me at home after work.", "entities": [], "id": "sp-0561"}
+{"form": "negative", "text": "The password manager keeps crashing.", "entities": [], "id": "sp-0562"}
+{"form": "negative", "text": "Skip ahead thirty seconds.", "entities": [], "id": "sp-0563"}
+{"form": "negative", "text": "Call my mum.", "entities": [], "id": "sp-0564"}
+{"form": "negative", "text": "Set an alarm for five forty five.", "entities": [], "id": "sp-0565"}
+{"form": "negative", "text": "What is the population of London?", "entities": [], "id": "sp-0566"}
+{"form": "negative", "text": "Add milk, eggs and bread to my shopping list.", "entities": [], "id": "sp-0567"}
+{"form": "negative", "text": "I'll be there in ten minutes.", "entities": [], "id": "sp-0568"}
+{"form": "negative", "text": "Remind me in two weeks to renew the insurance.", "entities": [], "id": "sp-0569"}
+{"form": "negative", "text": "Who won the match four nil last night?", "entities": [], "id": "sp-0570"}
+{"form": "negative", "text": "The kids are seven and nine years old.", "entities": [], "id": "sp-0571"}
+{"form": "negative", "text": "Lower the volume to level three.", "entities": [], "id": "sp-0572"}
+{"form": "negative", "text": "Translate thank you very much into Spanish.", "entities": [], "id": "sp-0573"}
+{"form": "negative", "text": "How many calories are in two bananas?", "entities": [], "id": "sp-0574"}
+{"form": "negative", "text": "The room number is twelve on the second floor.", "entities": [], "id": "sp-0575"}
+{"form": "negative", "text": "Find a recipe that takes under thirty minutes.", "entities": [], "id": "sp-0576"}
+{"form": "negative", "text": "Start a workout for forty five minutes.", "entities": [], "id": "sp-0577"}
+{"form": "negative", "text": "I walked ten thousand steps today.", "entities": [], "id": "sp-0578"}
+{"form": "negative", "text": "What's on my calendar for the third?", "entities": [], "id": "sp-0579"}

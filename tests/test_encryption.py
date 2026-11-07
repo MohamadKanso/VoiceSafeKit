@@ -1,6 +1,10 @@
 import json
 
-from voicesafekit.encryption import decrypt_json_payload, encrypt_json_payload
+import pytest
+
+pytest.importorskip("cryptography")
+
+from voicesafekit.encryption import decrypt_json_payload, encrypt_json_payload  # noqa: E402
 
 
 def test_encrypted_export_round_trips_and_hides_sensitive_values() -> None:

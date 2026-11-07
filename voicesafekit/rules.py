@@ -14,6 +14,7 @@ class PatternRule:
     pattern: re.Pattern[str]
     confidence: float = 1.0
     single_match: bool = False
+    # When the pattern has a named group "v", only that group is redacted.
 
 
 # PII pattern rules
@@ -47,7 +48,7 @@ PATTERN_RULES: tuple[PatternRule, ...] = (
         confidence=0.95,
         explanation="This looks like a payment card number. Do not send it to an LLM.",
         replacement="[payment number removed]",
-        pattern=re.compile(r"\b(?:\d[ -]*?){13,19}\b"),
+        pattern=re.compile(r"\b(?:\d[ -]?){12,18}\d\b"),
     ),
     PatternRule(
         kind="payment_card_partial",
@@ -123,11 +124,11 @@ PATTERN_RULES: tuple[PatternRule, ...] = (
         replacement="[date of birth removed]",
         pattern=re.compile(
             r"\b(?:born|dob|date of birth|d\.o\.b|birthday)\s*(?:is|was|on|:)?\s*"
-            r"(?:\d{1,2}[-/]\d{1,2}[-/]\d{2,4}"
+            r"(?:the\s+)?(?:\d{1,2}[-/]\d{1,2}[-/]\d{2,4}"
             r"|\d{4}[-/]\d{1,2}[-/]\d{1,2}"
             r"|(?:january|february|march|april|may|june|july|august|september|october|november|december"
-            r"|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\.?\s+\d{1,2},?\s*\d{4}"
-            r"|\d{1,2}\s+(?:january|february|march|april|may|june|july|august|september|october|november|december"
+            r"|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\.?\s+\d{1,2}(?:st|nd|rd|th)?,?\s*\d{4}"
+            r"|\d{1,2}(?:st|nd|rd|th)?\s+(?:of\s+)?(?:january|february|march|april|may|june|july|august|september|october|november|december"
             r"|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\.?\s+\d{4})\b",
             re.IGNORECASE,
         ),
@@ -155,9 +156,16 @@ PATTERN_RULES: tuple[PatternRule, ...] = (
         replacement="[secret removed]",
         pattern=re.compile(
             r"\b(?:"
-            r"(?:password|passcode)\s*(?:is|was|might be|may be|could be|=|:)?"
+            # "password is X", "password for my bank was X", "passcode: X"
+            r"(?:password|passcode|passphrase)(?:\s+(?:for|to|on)\s+(?:my\s+|the\s+)?[\w.-]+){0,2}"
+            r"\s*(?:is|was|might be|may be|could be|=|:)"
             r"\s*(?:something like|around|maybe|possibly)?\s*[^\s,.;]{4,}|"
-            r"(?:api key|token|secret)\s*(?:is|was|=|:)?\s*[^\s,.;]{4,}"
+            # "password BlueFalcon2026" with no verb: the value must look like a credential
+            r"(?:password|passcode)\s+(?:something like\s+)?"
+            r"(?=[^\s,.;]*[\d!@#$%^&*])[^\s,.;]{4,}|"
+            # "api key is sk-123", "token: abc_123" (value must look like a key)
+            r"(?:api key|access token|auth token|token|secret key|secret)\s*(?:is|was|=|:)"
+            r"\s*(?=[^\s,.;]*[\d_\-!@#$%^&*])[^\s,.;]{4,}"
             r")",
             re.IGNORECASE,
         ),
@@ -174,6 +182,113 @@ PATTERN_RULES: tuple[PatternRule, ...] = (
             r"(?:Street|St|Road|Rd|Avenue|Ave|Lane|Ln|Drive|Dr|Way|Close|Court)\b",
             re.IGNORECASE,
         ),
+    ),
+    PatternRule(
+        kind="ssn",
+        label="Social Security Number",
+        severity="critical",
+        confidence=0.9,
+        explanation=(
+            "A nine-digit number said right after 'social security' or 'SSN'. "
+            "Spoken SSNs rarely include dashes. Never transmit them."
+        ),
+        replacement="[SSN removed]",
+        pattern=re.compile(
+            r"\b(?:ssn|social security(?:\s+number)?|social)\b[^.!?\n\d]{0,25}?"
+            r"(?P<v>(?!000|666|9\d{2})\d{3}[-\s]?\d{2}[-\s]?\d{4})\b",
+            re.IGNORECASE,
+        ),
+    ),
+    PatternRule(
+        kind="pin",
+        label="PIN",
+        severity="high",
+        confidence=0.9,
+        explanation="PINs unlock cards, phones and accounts. Never send them to a model.",
+        replacement="[PIN removed]",
+        pattern=re.compile(
+            r"\bpin(?:\s+(?:number|code))?\s*(?:is|was|=|:)?\s*(?P<v>\d(?:[ -]?\d){3,7})\b",
+            re.IGNORECASE,
+        ),
+    ),
+    PatternRule(
+        kind="otp",
+        label="One-time or verification code",
+        severity="high",
+        confidence=0.9,
+        explanation=(
+            "Verification and one-time codes are live credentials. Reading one out "
+            "is the classic step in an account-takeover scam."
+        ),
+        replacement="[verification code removed]",
+        pattern=re.compile(
+            r"\b(?:(?:verification|one[- ]time|login|log-in|sign[- ]in|auth(?:entication)?|"
+            r"2fa|two[- ]factor|sms|text|access)\s+code|otp|"
+            r"code\s+(?:you|they|the bank|it)\s+(?:just\s+)?(?:sent|texted|gave)(?:\s+me)?)"
+            r"\s*(?:is|was|=|:)?\s*(?P<v>\d(?:[ ,-]{0,2}\d){3,7})\b",
+            re.IGNORECASE,
+        ),
+    ),
+    PatternRule(
+        kind="passport",
+        label="Passport number",
+        severity="critical",
+        confidence=0.85,
+        explanation="Passport numbers are government identity documents. Never transmit them.",
+        replacement="[passport number removed]",
+        pattern=re.compile(
+            r"\bpassport(?:\s+(?:number|no\.?))?\s*(?:is|was|=|:)?\s*"
+            r"(?P<v>(?=[A-Z0-9 ]*\d)[A-Z0-9](?:[A-Z0-9]|(?<=\d) (?=\d)){5,10})\b",
+            re.IGNORECASE,
+        ),
+    ),
+    PatternRule(
+        kind="national_insurance",
+        label="UK National Insurance number",
+        severity="critical",
+        confidence=0.9,
+        explanation=(
+            "National Insurance numbers are UK government identifiers. Never transmit them."
+        ),
+        replacement="[NI number removed]",
+        pattern=re.compile(
+            r"\b(?!BG|GB|NK|KN|TN|NT|ZZ)[A-CEGHJ-PR-TW-Z][A-CEGHJ-NPR-TW-Z]"
+            r"\s?\d{2}\s?\d{2}\s?\d{2}\s?[A-D]\b",
+            re.IGNORECASE,
+        ),
+    ),
+    PatternRule(
+        kind="api_key",
+        label="API key or access token",
+        severity="high",
+        confidence=0.97,
+        explanation="This matches a known API key format. Revoke it if it was shared.",
+        replacement="[API key removed]",
+        pattern=re.compile(
+            r"\b(?:sk-(?:proj-|ant-)?[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{36}|"
+            r"xox[baprs]-[A-Za-z0-9-]{10,}|AIza[0-9A-Za-z_-]{35})\b"
+        ),
+    ),
+    PatternRule(
+        kind="person_name",
+        label="Person name",
+        severity="medium",
+        confidence=0.8,
+        explanation="The speaker introduced themselves by name. Names identify people.",
+        replacement="[name removed]",
+        pattern=re.compile(
+            r"(?i:\bmy\s+name\s+is|\bmy\s+name's|\bthe\s+name's|\bthe\s+name\s+is)\s+"
+            r"(?P<v>[A-Z][a-z]+(?:[ -](?!And\b|I\b)[A-Z][a-z'-]+){0,2})"
+        ),
+    ),
+    PatternRule(
+        kind="postcode",
+        label="UK postcode",
+        severity="medium",
+        confidence=0.75,
+        explanation="Postcodes narrow a location down to a handful of homes.",
+        replacement="[postcode removed]",
+        pattern=re.compile(r"\b[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}\b"),
     ),
 )
 
@@ -206,7 +321,8 @@ INTENT_RULES: tuple[PatternRule, ...] = (
         explanation="Legal questions need careful boundaries and may require a professional.",
         replacement="[legal details withheld]",
         pattern=re.compile(
-            r"\b(?:lawsuit|sue|contract dispute|eviction|immigration|legal advice|"
+            r"\b(?:lawsuit|(?:to|will|i'll|can i|should i|gonna|going to)\s+(?P<v>sue)|suing|"
+            r"contract dispute|eviction|immigration|legal advice|"
             r"restraining order|custody|divorce settlement)\b",
             re.IGNORECASE,
         ),
@@ -281,7 +397,9 @@ INTENT_RULES: tuple[PatternRule, ...] = (
         replacement="[urgent safety details withheld]",
         pattern=re.compile(
             r"\b(?:can't breathe|cannot breathe|heart attack|overdose|hurt myself|"
-            r"kill myself|call 911|call an ambulance|emergency|suicidal)\b",
+            r"kill myself|call 911|call 999|call 112|call an ambulance|suicidal|"
+            r"emergency(?!\s+(?:fund|funds|savings|contact|contacts|exit|kit|plan|brake|"
+            r"number|services number|meeting|landing|lighting|power|stop)))\b",
             re.IGNORECASE,
         ),
         single_match=True,

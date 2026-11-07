@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import re
+from dataclasses import replace
 
 from voicesafekit.models import AnalysisResult, ConversationResult, ConversationTurn, Finding
 from voicesafekit.rules import INTENT_RULES, PATTERN_RULES, PatternRule
+from voicesafekit.spoken import NormalizedText, normalize_spoken
 
 SEVERITY_POINTS = {
     "low": 10,
@@ -15,9 +17,15 @@ SEVERITY_RANK = {"low": 1, "medium": 2, "high": 3, "critical": 4}
 DECISION_RANK = {"SAFE": 0, "REDACT": 1, "REVIEW": 2, "BLOCK": 3}
 
 
-def analyze_transcript(transcript: str) -> AnalysisResult:
-    """Find privacy and safety risks in a voice assistant transcript."""
-    findings = _find_risks(transcript)
+def analyze_transcript(transcript: str, *, spoken: bool = True) -> AnalysisResult:
+    """Find privacy and safety risks in a voice assistant transcript.
+
+    With ``spoken=True`` (the default) the transcript is first normalised so that
+    speech-to-text output such as "four two four two ..." or "alex dot rivera at
+    gmail dot com" is checked in its written form. Redaction always applies to
+    the original transcript.
+    """
+    findings = _find_risks(transcript, spoken=spoken)
     score = _score(findings)
     decision = _decision(score, findings)
     safe_transcript = _redact(transcript, findings)
@@ -38,6 +46,8 @@ def analyze_transcript(transcript: str) -> AnalysisResult:
 def analyze_conversation(
     utterances: list[str],
     speaker: str = "user",
+    *,
+    spoken: bool = True,
 ) -> ConversationResult:
     """Analyze a sequence of utterances as a multi-turn conversation.
 
@@ -49,7 +59,7 @@ def analyze_conversation(
     peak_decision = "SAFE"
 
     for utterance in utterances:
-        result = analyze_transcript(utterance)
+        result = analyze_transcript(utterance, spoken=spoken)
         turns.append(ConversationTurn(speaker=speaker, transcript=utterance, result=result))
         seen_kinds.update(f.kind for f in result.findings)
         if DECISION_RANK.get(result.decision, 0) > DECISION_RANK.get(peak_decision, 0):
@@ -68,11 +78,21 @@ def analyze_conversation(
 # internal helpers
 
 
-def _find_risks(transcript: str) -> list[Finding]:
+def _find_risks(transcript: str, *, spoken: bool = True) -> list[Finding]:
+    norm = normalize_spoken(transcript) if spoken else None
+    text = norm.text if norm is not None and norm.changed else transcript
     findings: list[Finding] = []
     for rule in (*PATTERN_RULES, *INTENT_RULES):
-        findings.extend(_matches_for_rule(transcript, rule))
+        findings.extend(_matches_for_rule(text, rule))
+    if norm is not None and norm.changed:
+        findings = [_to_original(f, norm) for f in findings]
     return _remove_overlaps(sorted(findings, key=lambda f: (f.start, -f.end)))
+
+
+def _to_original(finding: Finding, norm: NormalizedText) -> Finding:
+    start, end = norm.to_original(finding.start, finding.end)
+    spoken = norm.text[finding.start : finding.end] != norm.original[start:end]
+    return replace(finding, start=start, end=end, spoken=spoken)
 
 
 def _score(findings: list[Finding]) -> int:
@@ -82,17 +102,22 @@ def _score(findings: list[Finding]) -> int:
 
 def _matches_for_rule(transcript: str, rule: PatternRule) -> list[Finding]:
     matches: list[Finding] = []
+    has_value_group = "v" in rule.pattern.groupindex
     for match in rule.pattern.finditer(transcript):
-        matched_text = match.group(0).strip()
+        if has_value_group and match.group("v") is not None:
+            m_start, m_end = match.span("v")
+        else:
+            m_start, m_end = match.span()
+        matched_text = transcript[m_start:m_end].strip()
 
         if rule.kind == "phone" and (
-            _looks_like_card_shaped_number(matched_text, transcript, match.start(), match.end())
+            _looks_like_card_shaped_number(matched_text, transcript, m_start, m_end)
             or _looks_like_ip_address(matched_text)
         ):
             continue
 
         if rule.kind == "payment_card" and not _looks_like_payment_card(
-            matched_text, transcript, match.start(), match.end()
+            matched_text, transcript, m_start, m_end
         ):
             continue
 
@@ -102,12 +127,20 @@ def _matches_for_rule(transcript: str, rule: PatternRule) -> list[Finding]:
         if rule.kind == "ip_address" and matched_text in ("0.0.0.0", "255.255.255.255"):
             continue
 
+        if rule.kind == "phone" and _looks_like_date(matched_text):
+            continue
+
+        if rule.kind == "national_insurance" and not _passes_nino_context(
+            matched_text, transcript, m_start
+        ):
+            continue
+
         confidence = _adjusted_confidence(
             rule,
             matched_text,
             transcript,
-            match.start(),
-            match.end(),
+            m_start,
+            m_end,
         )
 
         matches.append(
@@ -116,8 +149,8 @@ def _matches_for_rule(transcript: str, rule: PatternRule) -> list[Finding]:
                 label=rule.label,
                 severity=rule.severity,
                 explanation=rule.explanation,
-                start=match.start(),
-                end=match.end(),
+                start=m_start,
+                end=m_end,
                 replacement=rule.replacement,
                 confidence=confidence,
             )
@@ -241,8 +274,23 @@ def _guidance(findings: list[Finding]) -> list[str]:
         )
     if {"medical", "legal", "financial"} & kinds:
         guidance.append("Give general information only and suggest a qualified professional.")
-    if {"payment_card", "secret", "ssn", "iban", "cvv"} & kinds:
-        guidance.append("Never echo financial identifiers, SSNs, or credentials back to the user.")
+    if {
+        "payment_card", "secret", "ssn", "iban", "cvv", "pin", "passport",
+        "national_insurance", "api_key",
+    } & kinds:
+        guidance.append(
+            "Never echo financial identifiers, government IDs, or credentials back to the user."
+        )
+    if "otp" in kinds:
+        guidance.append(
+            "A one-time code was read out. Legitimate services never ask for these by voice; "
+            "warn the user this is a common scam pattern."
+        )
+    if any(f.spoken for f in findings):
+        guidance.append(
+            "Some details were spoken as words (for example 'four two four two'). "
+            "Treat them exactly like written numbers."
+        )
     return guidance
 
 
@@ -271,6 +319,13 @@ _PLURAL_LABELS: dict[str, str] = {
     "Emotional distress signal": "emotional distress signals",
     "Coercion or pressure signal": "coercion signals",
     "Emergency or immediate harm": "emergency or immediate harm phrases",
+    "PIN": "PINs",
+    "One-time or verification code": "one-time or verification codes",
+    "Passport number": "passport numbers",
+    "UK National Insurance number": "UK National Insurance numbers",
+    "API key or access token": "API keys or access tokens",
+    "Person name": "person names",
+    "UK postcode": "UK postcodes",
 }
 
 
@@ -300,6 +355,22 @@ def _looks_like_card_shaped_number(value: str, transcript: str, start: int, end:
 def _has_card_context(transcript: str, start: int, end: int) -> bool:
     window = transcript[max(0, start - 32) : min(len(transcript), end + 32)].lower()
     return any(p in window for p in ("card", "credit", "debit", "visa", "mastercard", "payment"))
+
+
+def _looks_like_date(value: str) -> bool:
+    return bool(
+        re.fullmatch(
+            r"\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}", value.strip()
+        )
+    )
+
+
+def _passes_nino_context(value: str, transcript: str, start: int) -> bool:
+    letters = [c for c in value if c.isalpha()]
+    if all(c.isupper() for c in letters):
+        return True
+    window = transcript[max(0, start - 40) : start].lower()
+    return any(k in window for k in ("national insurance", "ni number", "nino", "insurance number"))
 
 
 def _looks_like_ip_address(value: str) -> bool:

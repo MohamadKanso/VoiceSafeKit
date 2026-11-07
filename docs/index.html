@@ -34,8 +34,10 @@
       <span>VoiceSafeKit</span>
     </a>
     <nav aria-label="Primary navigation">
-      <a href="#workflow">Workflow</a>
+      <a href="#why">Why</a>
       <a href="#demo">Try Demo</a>
+      <a href="#benchmark">Benchmark</a>
+      <a href="#integrations">Integrations</a>
       <a href="paper.html">Paper</a>
       <a href="progress.html">Progress</a>
       <a href="https://github.com/MohamadKanso/VoiceSafeKit">GitHub</a>
@@ -79,6 +81,51 @@
           <span></span><span></span><span></span><span></span>
         </div>
         <p id="heroSummary">Review before sending. Found private details.</p>
+      </div>
+    </section>
+
+    <!-- Why: spoken forms -->
+    <section id="why" class="workflow">
+      <div class="section-heading">
+        <p class="eyebrow">The problem nobody was checking</p>
+        <h2>Speech-to-text writes what people say, not what they mean.</h2>
+        <p class="section-lede">
+          PII filters are built for typed text. A voice transcript spells numbers, emails and
+          dates out as words, so they pass straight through. Here is the same transcript
+          through a text-only filter and through VoiceSafeKit.
+        </p>
+      </div>
+      <div class="compare-table" role="table" aria-label="Spoken transcripts compared">
+        <div class="compare-row compare-head" role="row">
+          <span role="columnheader">What speech-to-text wrote</span>
+          <span role="columnheader">Text-only filter</span>
+          <span role="columnheader">VoiceSafeKit</span>
+        </div>
+        <div class="compare-row" role="row">
+          <code role="cell">my card is four two four two four two four two four two four two four two four two</code>
+          <span role="cell" class="compare-miss">SAFE, sent as-is</span>
+          <span role="cell" class="compare-hit">my card is [CARD_1]</span>
+        </div>
+        <div class="compare-row" role="row">
+          <code role="cell">email me at alex dot rivera at gmail dot com</code>
+          <span role="cell" class="compare-miss">SAFE, sent as-is</span>
+          <span role="cell" class="compare-hit">email me at [EMAIL_1]</span>
+        </div>
+        <div class="compare-row" role="row">
+          <code role="cell">my social is four seven one, five five, eight eight four three</code>
+          <span role="cell" class="compare-miss">SAFE, sent as-is</span>
+          <span role="cell" class="compare-hit">BLOCK: my social is [SSN removed]</span>
+        </div>
+        <div class="compare-row" role="row">
+          <code role="cell">the code they just texted me is four eight two nine one three</code>
+          <span role="cell" class="compare-miss">SAFE, sent as-is</span>
+          <span role="cell" class="compare-hit">[OTP_1] + scam warning for the assistant</span>
+        </div>
+        <div class="compare-row" role="row">
+          <code role="cell">I need to build an emergency fund this year</code>
+          <span role="cell" class="compare-miss">v0.4: BLOCK (false alarm)</span>
+          <span role="cell" class="compare-hit">SAFE</span>
+        </div>
       </div>
     </section>
 
@@ -277,14 +324,107 @@
       </section>
 
     </section>
+
+    <!-- Benchmark -->
+    <section id="benchmark" class="workflow">
+      <div class="section-heading">
+        <p class="eyebrow">SpokenPII benchmark</p>
+        <h2>Measured against Microsoft Presidio.</h2>
+        <p class="section-lede">
+          No public benchmark measured PII the way speech-to-text writes it, so the repo ships
+          one: 540 labelled sentences in written and spoken form, 40 tricky everyday requests,
+          and a set read aloud by a TTS voice and transcribed by Whisper.
+        </p>
+      </div>
+      <div class="steps bench-grid">
+        <article>
+          <span>Spoken PII protected</span>
+          <h3>100% <small>vs 21%</small></h3>
+          <p>270 spoken sentences: cards, SSNs, phones, emails, PINs, one-time codes, passports, dates of birth, names. With spoken mode off, VoiceSafeKit itself drops to 11%.</p>
+        </article>
+        <article>
+          <span>Real Whisper transcripts</span>
+          <h3>94% <small>vs 73%</small></h3>
+          <p>108 utterances spoken by a TTS voice and transcribed by Whisper <code>base.en</code>. Nothing was tuned on this set; the 7 misses are published as the next fixes.</p>
+        </article>
+        <article>
+          <span>False alarms, everyday requests</span>
+          <h3>0% <small>vs 42%</small></h3>
+          <p>"Set a timer for twenty five minutes", "call Sue", "emergency fund". About 0.06 ms per sentence against 3 ms, with zero dependencies.</p>
+        </article>
+      </div>
+      <p class="section-note">
+        Honest notes: the synthetic set and the detector share an author, so it is a regression
+        suite more than proof; Presidio was run with its defaults and is not built for speech.
+        Reproduce with <code>python benchmarks/run.py --presidio</code>.
+        <a href="paper.html#s16">Method and full tables</a>
+      </p>
+    </section>
+
+    <!-- Integrations -->
+    <section id="integrations" class="workflow">
+      <div class="section-heading">
+        <p class="eyebrow">Drop it into your voice agent</p>
+        <h2>The LLM sees placeholders. The voice says the real thing.</h2>
+        <p class="section-lede">
+          Reversible placeholders keep personal data out of the model while the agent can still
+          say it back. Passwords, PINs, CVVs and one-time codes are never stored, so they can
+          never be read aloud.
+        </p>
+      </div>
+      <pre class="code-panel"><span class="code-dim">User says    :</span> Hi, my name is Alex Rivera. My card number is four two four two four two four two
+               four two four two four two four two and my email is alex dot rivera at gmail dot com.
+<span class="code-dim">LLM receives :</span> Hi, my name is <span class="code-hit">[NAME_1]</span>. My card number is <span class="code-hit">[CARD_1]</span> and my email is <span class="code-hit">[EMAIL_1]</span>.
+<span class="code-dim">TTS says     :</span> Thanks Alex Rivera. I'll send the receipt to alex dot rivera at gmail dot com.</pre>
+      <div class="steps code-grid">
+        <article>
+          <span>Pipecat</span>
+          <pre class="code-panel small"><code>guard_in, restore_out, guard_ctx = (
+    voicesafe_processors()
+)
+
+Pipeline([
+    transport.input(), stt,
+    guard_in,          # PII -&gt; [CARD_1]
+    user_aggregator, llm,
+    restore_out,       # real values for TTS
+    tts, transport.output(),
+    guard_ctx, assistant_aggregator,
+])</code></pre>
+        </article>
+        <article>
+          <span>LiveKit Agents</span>
+          <pre class="code-panel small"><code>from voicesafekit.integrations.livekit import (
+    VoiceSafeAgent,
+)
+
+class Assistant(VoiceSafeAgent):   # not Agent
+    def __init__(self):
+        super().__init__(
+            instructions="You are helpful.",
+        )</code></pre>
+        </article>
+        <article>
+          <span>Python or CLI</span>
+          <pre class="code-panel small"><code>pip install git+https://github.com/MohamadKanso/VoiceSafeKit
+
+from voicesafekit import PrivacySession
+s = PrivacySession()
+s.protect("my pin is four eight two one").text
+# 'my pin is [PIN_1]' (never restorable)
+
+echo "..." | voicesafekit redact</code></pre>
+        </article>
+      </div>
+    </section>
   </main>
 
   <footer>
     <span>VoiceSafeKit is a demo safety layer, not legal, medical or security advice.</span>
     <a href="paper.html">How it was built</a>
     <a href="progress.html">Progress</a>
-    <a href="https://github.com/OpenVoiceOS/ovos-core">OpenVoiceOS</a>
-    <a href="https://github.com/OHF-Voice/wyoming">Wyoming protocol</a>
+    <a href="https://github.com/MohamadKanso/VoiceSafeKit">GitHub</a>
+    <a href="https://github.com/MohamadKanso/VoiceSafeKit/issues/new?template=missed_spoken_pii.yml">Report a missed transcript</a>
   </footer>
 
   <div id="toastContainer" class="toast-container" aria-live="polite"></div>

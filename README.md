@@ -60,6 +60,30 @@ echo "my pin is four eight two one" | voicesafekit redact
 # my pin is [PIN removed]
 ```
 
+## See it
+
+Spoken PII caught in the [live app](https://mohamadkanso.github.io/VoiceSafeKit/), with no
+digits or @ signs anywhere in the transcript:
+
+<p align="center">
+  <img src="docs/assets/screenshot-1-transcript.png" alt="Capture and Check panels: a spoken card number, email and one-time code are each flagged and marked caught in spoken form" width="900">
+</p>
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/assets/screenshot-2-risks.png" alt="Inspect tab highlighting the spoken name, card number, email and code in the original transcript"></td>
+    <td width="50%"><img src="docs/assets/screenshot-3-protect.png" alt="Protect panel with the safe transcript and guidance for the assistant"></td>
+  </tr>
+  <tr>
+    <td><sub>Inspect: the exact spoken words that were flagged.</sub></td>
+    <td><sub>Protect: the safe transcript and guidance for the assistant.</sub></td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="docs/assets/screenshot-4-spoken-vs-text.png" alt="Table comparing a text-only filter, which marks spoken PII as SAFE, with VoiceSafeKit, which redacts it" width="900">
+</p>
+
 ## SpokenPII benchmark
 
 No public benchmark measures PII *as speech-to-text writes it*, so this repo ships one.

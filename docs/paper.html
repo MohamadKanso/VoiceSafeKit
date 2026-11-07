@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>How VoiceSafeKit Works - Technical Paper</title>
-  <meta name="description" content="A technical walkthrough of how VoiceSafeKit was built: in-browser Whisper transcription, privacy rule detection and client-side AI safety filtering.">
+  <meta name="description" content="A technical walkthrough of VoiceSafeKit 0.5: spoken-form PII detection for speech-to-text transcripts, reversible placeholders, Pipecat and LiveKit integrations, and the SpokenPII benchmark.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23030504'/%3E%3Cpath d='M7 8h18v16H7z' fill='none' stroke='%2300ff84' stroke-width='2'/%3E%3C/svg%3E">
   <style>
     :root {
@@ -198,6 +198,7 @@
     /* Sections */
     .section {
       margin-bottom: 72px;
+      scroll-margin-top: 80px; /* Contents links land below the sticky top bar */
       opacity: 0;
       transform: translateY(22px);
       transition: opacity 0.55s ease, transform 0.55s ease;
@@ -607,10 +608,15 @@
         border-left-color: var(--green);
       }
 
-      .page-wrap { width: auto; min-width: 0; padding-right: 0; }
+      /* margin: 0 lets the grid item stretch to its column; auto margins sized it to its widest flow diagram */
+      .page-wrap { width: auto; min-width: 0; padding-right: 0; margin: 0; }
     }
 
     @media (max-width: 640px) {
+      .topbar { padding: 14px 16px; gap: 12px; }
+      .topbar nav { gap: 12px; }
+      .severity-table { display: block; overflow-x: auto; font-size: 13px; }
+      .severity-table th, .severity-table td { padding: 10px; }
       .arch-diagram { grid-template-columns: 1fr; }
       .score-demo { grid-template-columns: 1fr; }
     }
@@ -640,15 +646,15 @@
 
     <!-- Paper header -->
     <div class="paper-header">
-      <p class="paper-label">Technical paper</p>
+      <p class="paper-label">Technical paper &middot; v0.5</p>
       <h1 class="paper-title">How <em>VoiceSafeKit</em> was built</h1>
       <p style="color: var(--muted); font-size: 15px; margin-top: 14px;">
-        A walkthrough of the design, reasoning and technical choices behind a browser-based privacy filter for voice assistant transcripts.
+        Speech-to-text writes what people say, not what they mean. This paper explains how VoiceSafeKit reads personal data in that spoken form and keeps it away from the language model behind a voice assistant.
       </p>
       <div class="paper-meta">
         <span><span class="meta-dot"></span>Mohamad Kanso</span>
-        <span><span class="meta-dot"></span>2026</span>
-        <span><span class="meta-dot"></span>Client-side AI, Privacy and Voice Assistants</span>
+        <span><span class="meta-dot"></span>November 2026</span>
+        <span><span class="meta-dot"></span>Spoken PII, Privacy and Voice Agents</span>
       </div>
     </div>
 
@@ -656,7 +662,7 @@
     <div class="abstract-box section" id="abstract">
       <span class="abstract-label">Abstract</span>
       <p>
-        VoiceSafeKit is a privacy filter that sits between a voice assistant and a large language model. It records audio in the browser, transcribes it with a Whisper speech model running on the user's device, then checks the text for sensitive information before it can be sent to an AI. The project is a static web app with a mirrored Python package for CLI and server-side use. This paper explains the problem it solves, how it was designed, what it detects and why those choices were made.
+        Speech-to-text engines write what people say. A card number arrives as "four two four two four two&hellip;", an email as "alex dot rivera at gmail dot com", a phone number as "oh seven seven double oh&hellip;". Text-only PII tools, regex filters and NER models alike, are built for written text and pass all three straight through to the model. VoiceSafeKit is a privacy filter that sits between speech-to-text and a large language model. It first normalises spoken forms into written ones, runs its detectors on the written form, then maps every finding back to the original words so the redaction lands on what was actually said. Version 0.5 is a Python library with zero runtime dependencies, a browser app that transcribes with Whisper on the user's device, and drop-in processors for Pipecat and LiveKit Agents. On real Whisper transcripts it protects 94% of PII utterances with no false alarms; Microsoft Presidio, run with its defaults, protects 73% and raises false alarms on 42% of ordinary requests. This paper explains the problem, the design, what it detects, how it was measured and where it still fails.
       </p>
     </div>
 
@@ -665,20 +671,48 @@
       <p class="section-num">01 - The Problem</p>
       <h2 class="section-title">Voice assistants and the data they leak</h2>
       <p>
-        Voice assistants are becoming more capable because they can now pass what a user says directly to a large language model. That creates a real risk. When someone speaks to an assistant, they often include private details without thinking: an email address, a phone number, a password reset flow, a medical question. The assistant records all of it and sends it upstream.
+        Voice assistants are becoming more capable because they can now pass what a user says directly to a large language model. That creates a real risk. When someone speaks to an assistant, they often include private details without thinking: a card number to pay for something, an email address for a receipt, a one-time code a "bank" asked them to read out. The assistant transcribes all of it and sends it upstream.
       </p>
       <p>
-        There is usually nothing in between. The raw transcript goes to a cloud model, often unfiltered. Most developers building voice assistants focus on intent detection and response quality. Privacy filtering at the speech input layer is rarely a priority and off-the-shelf solutions for it are almost non-existent.
+        There is usually nothing in between, and the tools that do exist were built for a different kind of text. PII filters look for <code style="color: var(--green-2); font-size: 13px;">4242 4242 4242 4242</code> and <code style="color: var(--green-2); font-size: 13px;">alex.rivera@gmail.com</code>. Speech-to-text engines often write something else:
       </p>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>What speech-to-text actually writes</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre class="code"><span class="n">my card is four two four two four two four two four two four two four two four two</span>
+<span class="n">email me at alex dot rivera at gmail dot com</span>
+<span class="n">call me on oh seven seven double oh nine double oh one two three</span>
+<span class="n">my social is four seven one, five five, eight eight four three</span></pre>
+      </div>
+
       <p>
-        VoiceSafeKit addresses that gap. It is a safety layer that checks what was said before it leaves the device.
+        A regex for card numbers needs digits. A named-entity model reads "four" as a word, not a number. Both return nothing. Before version 0.5, VoiceSafeKit had the same blind spot: every one of those lines came back <strong>SAFE</strong>.
+      </p>
+
+      <table class="severity-table">
+        <thead>
+          <tr><th>Transcript</th><th>0.4 (text-only rules)</th><th>0.5 (spoken forms)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>my card is four two four two &hellip;</td><td>SAFE, nothing found</td><td style="color: var(--text);">REVIEW: my card is [payment number removed]</td></tr>
+          <tr><td>email me at alex dot rivera at gmail dot com</td><td>SAFE, nothing found</td><td style="color: var(--text);">REDACT: email me at [email removed]</td></tr>
+          <tr><td>call me on oh seven seven double oh nine &hellip;</td><td>SAFE, nothing found</td><td style="color: var(--text);">REDACT: call me on [phone removed]</td></tr>
+          <tr><td>my social is four seven one, five five, &hellip;</td><td>SAFE, nothing found</td><td style="color: var(--text);">BLOCK: my social is [SSN removed]</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        VoiceSafeKit addresses that gap. It is a safety layer that reads a transcript the way speech-to-text writes it, removes the sensitive parts before they leave the device or reach the model, and can put the values back into the reply when the assistant genuinely needs to say them.
       </p>
 
       <div class="callout">
         <span class="callout-icon">Example</span>
         <p>
           A user says: <strong style="color: var(--green-2); font-family: monospace; font-size: 13px;">"My email is john@example.com and my password is BlueFalcon2026. Help me reset my account."</strong>
-          Without filtering, that entire string goes to the model. VoiceSafeKit flags the email and password, produces a redacted version and tells the assistant not to echo the credentials back.
+          Without filtering, that entire string goes to the model. VoiceSafeKit returns <strong>REVIEW</strong> with a score of 53, sends <strong style="color: var(--green-2); font-family: monospace; font-size: 13px;">"My email is [email removed] and my [secret removed]. Help me reset my account."</strong> and tells the assistant never to echo the credentials back.
         </p>
       </div>
     </div>
@@ -688,28 +722,28 @@
       <p class="section-num">02 - Architecture</p>
       <h2 class="section-title">Three stages: Capture, Check, Protect</h2>
       <p>
-        The system is split into three clearly separated stages. Each one has a single responsibility.
+        The system is split into three clearly separated stages. Each one has a single responsibility. The same stages run in three places: the browser app, the Python library and the Pipecat and LiveKit processors, where the framework's own speech-to-text service does the capturing.
       </p>
 
       <div class="arch-diagram">
         <div class="arch-step">
           <p class="arch-step-num">STAGE 01</p>
           <h3>Capture</h3>
-          <p>Record audio via the browser microphone, transcribe it locally using Whisper, or accept pasted text.</p>
+          <p>Record audio via the browser microphone and transcribe it locally with Whisper, accept pasted text, or take the final transcript from a voice framework's STT.</p>
         </div>
         <div class="arch-step">
           <p class="arch-step-num">STAGE 02</p>
           <h3>Check</h3>
-          <p>Run the transcript through a set of pattern rules. Score the result. Assign a decision label.</p>
+          <p>Normalise spoken numbers and emails, run the pattern and intent rules on the written form, score the result and assign a decision.</p>
         </div>
         <div class="arch-step">
           <p class="arch-step-num">STAGE 03</p>
           <h3>Protect</h3>
-          <p>Produce a redacted transcript and plain-English guidance for the assistant to follow.</p>
+          <p>Redact the original words, or swap them for reversible placeholders, and give plain-English guidance for the assistant to follow.</p>
         </div>
       </div>
 
-      <p>The data flow within Stage 1 is worth showing explicitly:</p>
+      <p>In the browser, the data flow within Stage 1 is worth showing explicitly:</p>
 
       <div class="flow-diagram">
         <div class="flow-node">Microphone</div>
@@ -730,6 +764,22 @@
       <p>
         Nothing in that chain touches a server. The audio is captured in the browser, decoded in the browser and transcribed in the browser. The only thing that ever leaves the device is the cleaned transcript and only if the user chooses to forward it.
       </p>
+
+      <p>Stage 2 is where version 0.5 changed most. Detection runs on a written copy of the transcript, and redaction runs on the original:</p>
+
+      <div class="flow-diagram">
+        <div class="flow-node">Transcript</div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-node">normalize_spoken</div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-node">Written form + char map</div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-node">Rules + validators</div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-node">Spans mapped back</div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-node">Original words redacted</div>
+      </div>
     </div>
 
     <!-- Section 3: Whisper -->
@@ -746,7 +796,7 @@
       <div class="callout">
         <span class="callout-icon">How it runs in the browser</span>
         <p>
-          Transformers.js (by Hugging Face) compiles the model to ONNX format and runs it via WebAssembly. No GPU is needed. The model downloads once and is then stored permanently in the browser's IndexedDB cache. Every subsequent run is instant.
+          Transformers.js (by Hugging Face) runs an ONNX export of the model via WebAssembly. No GPU is needed. The model downloads once and is then stored in the browser's cache. Every subsequent run is instant.
         </p>
       </div>
 
@@ -770,11 +820,11 @@
       </div>
 
       <p>
-        The model is loaded lazily: it starts downloading as soon as the user presses Record, so by the time they finish speaking, it is usually ready. On repeat visits, the cached version loads in under a second.
+        The model is loaded lazily: it starts downloading as soon as the user presses Record, so by the time they finish speaking, it is usually ready. On repeat visits, the cached version loads in under a second. The transcript then goes through the same normaliser and rules as the Python library: <code style="color: var(--green-2); font-size: 13px;">app.js</code> mirrors <code style="color: var(--green-2); font-size: 13px;">spoken.py</code>, <code style="color: var(--green-2); font-size: 13px;">rules.py</code> and <code style="color: var(--green-2); font-size: 13px;">engine.py</code>, and a spoken-mode toggle shows the difference normalisation makes.
       </p>
 
       <p style="color: var(--muted); font-size: 14px;">
-        <strong>Why tiny over base?</strong> The tiny model (75MB) completes transcription in roughly 2-4 seconds on a typical laptop. The base model (145MB) is more accurate but takes longer to load and process. For a tool where speed matters for usability, tiny is the right trade-off.
+        <strong>Why tiny over base?</strong> The tiny model (75MB) completes transcription in roughly 2-4 seconds on a typical laptop. The base model (145MB) is more accurate but takes longer to load and process. For a tool where speed matters for usability, tiny is the right trade-off. The benchmark in section 16 uses <code style="color: var(--green-2); font-size: 13px;">base.en</code> through faster-whisper, closer to what a server-side voice agent would run.
       </p>
     </div>
 
@@ -783,59 +833,141 @@
       <p class="section-num">04 - The Detection Engine</p>
       <h2 class="section-title">What it looks for and how it decides</h2>
       <p>
-        Once the transcript exists as plain text, VoiceSafeKit runs it through a set of detection rules. Each rule has a pattern (a regular expression), a severity level, a human-readable explanation and a replacement string for the redacted output.
+        Once the transcript exists as plain text, and spoken forms have been rewritten into written ones, VoiceSafeKit runs it through a set of detection rules. Each rule has a pattern (a regular expression), a severity level, a base confidence, a human-readable explanation and a replacement string for the redacted output. Some rules mark a value group so that only the value is redacted and the context stays readable: <strong style="color: var(--green-2); font-family: monospace; font-size: 13px;">"my pin is [PIN removed]"</strong>. Several rules also run a validator before a match counts: Luhn or card context for cards, mod-97 for IBANs, issued ranges for SSNs, date and IP checks for phone numbers.
       </p>
+
+      <h3 style="font-size: 18px; font-weight: 420; margin: 32px 0 16px; color: var(--text);">Personal data and credentials</h3>
 
       <div class="rule-grid">
         <div class="rule-card">
           <p class="rule-card-kind medium">Medium</p>
           <h4>Email address</h4>
-          <p>Standard RFC-compliant email pattern.</p>
+          <p>Written emails, and spoken ones once normalised ("alex dot rivera at gmail dot com").</p>
         </div>
         <div class="rule-card">
           <p class="rule-card-kind medium">Medium</p>
           <h4>Phone number</h4>
-          <p>International and local formats. Rejects 13+ digit sequences to avoid clashing with card numbers.</p>
+          <p>International and local formats. Skipped when the digits look like a card (13-19 digits), an IP address or a date.</p>
         </div>
         <div class="rule-card">
           <p class="rule-card-kind high">High</p>
           <h4>Payment card</h4>
-          <p>13-19 digit groups with optional spaces or dashes.</p>
+          <p>13-19 digits with optional single spaces or dashes. Flagged when it passes Luhn or card words are nearby.</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind medium">Medium</p>
+          <h4>Partial card</h4>
+          <p>"Card ending in 4821", "card last four digits are 4821".</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind critical">Critical</p>
+          <h4>CVV / security code</h4>
+          <p>3-4 digits after cvv, cvc, cv2 or security code.</p>
         </div>
         <div class="rule-card">
           <p class="rule-card-kind high">High</p>
-          <h4>Password / secret</h4>
-          <p>Keyword-triggered: "password is", "token:", "api key =".</p>
+          <h4>PIN</h4>
+          <p>"My pin is four eight two one". Only the digits are redacted.</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind high">High</p>
+          <h4>One-time code</h4>
+          <p>Verification, login and 2FA codes, or "the code they just sent me". Flagged as a scam pattern.</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind critical">Critical</p>
+          <h4>IBAN</h4>
+          <p>Country code, check digits and BBAN, validated by mod-97.</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind critical">Critical</p>
+          <h4>Social Security Number</h4>
+          <p>XXX-XX-XXXX with unissued ranges excluded, or nine digits with no dashes after "social" or "SSN".</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind critical">Critical</p>
+          <h4>Passport number</h4>
+          <p>6-11 letters and digits after "passport" or "passport number".</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind critical">Critical</p>
+          <h4>UK National Insurance</h4>
+          <p>Two letters, six digits and a final A-D. Lower case needs NI context nearby.</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind medium">Medium</p>
+          <h4>Date of birth</h4>
+          <p>After born, DOB or birthday: numeric and month-name dates, including spoken ordinals.</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind medium">Medium</p>
+          <h4>Person name</h4>
+          <p>Self-introductions: "my name is Alex Rivera". Only the name is redacted.</p>
         </div>
         <div class="rule-card">
           <p class="rule-card-kind medium">Medium</p>
           <h4>Street address</h4>
-          <p>Number followed by street name suffix.</p>
+          <p>House number followed by a street name and suffix (Street, Road, Lane, Close).</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind medium">Medium</p>
+          <h4>UK postcode</h4>
+          <p>Outward and inward codes such as SW1A 1AA.</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind medium">Medium</p>
+          <h4>IP address</h4>
+          <p>IPv4, excluding 0.0.0.0 and 255.255.255.255.</p>
         </div>
         <div class="rule-card">
           <p class="rule-card-kind high">High</p>
+          <h4>Password / secret</h4>
+          <p>A keyword plus a verb ("my password for netflix is &hellip;") or a credential-shaped value.</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind high">High</p>
+          <h4>API key</h4>
+          <p>Known formats from OpenAI, AWS, GitHub, Slack and Google.</p>
+        </div>
+      </div>
+
+      <h3 style="font-size: 18px; font-weight: 420; margin: 32px 0 16px; color: var(--text);">Intent and safety signals</h3>
+
+      <div class="rule-grid">
+        <div class="rule-card">
+          <p class="rule-card-kind high">High</p>
           <h4>Medical question</h4>
-          <p>Keywords: chest pain, medication, dose, blood pressure.</p>
+          <p>Keywords: chest pain, medication, dose, blood pressure, insulin.</p>
         </div>
         <div class="rule-card">
           <p class="rule-card-kind high">High</p>
           <h4>Legal question</h4>
-          <p>Keywords: lawsuit, eviction, immigration, legal advice.</p>
+          <p>Lawsuit, eviction, immigration, custody. "Sue" only as a verb ("going to sue").</p>
         </div>
         <div class="rule-card">
           <p class="rule-card-kind high">High</p>
           <h4>Financial question</h4>
-          <p>Keywords: crypto, credit score, loan application, mortgage.</p>
+          <p>Keywords: crypto, credit score, loan application, mortgage, day trading.</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind high">High</p>
+          <h4>Emotional distress</h4>
+          <p>Hopelessness, worthlessness, "can't take this anymore" (section 11).</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind high">High</p>
+          <h4>Coercion</h4>
+          <p>"They made me say this", "don't tell anyone I said this" (section 11).</p>
         </div>
         <div class="rule-card">
           <p class="rule-card-kind critical">Critical</p>
           <h4>Emergency / harm</h4>
-          <p>Keywords: can't breathe, heart attack, overdose, hurt myself.</p>
+          <p>Can't breathe, heart attack, overdose, hurt myself. Not "emergency fund" or "emergency contact".</p>
         </div>
       </div>
 
       <h3 style="font-size: 18px; font-weight: 420; margin: 32px 0 16px; color: var(--text);">Severity and scoring</h3>
-      <p>Every finding contributes to a risk score. The score is additive, capped at 100.</p>
+      <p>Every finding contributes to a risk score: its severity points multiplied by its confidence (section 09), summed and capped at 100.</p>
 
       <table class="severity-table">
         <thead>
@@ -854,37 +986,38 @@
           <tr>
             <td><span class="sev-pill medium">MEDIUM</span></td>
             <td style="color: var(--text);">22</td>
-            <td>Email, phone number, street address</td>
+            <td>Email, phone, partial card, date of birth, name, street address, postcode, IP address</td>
           </tr>
           <tr>
             <td><span class="sev-pill high">HIGH</span></td>
             <td style="color: var(--text);">36</td>
-            <td>Password, card number, medical / legal / financial intent</td>
+            <td>Card number, PIN, one-time code, password, API key, medical / legal / financial intent, distress, coercion</td>
           </tr>
           <tr>
             <td><span class="sev-pill critical">CRITICAL</span></td>
             <td style="color: var(--text);">55</td>
-            <td>Emergency language, immediate harm</td>
+            <td>SSN, IBAN, CVV, passport, UK National Insurance number, emergency language</td>
           </tr>
         </tbody>
       </table>
 
       <h3 style="font-size: 18px; font-weight: 420; margin: 32px 0 16px; color: var(--text);">Decision labels</h3>
+      <p>The decision is checked from the top down: a critical finding blocks regardless of score, and a high finding always asks for review.</p>
 
       <div class="score-demo">
         <div class="score-demo-card">
           <p class="label">SAFE</p>
           <p class="decision safe">SAFE</p>
-          <div class="score-bar-wrap"><div class="score-bar" data-width="12"></div></div>
-          <p class="score-num">Score: 0-21</p>
+          <div class="score-bar-wrap"><div class="score-bar" data-width="10"></div></div>
+          <p class="score-num">Score: 0-16</p>
           <p style="font-size: 13px; margin-top: 10px;">No concerning content found. The assistant can proceed normally.</p>
         </div>
         <div class="score-demo-card">
           <p class="label">REDACT</p>
           <p class="decision redact">REDACT</p>
           <div class="score-bar-wrap"><div class="score-bar" data-width="35"></div></div>
-          <p class="score-num">Score: 22-54</p>
-          <p style="font-size: 13px; margin-top: 10px;">Low-risk personal data found. Use the cleaned version instead.</p>
+          <p class="score-num">Score: 17-54, no high or critical</p>
+          <p style="font-size: 13px; margin-top: 10px;">Personal data found. Use the cleaned version instead.</p>
         </div>
         <div class="score-demo-card">
           <p class="label">REVIEW</p>
@@ -898,13 +1031,17 @@
           <p class="decision block">BLOCK</p>
           <div class="score-bar-wrap"><div class="score-bar critical" data-width="98"></div></div>
           <p class="score-num">Any CRITICAL finding</p>
-          <p style="font-size: 13px; margin-top: 10px;">Emergency or immediate harm detected. Do not forward. Route to emergency help.</p>
+          <p style="font-size: 13px; margin-top: 10px;">Government ID, bank details, card security code or emergency. Do not forward. Route emergencies to real help.</p>
         </div>
       </div>
 
+      <p>
+        The REDACT threshold is 17, not 22, because scores are confidence-weighted. A spoken UK mobile number is one medium finding at 85% confidence: 22 &times; 0.85 = 18.7, rounded to 19, which still lands in REDACT.
+      </p>
+
       <h3 style="font-size: 18px; font-weight: 420; margin: 32px 0 16px; color: var(--text);">Overlap resolution</h3>
       <p>
-        When two rules match overlapping text (for example, a 16-digit number that could be both a phone and a card), the higher-severity rule wins. The overlapping lower-severity finding is discarded. This prevents double-counting and ensures the more serious label is shown.
+        When two rules match overlapping text (for example, a 16-digit number that could be both a phone and a card, or a passport number that also looks like a phone), the higher-severity rule wins. Ties go to the earlier, then the longer, match. The overlapping lower-severity finding is discarded. This prevents double-counting and ensures the more serious label is shown.
       </p>
 
       <div class="code-block">
@@ -914,14 +1051,18 @@
         </div>
         <pre class="code"><span class="k">function</span> <span class="n">removeOverlaps</span><span class="p">(</span><span class="n">findings</span><span class="p">) {</span>
   <span class="k">const</span> <span class="n">accepted</span> <span class="p">= [];</span>
-  <span class="n">findings</span><span class="p">.</span><span class="n">sort</span><span class="p">((</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">) =></span>
-    <span class="n">severityRank</span><span class="p">[</span><span class="n">b</span><span class="p">.</span><span class="n">severity</span><span class="p">] -</span> <span class="n">severityRank</span><span class="p">[</span><span class="n">a</span><span class="p">.</span><span class="n">severity</span><span class="p">]</span>
+  <span class="k">const</span> <span class="n">prioritySorted</span> <span class="p">= [...</span><span class="n">findings</span><span class="p">].</span><span class="n">sort</span><span class="p">(</span>
+    <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">) =></span>
+      <span class="n">severityRank</span><span class="p">[</span><span class="n">b</span><span class="p">.</span><span class="n">severity</span><span class="p">] -</span> <span class="n">severityRank</span><span class="p">[</span><span class="n">a</span><span class="p">.</span><span class="n">severity</span><span class="p">] ||</span>
+      <span class="n">a</span><span class="p">.</span><span class="n">start</span> <span class="p">-</span> <span class="n">b</span><span class="p">.</span><span class="n">start</span> <span class="p">||</span>
+      <span class="n">b</span><span class="p">.</span><span class="n">end</span> <span class="p">-</span> <span class="n">b</span><span class="p">.</span><span class="n">start</span> <span class="p">- (</span><span class="n">a</span><span class="p">.</span><span class="n">end</span> <span class="p">-</span> <span class="n">a</span><span class="p">.</span><span class="n">start</span><span class="p">)</span>
   <span class="p">);</span>
-  <span class="k">for</span> <span class="p">(</span><span class="k">const</span> <span class="n">f</span> <span class="k">of</span> <span class="n">findings</span><span class="p">) {</span>
-    <span class="k">if</span> <span class="p">(!</span><span class="n">accepted</span><span class="p">.</span><span class="n">some</span><span class="p">(</span><span class="n">x</span> <span class="p">=></span> <span class="n">f</span><span class="p">.</span><span class="n">start</span> <span class="p">&lt;</span> <span class="n">x</span><span class="p">.</span><span class="n">end</span> <span class="p">&amp;&amp;</span> <span class="n">x</span><span class="p">.</span><span class="n">start</span> <span class="p">&lt;</span> <span class="n">f</span><span class="p">.</span><span class="n">end</span><span class="p">))</span>
-      <span class="n">accepted</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">f</span><span class="p">);</span>
+  <span class="k">for</span> <span class="p">(</span><span class="k">const</span> <span class="n">finding</span> <span class="k">of</span> <span class="n">prioritySorted</span><span class="p">) {</span>
+    <span class="k">if</span> <span class="p">(!</span><span class="n">accepted</span><span class="p">.</span><span class="n">some</span><span class="p">((</span><span class="n">x</span><span class="p">) =></span> <span class="n">finding</span><span class="p">.</span><span class="n">start</span> <span class="p">&lt;</span> <span class="n">x</span><span class="p">.</span><span class="n">end</span> <span class="p">&amp;&amp;</span> <span class="n">x</span><span class="p">.</span><span class="n">start</span> <span class="p">&lt;</span> <span class="n">finding</span><span class="p">.</span><span class="n">end</span><span class="p">)) {</span>
+      <span class="n">accepted</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">finding</span><span class="p">);</span>
+    <span class="p">}</span>
   <span class="p">}</span>
-  <span class="k">return</span> <span class="n">accepted</span><span class="p">;</span>
+  <span class="k">return</span> <span class="n">accepted</span><span class="p">.</span><span class="n">sort</span><span class="p">((</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">) =></span> <span class="n">a</span><span class="p">.</span><span class="n">start</span> <span class="p">-</span> <span class="n">b</span><span class="p">.</span><span class="n">start</span><span class="p">);</span>
 <span class="p">}</span></pre>
       </div>
     </div>
@@ -933,8 +1074,12 @@
 
       <div class="stack-grid">
         <div class="stack-item">
+          <p class="tech-name">Python library</p>
+          <p class="tech-role">Pure Python 3.10-3.13 with zero runtime dependencies. No network, no model download.</p>
+        </div>
+        <div class="stack-item">
           <p class="tech-name">HTML / CSS / JS</p>
-          <p class="tech-role">Zero framework, zero build step. Runs as static files on GitHub Pages.</p>
+          <p class="tech-role">Zero framework, zero build step. Runs as static files on GitHub Pages and mirrors the Python rules.</p>
         </div>
         <div class="stack-item">
           <p class="tech-name">@xenova/transformers</p>
@@ -957,27 +1102,35 @@
           <p class="tech-role">HTTPS static hosting. Required for microphone access permissions.</p>
         </div>
         <div class="stack-item">
-          <p class="tech-name">Python package</p>
-          <p class="tech-role">The same detection rules mirrored in Python for CLI or server-side use.</p>
+          <p class="tech-name">[pipecat] / [livekit]</p>
+          <p class="tech-role">Optional extras. Only the integration modules import them.</p>
         </div>
         <div class="stack-item">
-          <p class="tech-name">cryptography</p>
-          <p class="tech-role">Adds AES-GCM encrypted exports to the Python CLI.</p>
+          <p class="tech-name">[crypto] cryptography</p>
+          <p class="tech-role">Optional extra. Adds AES-GCM encrypted exports to the Python CLI.</p>
+        </div>
+        <div class="stack-item">
+          <p class="tech-name">GitHub Actions CI</p>
+          <p class="tech-role">Tests on Python 3.10-3.13, a no-dependency job that also runs the benchmark, and an integrations job.</p>
         </div>
         <div class="stack-item">
           <p class="tech-name">pytest</p>
-          <p class="tech-role">Unit tests for the Python detection engine.</p>
+          <p class="tech-role">Unit tests for the engine, normaliser, sessions and integrations.</p>
         </div>
         <div class="stack-item">
           <p class="tech-name">ruff</p>
           <p class="tech-role">Python linter. Enforced in CI.</p>
+        </div>
+        <div class="stack-item">
+          <p class="tech-name">faster-whisper</p>
+          <p class="tech-role">Benchmark only: transcribes the SpokenPII-ASR audio with base.en on CPU.</p>
         </div>
       </div>
 
       <div class="callout" style="margin-top: 28px;">
         <span class="callout-icon">Why no framework?</span>
         <p>
-          Using React, Vue or any other framework would require a build step, a <code>node_modules</code> folder and a bundler. The point of this project is that it should run as static files on any HTTPS host with no server, no backend and no deployment complexity. Vanilla HTML/JS keeps that simple.
+          Using React, Vue or any other framework would require a build step, a <code>node_modules</code> folder and a bundler. The point of this project is that it should run as static files on any HTTPS host with no server, no backend and no deployment complexity. Vanilla HTML/JS keeps that simple. The same reasoning applies to the Python core: <code>pip install</code> pulls in nothing else.
         </p>
       </div>
     </div>
@@ -989,13 +1142,19 @@
 
       <p><strong>Why no API key for transcription?</strong> Any API key embedded in a public GitHub repository is public. Anyone can read your source, extract the key and use it. Running the model entirely in the browser avoids this problem entirely. It also means the audio never touches a third-party server, which is directly relevant to the privacy use case.</p>
 
-      <p><strong>Why not use the Luhn algorithm to validate card numbers?</strong> The Luhn checksum is used by card issuers to catch typos. It does not distinguish real cards from made-up ones that happen to pass. More importantly, a user dictating a card number to a voice assistant may speak the digits in a way that produces a transcript with a typo. The card would fail Luhn but should still be flagged. A safety tool should err on the side of flagging too much, not too little.</p>
+      <p><strong>Why normalise first instead of writing spoken-form rules?</strong> A separate set of rules for "four two four two" would duplicate every detector and every validator. Rewriting the speech into its written form once means the Luhn check, the mod-97 check and the SSN range filter all apply to spoken numbers for free, and the same detector can be run with normalisation switched off as a baseline. Section 12 explains how it works.</p>
 
-      <p><strong>Why flag intent (medical, legal, financial) separately from data?</strong> A transcript might not contain any personally identifiable information but still be problematic. Someone asking an AI for a medication dose change or investment advice needs different handling to someone asking for a restaurant recommendation. Intent rules capture that distinction.</p>
+      <p><strong>Why Luhn <em style="font-style: normal; color: var(--green-2);">or</em> card context?</strong> A 13-19 digit number is flagged as a card when it passes the Luhn checksum, or when a card word (card, credit, debit, visa, mastercard, payment) sits within 32 characters of it. A Luhn-valid number also gets a small confidence boost, from 95% to 99%. Luhn alone is not enough for voice: a user dictating a card may say it with a slip, or the STT may mishear one digit. That number fails Luhn but is still the user's card, and "my card number is &hellip;" makes that clear. Context alone is not enough either, because people read card numbers without saying "card". A 16-digit reference number with neither signal is left alone, so order and tracking numbers do not trip the filter.</p>
+
+      <p><strong>Why rules and not a model?</strong> A voice agent has a latency budget of a few hundred milliseconds per turn. The rules take about 0.06 ms per utterance (median on the SpokenPII set), need no download and produce exact spans that can be audited. A general NER model does not fix the core problem anyway: it reads "four" as a word. Presidio with spaCy's large English model takes about 3 ms per utterance on the same set and still misses most spoken PII (section 16).</p>
+
+      <p><strong>Why zero dependencies?</strong> Voice agent stacks are already heavy. A privacy layer should be easy to read in full, easy to install anywhere and impossible to break with a dependency upgrade. Encrypted exports moved to the optional <code>[crypto]</code> extra in 0.5, and Pipecat and LiveKit are optional extras that only the integration modules import. CI has a job that installs the package with <code>--no-deps</code> and runs the tests and benchmark to keep it that way.</p>
+
+      <p><strong>Why flag intent (medical, legal, financial) separately from data?</strong> A transcript might not contain any personally identifiable information but still be problematic. Someone asking an AI for a medication dose change or investment advice needs different handling to someone asking for a restaurant recommendation. Intent rules capture that distinction. When placeholders are used (section 14), intents are reported but left in the text, because the model needs them to respond well.</p>
 
       <p><strong>Why client-side everything?</strong> The thesis of the project is that sensitive voice data should not leave the device unless it has been checked and cleaned. If the checking itself required sending data to a server, the whole premise would collapse. Everything runs locally by design.</p>
 
-      <p><strong>Why encrypt saved exports?</strong> The filter has to read plain text while it is checking the transcript. That part happens in memory. Saved files are different. They can include the redaction map, which may contain the exact email address, SSN or account number that was removed from the safe transcript. Browser exports now use the Web Crypto API to save encrypted JSON. The Python CLI uses AES-256-GCM through the <code>cryptography</code> package. TLS/HTTPS is still useful when data travels over a network, but it does not encrypt a file sitting on disk.</p>
+      <p><strong>Why encrypt saved exports?</strong> The filter has to read plain text while it is checking the transcript. That part happens in memory. Saved files are different. They can include the redaction map, which may contain the exact email address, SSN or account number that was removed from the safe transcript. Browser exports use the Web Crypto API to save encrypted JSON. The Python CLI uses AES-256-GCM through the <code>cryptography</code> package, installed with <code>pip install "voicesafekit[crypto]"</code>. TLS/HTTPS is still useful when data travels over a network, but it does not encrypt a file sitting on disk.</p>
 
       <p><strong>How the export encryption was built.</strong> The analysis engine was left unchanged: it still produces the same structured result with <code>decision</code>, <code>findings</code>, <code>safe_transcript</code> and <code>redaction_map</code>. The encryption layer sits after analysis, at the moment a user chooses to save the result. That keeps detection simple while making the saved artifact safer.</p>
 
@@ -1008,6 +1167,14 @@
       <h2 class="section-title">What it does not do well</h2>
 
       <p>
+        <strong>English only.</strong> The number words, ordinals, months and joiner words in the normaliser are English. "Quatre deux quatre deux" passes through untouched.
+      </p>
+
+      <p>
+        <strong>Real STT punctuation still breaks some numbers.</strong> On the real Whisper transcripts, 7 of 108 PII utterances leaked. Whisper split digit groups with commas, glued a keyword to the number, wrote digits as decimals or misheard the keyword. Section 16 lists the patterns.
+      </p>
+
+      <p>
         <strong>Accent and noise sensitivity.</strong> Whisper tiny is accurate for clear English speech in a quiet environment. Heavy accents, background noise, or fast speech can produce transcription errors. Those errors may cause sensitive content to be missed. The base model would improve accuracy but at the cost of speed.
       </p>
 
@@ -1016,11 +1183,15 @@
       </p>
 
       <p>
-        <strong>No streaming transcription.</strong> The current design records a full clip and then transcribes it. Real-time word-by-word transcription is possible with a sliding-window approach to Whisper, but it was not implemented here.
+        <strong>Text only, not audio.</strong> VoiceSafeKit cleans the transcript. If the audio itself is recorded, the card number is still in the recording. Bleeping or muting those spans is planned but not built.
       </p>
 
       <p>
-        <strong>Not a security product.</strong> VoiceSafeKit is a demonstration of the concept. It should not be used as the sole privacy control in a production voice assistant. It is a starting point and a reference implementation.
+        <strong>No streaming input guard.</strong> Each final transcript is checked on its own. If the STT splits a card number across two final chunks, neither chunk may look like a card. The browser app also records a full clip before transcribing rather than streaming word by word.
+      </p>
+
+      <p>
+        <strong>Not a security product.</strong> VoiceSafeKit is a fast first layer, not a full privacy programme or a compliance certification. It should not be the sole privacy control in a production voice assistant. Pair it with your own review for PCI DSS, HIPAA or GDPR work.
       </p>
     </div>
 
@@ -1030,19 +1201,27 @@
       <h2 class="section-title">Where this goes next</h2>
 
       <p>
-        The most natural next step is integration with real open-source voice assistant frameworks. Two candidates are already referenced in the project:
+        Earlier versions of this paper named framework integration as the most natural next step. Version 0.5 ships it: an <strong>OpenVoiceOS</strong> adapter (<code>protect_utterance</code>) that checks STT output before the intent parser, and drop-in processors for <strong>Pipecat</strong> and <strong>LiveKit Agents</strong> (section 15). What is still open:
       </p>
 
       <p>
-        <strong>OpenVoiceOS</strong> is an open-source voice operating system built on the Mycroft platform. A VoiceSafeKit adapter would intercept the STT output before it is passed to the intent parser, giving privacy filtering at the right layer of the pipeline.
+        <strong>Whisper punctuation in numbers.</strong> Found by the ASR benchmark: join comma-separated digit groups after a sensitive keyword, split keywords glued to digits (<code>SSN609507896</code>), handle digits Whisper writes as decimals, and common mishearings ("fin" for PIN). This is the next release.
       </p>
 
       <p>
-        <strong>Wyoming protocol</strong> is a lightweight protocol used by Home Assistant for communicating between voice satellite devices and processing servers. A Wyoming microservice wrapping the VoiceSafeKit detection engine would allow any Wyoming-compatible assistant to use it as a filter stage.
+        <strong>Audio redaction.</strong> Map findings to STT word timestamps and bleep or mute those spans in recordings, plus a PCI "pause recording" signal.
       </p>
 
       <p>
-        Other areas worth exploring include streaming transcription, neural intent classification to replace keyword rules and a dashboard for assistant developers to tune sensitivity thresholds per deployment context.
+        <strong>Streaming input guard.</strong> Hold back interim transcripts that end in an unfinished number, so a card split across STT chunks is still caught.
+      </p>
+
+      <p>
+        <strong>Home Assistant and the Wyoming protocol.</strong> Wyoming is the lightweight protocol Home Assistant uses between voice satellites and processing servers. A Wyoming proxy that redacts <code>Transcript</code> events, and a redacting conversation agent that wraps any cloud LLM agent, would bring the filter to any Home Assistant voice setup.
+      </p>
+
+      <p>
+        <strong>Multilingual spoken numbers</strong> (French, German, Spanish, Arabic), spelled-out letters and the NATO alphabet ("a for alpha"), spoken postcodes, gateway plugins for LiteLLM and Open WebUI, a LiveKit <code>Redactor</code> backend, and an MCP server so desktop assistants can redact before sending.
       </p>
     </div>
 
@@ -1056,11 +1235,11 @@
       </p>
 
       <p>
-        Version 0.2.0 adds a <code style="color:var(--green-2); font-size:13px;">confidence: float</code> field to every <code style="color:var(--green-2); font-size:13px;">Finding</code>. Each rule declares a base confidence that reflects how precise its pattern is. Context-aware validators then adjust it upward or downward.
+        Version 0.2.0 added a <code style="color:var(--green-2); font-size:13px;">confidence: float</code> field to every <code style="color:var(--green-2); font-size:13px;">Finding</code>. Each rule declares a base confidence that reflects how precise its pattern is. Context-aware validators then adjust it: a Luhn-valid card gains 4 percentage points, a phone number written with a leading <code style="color:var(--green-2); font-size:13px;">+</code> gains 8.
       </p>
 
       <h3 style="font-size: 18px; font-weight: 420; margin: 32px 0 16px; color: var(--text);">Confidence-weighted scoring</h3>
-      <p>The risk score is now computed as:</p>
+      <p>The risk score is computed as:</p>
 
       <div class="code-block">
         <div class="code-block-header">
@@ -1082,9 +1261,13 @@
         </thead>
         <tbody>
           <tr><td>Email address</td><td style="color:var(--text)">98%</td><td>Pattern is highly specific</td></tr>
-          <tr><td>Social Security Number</td><td style="color:var(--text)">95%</td><td>Pattern + invalid-range filter</td></tr>
+          <tr><td>API key</td><td style="color:var(--text)">97%</td><td>Vendor prefixes and fixed lengths</td></tr>
+          <tr><td>Social Security Number</td><td style="color:var(--text)">95%</td><td>Pattern + invalid-range filter (90% for the no-dash spoken form)</td></tr>
+          <tr><td>PIN / one-time code</td><td style="color:var(--text)">90%</td><td>Only fires after an explicit keyword</td></tr>
           <tr><td>IBAN / Bank account</td><td style="color:var(--text)">88%</td><td>Pattern + mod-97 checksum</td></tr>
           <tr><td>Phone number</td><td style="color:var(--text)">85%</td><td>Prone to false positives from digit sequences</td></tr>
+          <tr><td>Person name</td><td style="color:var(--text)">80%</td><td>Self-introductions only; capitalisation depends on the STT</td></tr>
+          <tr><td>UK postcode</td><td style="color:var(--text)">75%</td><td>Short pattern that can collide with product codes</td></tr>
           <tr><td>Emotional distress</td><td style="color:var(--text)">70%</td><td>Nuanced language, intent is ambiguous</td></tr>
           <tr><td>Coercion signal</td><td style="color:var(--text)">65%</td><td>Hardest to detect reliably from text alone</td></tr>
         </tbody>
@@ -1101,7 +1284,7 @@
       </p>
 
       <p>
-        The <code style="color:var(--green-2); font-size:13px;">analyze_conversation</code> function takes an ordered list of utterances and returns a <code style="color:var(--green-2); font-size:13px;">ConversationResult</code> with per-turn analysis, a peak decision and the union of all entity kinds detected across the session.
+        The <code style="color:var(--green-2); font-size:13px;">analyze_conversation</code> function takes an ordered list of utterances and returns a <code style="color:var(--green-2); font-size:13px;">ConversationResult</code> with per-turn analysis, a peak decision, a cumulative score (the highest single-turn score) and the union of all entity kinds detected across the session.
       </p>
 
       <div class="code-block">
@@ -1118,19 +1301,19 @@
 <span class="p">])</span>
 
 <span class="n">result</span><span class="p">.</span><span class="n">peak_decision</span>    <span class="c"># "BLOCK"</span>
-<span class="n">result</span><span class="p">.</span><span class="n">cumulative_score</span> <span class="c"># 95</span>
+<span class="n">result</span><span class="p">.</span><span class="n">cumulative_score</span> <span class="c"># 52</span>
 <span class="n">result</span><span class="p">.</span><span class="n">seen_kinds</span>       <span class="c"># ("ssn",)</span>
 <span class="n">len</span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">turns</span><span class="p">)</span>        <span class="c"># 3</span></pre>
       </div>
 
       <p>
-        The web app exposes this as a <strong>Conversation mode</strong> toggle. Each turn is added explicitly, a turn history panel tracks the sequence and a timeline view below the main panels shows every turn's findings and decision alongside a cumulative summary bar.
+        The score is 52, below the REVIEW threshold, yet the decision is BLOCK: a single critical finding (55 points × 95% confidence) is enough. The web app exposes this as a <strong>Conversation mode</strong> toggle. Each turn is added explicitly, a turn history panel tracks the sequence and a timeline view below the main panels shows every turn's findings and decision alongside a cumulative summary bar.
       </p>
 
       <div class="callout">
         <span class="callout-icon">Design note</span>
         <p>
-          Cross-turn entity tracking (noticing that "my card" in turn 3 refers to the card number mentioned in turn 1) is not yet implemented. Each turn is currently analyzed in isolation. This is noted as a limitation and is the most important remaining engineering gap.
+          <code>analyze_conversation</code> still scores each turn in isolation; it does not yet raise the risk when a name, an email and a date of birth arrive in separate turns. Cross-turn <em style="font-style: normal; color: var(--green-2);">linking</em> is now partly addressed by <code>PrivacySession</code> (section 14): the same value gets the same placeholder in every turn, so the model sees one consistent <code>[CARD_1]</code> and the user can say "use that card again" without the number ever reaching it. Cross-turn risk aggregation remains the most important engineering gap.
         </p>
       </div>
     </div>
@@ -1141,7 +1324,7 @@
       <h2 class="section-title">Financial identifiers, context signals and human vulnerability</h2>
 
       <p>
-        The v0.2.0 detector set adds three categories that were entirely absent from the original engine.
+        The v0.2.0 detector set added three categories that were entirely absent from the original engine.
       </p>
 
       <h3 style="font-size: 18px; font-weight: 420; margin: 32px 0 16px; color: var(--text);">Financial identity numbers</h3>
@@ -1149,7 +1332,7 @@
         SSNs, IBANs and CVV codes are the three most common financial identifiers that a voice assistant user might accidentally speak. Each has a distinct detection challenge.
       </p>
       <p>
-        <strong>SSN</strong> - The pattern <code style="color:var(--green-2); font-size:13px;">\b(?!000|666|9\d{2})\d{3}[-\s]\d{2}[-\s]\d{4}\b</code> excludes area numbers that the Social Security Administration has never issued. This eliminates a class of false positives from account numbers and tracking codes that happen to match the XXX-XX-XXXX format.
+        <strong>SSN</strong> - The pattern <code style="color:var(--green-2); font-size:13px;">\b(?!000|666|9\d{2})\d{3}[-\s]\d{2}[-\s]\d{4}\b</code> excludes area numbers that the Social Security Administration has never issued. This eliminates a class of false positives from account numbers and tracking codes that happen to match the XXX-XX-XXXX format. People rarely say the dashes, so version 0.5 adds a second rule: nine digits with optional separators, but only right after "social", "social security" or "SSN".
       </p>
       <p>
         <strong>IBAN</strong> - The pattern matches the standard two-letter country code, two check digits and 11-30 alphanumeric BBAN characters. A mod-97 checksum then validates the matched text. Without this step, any sufficiently long alphanumeric string near a country code would be flagged.
@@ -1160,7 +1343,7 @@
 
       <h3 style="font-size: 18px; font-weight: 420; margin: 32px 0 16px; color: var(--text);">Emotional and situational context</h3>
       <p>
-        Two new intent categories address situations that no PII detector can catch but that require fundamentally different assistant behavior.
+        Two intent categories address situations that no PII detector can catch but that require fundamentally different assistant behavior.
       </p>
       <p>
         The <strong>emotional distress signal</strong> fires on phrases expressing hopelessness, worthlessness, or a desire to disappear. When detected, the assistant guidance changes: instead of "redact and proceed," the guidance tells the assistant to respond with empathy and direct the user to appropriate support. The confidence is set at 70% because emotional language is genuinely ambiguous - "I feel like giving up" can mean quitting a project as easily as it can signal a crisis.
@@ -1170,25 +1353,464 @@
       </p>
     </div>
 
-    <!-- Closing - renumbered -->
+    <!-- Section 12: Spoken-form normalisation - added November 2026 -->
     <div class="section" id="s12">
-      <p class="section-num">12 - Closing</p>
+      <p class="section-num">12 - Spoken-Form Normalisation</p>
+      <h2 class="section-title">Reading speech the way STT writes it</h2>
+
+      <p>
+        <code style="color:var(--green-2); font-size:13px;">voicesafekit/spoken.py</code> rewrites spoken numbers, emails and dates into written form before any rule runs. It is pure Python, about 360 lines, and has no model behind it. The hard part is not turning "four" into 4. It is knowing when <em style="font-style: normal; color: var(--green-2);">not</em> to: "two kids", "oh I see" and "meet me at home" have to come out untouched, or the filter would bury every transcript in false alarms.
+      </p>
+
+      <div class="flow-diagram">
+        <div class="flow-node">"four two four two &hellip;"</div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-node">tokens</div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-node">"4242424242424242"</div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-node">card rule + Luhn</div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-node">span map</div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-node">[payment number removed]</div>
+      </div>
+
+      <h3 style="font-size: 18px; font-weight: 420; margin: 32px 0 16px; color: var(--text);">How it works</h3>
+
+      <div class="rule-grid">
+        <div class="rule-card">
+          <p class="rule-card-kind" style="color: var(--green);">Step 1</p>
+          <h4>Tokenise</h4>
+          <p>Split into words, digit runs and single punctuation marks, each with its character offsets.</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind" style="color: var(--green);">Number runs</p>
+          <h4>Digits as words</h4>
+          <p>"one" to "nine", plus zero, oh, nought and nil. Written digits can mix in: "four two 42".</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind" style="color: var(--green);">Number runs</p>
+          <h4>Double and triple</h4>
+          <p>"double oh" becomes 00, "triple five" becomes 555 ("treble" too).</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind" style="color: var(--green);">Number runs</p>
+          <h4>Tens, teens, hundred</h4>
+          <p>"forty two" is 42, "forty-two" too, "nineteen ninety" is 1990, "nine hundred" is 900.</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind" style="color: var(--green);">Number runs</p>
+          <h4>"plus" and separators</h4>
+          <p>"plus four four &hellip;" becomes +44. Commas, dashes and dots between number words stay inside the run.</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind medium">Guard</p>
+          <h4>Weak "oh"</h4>
+          <p>"Oh" and "o" only count as zero when another number word is next to them. "Oh I see" is left alone.</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind medium">Guard</p>
+          <h4>Words and 3+ digits</h4>
+          <p>A run is rewritten only if it contains number words and produces at least 3 digits. "Two kids" is untouched.</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind medium">Guard</p>
+          <h4>Spoken emails</h4>
+          <p>"Dot", "at", "underscore", "dash". Needs a spoken joiner and a known TLD, so "meet me at home" never matches.</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind medium">Guard</p>
+          <h4>Date ordinals</h4>
+          <p>"March fourth" becomes "march 4th", "twenty first of may" becomes "21st of may", only next to a month.</p>
+        </div>
+      </div>
+
+      <h3 style="font-size: 18px; font-weight: 420; margin: 32px 0 16px; color: var(--text);">Mapping back to the original words</h3>
+      <p>
+        The normaliser returns a <code style="color:var(--green-2); font-size:13px;">NormalizedText</code>: the written text plus, for every character in it, the span of the original transcript it came from. Every rule runs on the written text. Each finding's span is then passed through <code style="color:var(--green-2); font-size:13px;">to_original(start, end)</code>, so the redaction is applied to the words the user actually said. The 11 characters of <code style="color:var(--green-2); font-size:13px;">07700900123</code> map back to all 53 characters of "oh seven seven double oh nine double oh one two three", and the safe transcript reads "call me on [phone removed]" with nothing left over.
+      </p>
+      <p>
+        Each finding also carries a <code style="color:var(--green-2); font-size:13px;">spoken</code> flag, set when the written text of the match differs from the original slice. It tells you which findings a text-only filter would have missed, and it adds a line to the assistant guidance: treat spoken details exactly like written ones.
+      </p>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>Python - spoken-form normalisation</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre class="code"><span class="k">from</span> <span class="n">voicesafekit</span> <span class="k">import</span> <span class="n">analyze_transcript</span><span class="p">,</span> <span class="n">normalize_spoken</span>
+
+<span class="n">norm</span> <span class="p">=</span> <span class="n">normalize_spoken</span><span class="p">(</span><span class="s">"call me on oh seven seven double oh nine double oh one two three"</span><span class="p">)</span>
+<span class="n">norm</span><span class="p">.</span><span class="n">text</span>                  <span class="c"># 'call me on 07700900123'</span>
+<span class="n">norm</span><span class="p">.</span><span class="n">to_original</span><span class="p">(</span><span class="s">11</span><span class="p">,</span> <span class="s">22</span><span class="p">)</span>   <span class="c"># (11, 64): 'oh seven seven double oh nine double oh one two three'</span>
+
+<span class="n">result</span> <span class="p">=</span> <span class="n">analyze_transcript</span><span class="p">(</span><span class="s">"my social is four seven one, five five, eight eight four three"</span><span class="p">)</span>
+<span class="n">result</span><span class="p">.</span><span class="n">decision</span>            <span class="c"># 'BLOCK'</span>
+<span class="n">result</span><span class="p">.</span><span class="n">safe_transcript</span>     <span class="c"># 'my social is [SSN removed]'</span>
+<span class="n">result</span><span class="p">.</span><span class="n">findings</span><span class="p">[</span><span class="s">0</span><span class="p">].</span><span class="n">spoken</span>  <span class="c"># True</span>
+
+<span class="n">analyze_transcript</span><span class="p">(</span><span class="s">"my social is four seven one, five five, eight eight four three"</span><span class="p">,</span>
+                   <span class="n">spoken</span><span class="p">=</span><span class="k">False</span><span class="p">).</span><span class="n">decision</span>                 <span class="c"># 'SAFE'</span>
+<span class="n">analyze_transcript</span><span class="p">(</span><span class="s">"I have two kids and we leave at five"</span><span class="p">).</span><span class="n">decision</span>  <span class="c"># 'SAFE'</span></pre>
+      </div>
+
+      <div class="callout">
+        <span class="callout-icon">Turning it off</span>
+        <p>
+          Normalisation is on by default everywhere. <code>spoken=False</code> in Python, <code>--no-spoken</code> on the CLI and the spoken-mode toggle in the browser app switch it off, which is also how the "spoken mode off" baseline in section 16 is produced.
+        </p>
+      </div>
+    </div>
+
+    <!-- Section 13: False positives fixed - added November 2026 -->
+    <div class="section" id="s13">
+      <p class="section-num">13 - False Positives Fixed</p>
+      <h2 class="section-title">A filter that cries wolf gets switched off</h2>
+
+      <p>
+        A privacy filter that blocks "how much should I keep in my emergency fund?" teaches developers to ignore it. Building the SpokenPII benchmark meant writing 40 ordinary requests designed to look risky, and the 0.4 engine tripped on several of them. Each was fixed with the narrowest rule change that kept the real case working. All of the outputs below come from running the 0.4 and 0.5 engines on the same sentence.
+      </p>
+
+      <table class="severity-table">
+        <thead>
+          <tr><th>Sentence</th><th>0.4</th><th>0.5</th><th>Fix</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>How much should I keep in my emergency fund?</td><td><span class="sev-pill critical">BLOCK</span></td><td><span class="sev-pill low">SAFE</span></td><td>"Emergency" is ignored before fund, savings, contact, exit, kit, plan and similar nouns.</td></tr>
+          <tr><td>Remind me to call Sue tomorrow.</td><td><span class="sev-pill medium">REVIEW</span></td><td><span class="sev-pill low">SAFE</span></td><td>"Sue" is legal only as a verb: after to, will, I'll, can I, should I, going to.</td></tr>
+          <tr><td>What's the secret ingredient in carbonara?</td><td><span class="sev-pill medium">REVIEW</span></td><td><span class="sev-pill low">SAFE</span></td><td>"Secret" now needs is, was, = or : and a value with a digit or symbol.</td></tr>
+          <tr><td>How do I do a password reset on my router?</td><td><span class="sev-pill medium">REVIEW</span></td><td><span class="sev-pill low">SAFE</span></td><td>"Password" needs a verb ("is", "was") or a credential-shaped value.</td></tr>
+          <tr><td>The meeting is on 2026-11-07.</td><td><span class="sev-pill medium">REDACT</span></td><td><span class="sev-pill low">SAFE</span></td><td>Phone matches shaped like ISO or day/month/year dates are dropped.</td></tr>
+          <tr><td>my passport number is 123456789</td><td>REDACT as a phone</td><td><span class="sev-pill critical">BLOCK</span></td><td>New passport rule; as the critical finding it wins the overlap.</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        Tightening the secret rule did not make it weaker. "My password for netflix is hunter22" was <strong>missed</strong> by 0.4 because of the words between "password" and "is". The 0.5 rule allows up to two "for/to/on [my] X" phrases there and now returns "my [secret removed]".
+      </p>
+
+      <h3 style="font-size: 18px; font-weight: 420; margin: 32px 0 16px; color: var(--text);">The lazy card regex</h3>
+      <p>
+        One fix was a real leak rather than a false alarm. The old card pattern used a lazy separator, so once it had 13 digits it was allowed to stop at the next space. On a number with a trailing group, it redacted the start and left the end readable:
+      </p>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>rules.py - payment card pattern</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre class="code"><span class="c"># 0.4: lazy separator, the match may end at any space after 13 digits</span>
+<span class="s">\b(?:\d[ -]*?){13,19}\b</span>
+<span class="c">#   "my card is 4000 0566 5566 5556 123" -&gt; "my card is [payment number removed] 123"</span>
+
+<span class="c"># 0.5: at most one separator between digits, and the match must end on a digit</span>
+<span class="s">\b(?:\d[ -]?){12,18}\d\b</span>
+<span class="c">#   "my card is 4000 0566 5566 5556 123" -&gt; "my card is [payment number removed]"</span></pre>
+      </div>
+    </div>
+
+    <!-- Section 14: Reversible placeholders - added November 2026 -->
+    <div class="section" id="s14">
+      <p class="section-num">14 - Reversible Placeholders</p>
+      <h2 class="section-title">Redact for the model, restore for the voice</h2>
+
+      <p>
+        Plain redaction breaks voice agents. If the model only ever sees "[email removed]", it cannot say "I've sent the receipt to your email at alex dot rivera at gmail dot com", and the user has no way to check it heard them right. <code style="color:var(--green-2); font-size:13px;">PrivacySession</code> keeps both goals: the model sees numbered placeholders, the user hears their real values, and the mapping between them lives only in memory.
+      </p>
+
+      <div class="rule-grid">
+        <div class="rule-card">
+          <p class="rule-card-kind" style="color: var(--green);">Before the LLM</p>
+          <h4>protect(text)</h4>
+          <p>Swaps personal data for [EMAIL_1], [CARD_1], [NAME_1] and returns the decision and findings.</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind" style="color: var(--green);">After the LLM</p>
+          <h4>restore(text)</h4>
+          <p>Puts the real values back into the reply. Unknown placeholders are left as they are.</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind" style="color: var(--green);">Token streams</p>
+          <h4>stream()</h4>
+          <p>Holds back a partial placeholder such as "[EMA" until the next chunk completes it.</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind" style="color: var(--green);">Stored context</p>
+          <h4>reprotect(text)</h4>
+          <p>Swaps restored values back to placeholders before a reply is saved to the chat history.</p>
+        </div>
+      </div>
+
+      <p>
+        <strong>The same value gets the same placeholder for the whole session.</strong> Values are keyed by kind and a canonical form: the normalised, lower-cased value with spaces, dots, dashes and brackets removed. "alex dot rivera at gmail dot com" in turn one and "alex.rivera@gmail.com" in turn two are both <code>[EMAIL_1]</code>, so the model can follow the conversation without ever seeing the address.
+      </p>
+      <p>
+        <strong>Credentials are never stored.</strong> Passwords, PINs, CVVs, one-time codes and API keys still get placeholders, but their values are not kept in the map, so the model cannot get the voice to read them back, by accident or by prompt injection. (A session has to be created with <code>restore_credentials=True</code> to change that.)
+      </p>
+      <p>
+        <strong>Intents stay in the text but are reported.</strong> Medical, legal, financial, distress, coercion and emergency findings are not replaced, because the model needs to know the user has chest pain to answer well. They still set the decision, and <code>protected.blocked</code> says whether the turn should be forwarded at all.
+      </p>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>Python - PrivacySession</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre class="code"><span class="k">from</span> <span class="n">voicesafekit</span> <span class="k">import</span> <span class="n">PrivacySession</span>
+
+<span class="n">session</span> <span class="p">=</span> <span class="n">PrivacySession</span><span class="p">()</span>
+
+<span class="n">session</span><span class="p">.</span><span class="n">protect</span><span class="p">(</span><span class="s">"email me at alex dot rivera at gmail dot com"</span><span class="p">).</span><span class="n">text</span>
+<span class="c"># 'email me at [EMAIL_1]'</span>
+<span class="n">session</span><span class="p">.</span><span class="n">protect</span><span class="p">(</span><span class="s">"actually use alex.rivera@gmail.com and my pin is 4821"</span><span class="p">).</span><span class="n">text</span>
+<span class="c"># 'actually use [EMAIL_1] and my pin is [PIN_1]'</span>
+
+<span class="n">session</span><span class="p">.</span><span class="n">restore</span><span class="p">(</span><span class="s">"Done, I've emailed [EMAIL_1]. Your PIN [PIN_1] is not stored."</span><span class="p">)</span>
+<span class="c"># "Done, I've emailed alex dot rivera at gmail dot com. Your PIN [PIN_1] is not stored."</span>
+<span class="n">session</span><span class="p">.</span><span class="n">mapping</span>
+<span class="c"># {'[EMAIL_1]': 'alex dot rivera at gmail dot com'}    no PIN in memory, ever</span>
+
+<span class="n">stream</span> <span class="p">=</span> <span class="n">session</span><span class="p">.</span><span class="n">stream</span><span class="p">()</span>
+<span class="n">stream</span><span class="p">.</span><span class="n">feed</span><span class="p">(</span><span class="s">"Sent to [EMA"</span><span class="p">)</span>       <span class="c"># 'Sent to '  (partial placeholder held back)</span>
+<span class="n">stream</span><span class="p">.</span><span class="n">feed</span><span class="p">(</span><span class="s">"IL_1] just now."</span><span class="p">)</span>    <span class="c"># 'alex dot rivera at gmail dot com just now.'</span>
+<span class="n">stream</span><span class="p">.</span><span class="n">flush</span><span class="p">()</span>                    <span class="c"># ''</span>
+
+<span class="n">session</span><span class="p">.</span><span class="n">reprotect</span><span class="p">(</span><span class="s">"I've emailed alex dot rivera at gmail dot com."</span><span class="p">)</span>
+<span class="c"># "I've emailed [EMAIL_1]."</span>
+
+<span class="n">turn</span> <span class="p">=</span> <span class="n">session</span><span class="p">.</span><span class="n">protect</span><span class="p">(</span><span class="s">"I have chest pain, my email is sam@example.com"</span><span class="p">)</span>
+<span class="n">turn</span><span class="p">.</span><span class="n">text</span>       <span class="c"># 'I have chest pain, my email is [EMAIL_2]'</span>
+<span class="n">turn</span><span class="p">.</span><span class="n">decision</span>   <span class="c"># 'REVIEW'  (the medical intent stays in the text and is reported)</span></pre>
+      </div>
+
+      <p>
+        The restored value is the form the user first used. Because the first mention was spoken, the TTS voice says "alex dot rivera at gmail dot com" rather than trying to pronounce an @ sign.
+      </p>
+    </div>
+
+    <!-- Section 15: Voice framework integrations - added November 2026 -->
+    <div class="section" id="s15">
+      <p class="section-num">15 - Voice Framework Integrations</p>
+      <h2 class="section-title">Drop-in processors for Pipecat and LiveKit</h2>
+
+      <p>
+        A filter is only useful where the transcript actually flows. Most production voice agents are built on a framework that wires STT, LLM and TTS together, so version 0.5 ships processors for the two most widely used open-source ones. Both share a single <code style="color:var(--green-2); font-size:13px;">PrivacySession</code> per conversation, so the input side and the output side agree on what <code>[CARD_1]</code> means.
+      </p>
+
+      <h3 style="font-size: 18px; font-weight: 420; margin: 32px 0 16px; color: var(--text);">Pipecat</h3>
+      <p>
+        <code style="color:var(--green-2); font-size:13px;">voicesafe_processors()</code> returns three frame processors that sit at three points in the pipeline:
+      </p>
+      <p>
+        <strong>The input processor</strong> goes after STT and before the user aggregator. It protects every final <code>TranscriptionFrame</code> before the LLM sees it, and interim transcriptions too, because they reach UIs and logs. It fires an <code>on_decision</code> event for every final transcript and <code>on_block</code> when one is blocked. A blocked transcript is dropped by default and a short refusal is spoken instead, pointing to the local emergency number.
+      </p>
+      <p>
+        <strong>The output restorer</strong> goes between the LLM and TTS. It runs the streamed <code>LLMTextFrame</code> tokens through a stream restorer, starting a fresh one for each response and flushing it at the end, so the voice says the real values.
+      </p>
+      <p>
+        <strong>The context guard</strong> goes before the assistant aggregator. It swaps restored values back to placeholders, so the stored assistant reply, which the LLM will read on the next turn, never contains them.
+      </p>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>Python - Pipecat pipeline</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre class="code"><span class="k">from</span> <span class="n">voicesafekit.integrations.pipecat</span> <span class="k">import</span> <span class="n">voicesafe_processors</span>
+
+<span class="n">guard_in</span><span class="p">,</span> <span class="n">restore_out</span><span class="p">,</span> <span class="n">guard_context</span> <span class="p">=</span> <span class="n">voicesafe_processors</span><span class="p">()</span>
+
+<span class="n">pipeline</span> <span class="p">=</span> <span class="n">Pipeline</span><span class="p">([</span>
+    <span class="n">transport</span><span class="p">.</span><span class="n">input</span><span class="p">(),</span> <span class="n">stt</span><span class="p">,</span>
+    <span class="n">guard_in</span><span class="p">,</span>             <span class="c"># spoken PII -> [CARD_1], [EMAIL_1] before the LLM</span>
+    <span class="n">user_aggregator</span><span class="p">,</span> <span class="n">llm</span><span class="p">,</span>
+    <span class="n">restore_out</span><span class="p">,</span>          <span class="c"># real values back for the voice only</span>
+    <span class="n">tts</span><span class="p">,</span> <span class="n">transport</span><span class="p">.</span><span class="n">output</span><span class="p">(),</span>
+    <span class="n">guard_context</span><span class="p">,</span>        <span class="c"># stored assistant replies keep the placeholders</span>
+    <span class="n">assistant_aggregator</span><span class="p">,</span>
+<span class="p">])</span>
+
+<span class="p">@</span><span class="n">guard_in</span><span class="p">.</span><span class="n">event_handler</span><span class="p">(</span><span class="s">"on_block"</span><span class="p">)</span>
+<span class="k">async def</span> <span class="n">on_block</span><span class="p">(</span><span class="n">processor</span><span class="p">,</span> <span class="n">protected</span><span class="p">):</span>
+    <span class="p">...</span>  <span class="c"># emergencies, government IDs, CVVs: never forwarded, refusal is spoken</span></pre>
+      </div>
+
+      <p>
+        The offline demo runs this pipeline with a fake STT frame and a fake LLM that streams its reply in awkward chunks ("Thanks [NA", "ME_1]. &hellip;"), so it needs no API keys. Its output, verbatim:
+      </p>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>examples/pipecat/offline_demo.py - output</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre class="code"><span class="c">User says    :</span> <span class="n">Hi, my name is Alex Rivera. My card number is four two four two four two four two four two four two four two four two and my email is alex dot rivera at gmail dot com.</span>
+<span class="c">LLM receives :</span> <span class="s">Hi, my name is [NAME_1]. My card number is [CARD_1] and my email is [EMAIL_1].</span>
+<span class="c">TTS says     :</span> <span class="n">Thanks Alex Rivera. I'll send the receipt to alex dot rivera at gmail dot com.</span></pre>
+      </div>
+
+      <h3 style="font-size: 18px; font-weight: 420; margin: 32px 0 16px; color: var(--text);">LiveKit Agents</h3>
+      <p>
+        <code style="color:var(--green-2); font-size:13px;">VoiceSafeAgent</code> is a subclass of LiveKit's <code>Agent</code>. It overrides two hooks. <code>on_user_turn_completed</code> protects the user's message before the LLM sees it; if the turn is blocked it says the refusal (without adding it to the chat context) and raises <code>StopResponse</code>, so the LLM is never called. <code>tts_node</code> restores placeholders in the streamed reply before passing it to the default TTS node, so the voice says the real values while the chat context and on-screen transcript keep the placeholders.
+      </p>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>Python - LiveKit agent</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre class="code"><span class="k">from</span> <span class="n">voicesafekit.integrations.livekit</span> <span class="k">import</span> <span class="n">VoiceSafeAgent</span>
+
+<span class="k">class</span> <span class="n">Assistant</span><span class="p">(</span><span class="n">VoiceSafeAgent</span><span class="p">):</span>          <span class="c"># instead of Agent</span>
+    <span class="k">def</span> <span class="n">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="n">super</span><span class="p">().</span><span class="n">__init__</span><span class="p">(</span><span class="n">instructions</span><span class="p">=</span><span class="s">"You are a helpful voice assistant."</span><span class="p">)</span></pre>
+      </div>
+
+      <p>
+        For transcript and log hooks, <code style="color:var(--green-2); font-size:13px;">VoiceSafeRedactor().redact(text)</code> is stateless and idempotent: running it twice gives the same output, which matters for hooks that may see the same text more than once.
+      </p>
+
+      <div class="callout">
+        <span class="callout-icon">Tested versions</span>
+        <p>
+          Tested against Pipecat 1.15 and LiveKit Agents 1.8, and a separate CI job runs the integration tests. Install with <code>pip install "voicesafekit[pipecat]"</code> or <code>"voicesafekit[livekit]"</code>; the core package never imports either framework.
+        </p>
+      </div>
+    </div>
+
+    <!-- Section 16: SpokenPII benchmark - added November 2026 -->
+    <div class="section" id="s16">
+      <p class="section-num">16 - The SpokenPII Benchmark</p>
+      <h2 class="section-title">Measuring PII as speech-to-text writes it</h2>
+
+      <p>
+        No public benchmark measures PII in the form speech-to-text produces, so the repository ships one in two parts. Both compare VoiceSafeKit 0.5, the same engine with spoken mode off, and Microsoft Presidio 2.2 with spaCy's <code>en_core_web_lg</code> model.
+      </p>
+
+      <p>
+        <strong>SpokenPII (synthetic).</strong> 580 labelled sentences: 270 with PII written normally, the same 270 values written the way they are spoken, and 40 tricky requests with no PII at all ("emergency fund", "call Sue", "twenty five minutes"). A gold span counts as protected only if at least 90% of its non-space characters are redacted. A no-PII sentence counts as a false alarm if anything in it was redacted.
+      </p>
+
+      <table class="severity-table">
+        <thead>
+          <tr><th>Detector</th><th>Written PII protected</th><th>Spoken PII protected</th><th>False alarms on no-PII</th><th>Median latency</th></tr>
+        </thead>
+        <tbody>
+          <tr><td style="color: var(--text);"><strong>VoiceSafeKit 0.5</strong></td><td style="color: var(--text);">100%</td><td style="color: var(--text);">100%</td><td style="color: var(--text);">0%</td><td style="color: var(--text);">0.06 ms</td></tr>
+          <tr><td>VoiceSafeKit 0.5, spoken mode off</td><td>100%</td><td>11%</td><td>0%</td><td>0.04 ms</td></tr>
+          <tr><td>Microsoft Presidio 2.2</td><td>86%</td><td>21%</td><td>45%</td><td>3.06 ms</td></tr>
+        </tbody>
+      </table>
+
+      <p>Spoken PII protected, by type:</p>
+
+      <table class="severity-table">
+        <thead>
+          <tr><th>Type</th><th>VoiceSafeKit 0.5</th><th>Spoken mode off</th><th>Presidio</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Card number</td><td style="color: var(--text);">100%</td><td>0%</td><td>0%</td></tr>
+          <tr><td>SSN</td><td style="color: var(--text);">100%</td><td>0%</td><td>3%</td></tr>
+          <tr><td>Phone</td><td style="color: var(--text);">100%</td><td>0%</td><td>0%</td></tr>
+          <tr><td>Email</td><td style="color: var(--text);">100%</td><td>0%</td><td>0%</td></tr>
+          <tr><td>PIN</td><td style="color: var(--text);">100%</td><td>0%</td><td>13%</td></tr>
+          <tr><td>One-time code</td><td style="color: var(--text);">100%</td><td>0%</td><td>3%</td></tr>
+          <tr><td>Passport</td><td style="color: var(--text);">100%</td><td>0%</td><td>0%</td></tr>
+          <tr><td>Date of birth</td><td style="color: var(--text);">100%</td><td>0%</td><td>77%</td></tr>
+          <tr><td>Name</td><td style="color: var(--text);">100%</td><td>100%</td><td>97%</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        <strong>SpokenPII-ASR (real speech-to-text).</strong> 148 of the spoken scripts, 108 with PII and 40 without, were read aloud by the macOS voice <code>Samantha</code>, digit by digit the way people say them, and transcribed by faster-whisper <code>base.en</code> on CPU. Here exact spans no longer line up, so the test is stricter in a different way: a sample leaks if the value can still be recovered from the redacted transcript after spoken-form normalisation. That means any 4 consecutive digits of a number, the email's local part plus <code>@</code>, the surname, or the birth year.
+      </p>
+
+      <table class="severity-table">
+        <thead>
+          <tr><th>Detector</th><th>PII protected (not leaked)</th><th>False alarms on no-PII</th></tr>
+        </thead>
+        <tbody>
+          <tr><td style="color: var(--text);"><strong>VoiceSafeKit 0.5</strong></td><td style="color: var(--text);">94% (101/108)</td><td style="color: var(--text);">0% (0/40)</td></tr>
+          <tr><td>VoiceSafeKit 0.5, spoken mode off</td><td>88% (95/108)</td><td>0% (0/40)</td></tr>
+          <tr><td>Microsoft Presidio 2.2</td><td>73% (79/108)</td><td>42% (17/40)</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        Whisper <code>base.en</code> wrote 92 of the 108 PII utterances fully in digits and symbols. So on this engine, the gap between VoiceSafeKit and Presidio comes as much from false alarms and voice-specific rules (PINs, one-time codes, spoken emails) as from spoken numbers. Engines and settings that write more of the speech as words will look more like the synthetic set.
+      </p>
+
+      <div class="callout">
+        <span class="callout-icon">Read these numbers honestly</span>
+        <p>
+          The same author wrote the synthetic set and the detector, so 100% there mostly shows that the templates are covered. Treat it as a regression suite. The ASR set is the fairer test: these are first-run numbers and nothing was tuned on it. Presidio is a general-purpose tool run with its defaults, not configured for speech; its false alarms are mostly <code>DATE_TIME</code> and <code>PERSON</code> hits on ordinary requests.
+        </p>
+      </div>
+
+      <h3 style="font-size: 18px; font-weight: 420; margin: 32px 0 16px; color: var(--text);">How real STT broke it: the 7 misses</h3>
+      <p>
+        The 7 ASR leaks are the most useful result in the benchmark, because they show failure modes no synthetic template would have predicted. They fall into four patterns, and fixing them is the next piece of work (<a href="https://github.com/MohamadKanso/VoiceSafeKit/issues/6" style="color:var(--green)">issue #6</a>):
+      </p>
+
+      <div class="rule-grid">
+        <div class="rule-card">
+          <p class="rule-card-kind high">Miss</p>
+          <h4>Comma-split groups</h4>
+          <p>Whisper punctuates digit groups like a list: <code>3790, 4339, 7110, 7181</code>. No single group is long enough to be a card.</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind high">Miss</p>
+          <h4>Keyword glued to digits</h4>
+          <p><code>SSN609507896</code>: no word boundary between the keyword and the number, so the SSN rule never starts.</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind high">Miss</p>
+          <h4>Digits as decimals</h4>
+          <p><code>073, 49.95, 3022</code>: part of the number becomes a price.</p>
+        </div>
+        <div class="rule-card">
+          <p class="rule-card-kind high">Miss</p>
+          <h4>Misheard keyword</h4>
+          <p><code>my fin is 96-28</code>: "PIN" heard as "fin", so the keyword-triggered rule has nothing to anchor on.</p>
+        </div>
+      </div>
+
+      <p>Everything is reproducible from the repository:</p>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span>Shell - reproduce the benchmark</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre class="code"><span class="n">python benchmarks/run.py --presidio</span>          <span class="c"># synthetic SpokenPII</span>
+<span class="n">python benchmarks/asr.py score --presidio</span>    <span class="c"># SpokenPII-ASR</span></pre>
+      </div>
+
+      <p>
+        The most valuable contribution anyone can make is a transcript from their own STT engine (Deepgram, Vosk, Parakeet, Moonshine or a cloud API) that VoiceSafeKit missed, with fake data only. The repository has an issue template for exactly that.
+      </p>
+    </div>
+
+    <!-- Closing - renumbered -->
+    <div class="section" id="s17">
+      <p class="section-num">17 - Closing</p>
       <h2 class="section-title">What this project is really about</h2>
       <p>
         Voice assistants are getting smarter quickly. The gap between what someone says and what an AI model is allowed to act on needs careful thought. Most of the safety work in this space focuses on model outputs (preventing harmful responses) rather than model inputs (preventing harmful data going in).
       </p>
       <p>
-        VoiceSafeKit is an argument that input filtering matters too and that it can be done locally, in a browser, with no infrastructure and with a good user experience. The code is open-source. The approach is intentionally simple so that it can be understood, copied and improved.
+        VoiceSafeKit is an argument that input filtering matters too, that for voice it has to read speech the way speech-to-text writes it, and that it can be done locally, in well under a millisecond, with no infrastructure and no dependencies. The code is open-source. The approach is intentionally simple so that it can be understood, copied and improved, and the benchmark is there so that "improved" can be measured.
       </p>
 
       <div class="callout" style="margin-top: 28px;">
         <span class="callout-icon">Try it</span>
-        <p>The live application is at <a href="https://mohamadkanso.github.io/VoiceSafeKit/" target="_blank">mohamadkanso.github.io/VoiceSafeKit</a> and the full source is on <a href="https://github.com/MohamadKanso/VoiceSafeKit" target="_blank">GitHub</a>.</p>
+        <p>The live application is at <a href="https://mohamadkanso.github.io/VoiceSafeKit/" target="_blank">mohamadkanso.github.io/VoiceSafeKit</a>: say a card number out loud and watch it disappear. The full source, the benchmark and the Pipecat and LiveKit examples are on <a href="https://github.com/MohamadKanso/VoiceSafeKit" target="_blank">GitHub</a>, and the library installs with <code style="word-break: break-all;">pip install git+https://github.com/MohamadKanso/VoiceSafeKit</code>.</p>
       </div>
     </div>
 
     <footer class="paper-footer">
-      <span>VoiceSafeKit, Mohamad Kanso, updated June 2026</span>
+      <span>VoiceSafeKit, Mohamad Kanso, updated November 2026</span>
       <div style="display:flex; gap: 20px;">
         <a href="https://github.com/MohamadKanso/VoiceSafeKit">GitHub</a>
         <a href="progress.html">Progress</a>
@@ -1213,7 +1835,12 @@
     <a href="#s9">09 - Confidence Scoring</a>
     <a href="#s10">10 - Multi-Turn Analysis</a>
     <a href="#s11">11 - New Detectors (2026)</a>
-    <a href="#s12">12 - Closing</a>
+    <a href="#s12">12 - Spoken Forms</a>
+    <a href="#s13">13 - False Positives</a>
+    <a href="#s14">14 - Placeholders</a>
+    <a href="#s15">15 - Integrations</a>
+    <a href="#s16">16 - SpokenPII Benchmark</a>
+    <a href="#s17">17 - Closing</a>
   </aside>
 
 </div><!-- end page-outer -->

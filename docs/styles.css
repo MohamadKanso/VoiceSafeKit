@@ -724,7 +724,7 @@ footer a { color: var(--green-2); text-decoration: none; }
 .progress-hero h1 { max-width: 840px; margin: 0; font-size: clamp(38px, 6vw, 70px); font-weight: 290; line-height: 1; }
 .progress-hero p:not(.eyebrow) { max-width: 700px; margin-top: 24px; color: var(--muted); font-size: 17px; line-height: 1.75; }
 
-.progress-summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 28px 0 72px; }
+.progress-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 28px 0 72px; }
 .progress-summary-grid article, .progress-item, .progress-test-card { border: 1px solid var(--line); background: var(--surface); }
 .progress-summary-grid article { padding: 24px; }
 .progress-summary-grid strong { display: block; margin: 10px 0; font-size: 24px; font-weight: 360; }
@@ -756,6 +756,44 @@ footer a { color: var(--green-2); text-decoration: none; }
 .progress-test-card { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 18px; padding: 24px; }
 .progress-output { color: var(--text) !important; font-family: "SFMono-Regular", Consolas, monospace; }
 .progress-test-card ul { margin: 0; padding-left: 18px; }
+.progress-summary-grid + .progress-note { margin-top: -48px; }
+.progress-note { max-width: 860px; margin: 0; color: var(--dim); font-size: 13px; line-height: 1.7; }
+.progress-note code { color: var(--green-2); }
+.progress-note a { color: var(--green-2); }
+.progress-summary-grid article p a { color: var(--green-2); }
+
+
+/* v0.5 homepage sections: why, benchmark, integrations */
+
+.section-lede { max-width: 760px; margin: 20px 0 0; color: var(--muted); font-size: 16px; line-height: 1.7; }
+.section-note { max-width: 860px; margin: 22px 0 0; color: var(--dim); font-size: 13px; line-height: 1.7; }
+.section-note code, .steps p code { color: var(--green-2); }
+.section-note a { color: var(--green-2); margin-left: 6px; }
+
+.compare-table { border: 1px solid var(--line); background: var(--surface); }
+.compare-row { display: grid; grid-template-columns: 1.6fr 0.8fr 1fr; gap: 20px; padding: 16px 22px; border-top: 1px solid var(--line-soft); align-items: center; }
+.compare-row:first-child { border-top: 0; }
+.compare-head span { color: var(--green-2); font-family: "SFMono-Regular", Consolas, monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+.compare-row code { color: var(--text); font-family: "SFMono-Regular", Consolas, monospace; font-size: 13px; line-height: 1.55; overflow-wrap: anywhere; }
+.compare-miss { color: var(--red); font-size: 13px; }
+.compare-hit { color: var(--green); font-family: "SFMono-Regular", Consolas, monospace; font-size: 13px; overflow-wrap: anywhere; }
+
+.bench-grid h3 { margin: 40px 0 12px; font-family: "SFMono-Regular", Consolas, monospace; font-size: 44px; font-weight: 400; color: var(--green); }
+.bench-grid h3 small { color: var(--dim); font-size: 16px; font-weight: 400; }
+
+.code-panel { margin: 0 0 20px; padding: 22px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font-family: "SFMono-Regular", Consolas, monospace; font-size: 13px; line-height: 1.7; white-space: pre-wrap; overflow-x: auto; }
+.code-panel.small { margin: 18px 0 0; padding: 16px; font-size: 12px; white-space: pre; border-color: var(--line-soft); background: var(--surface-2); }
+.code-dim { color: var(--dim); }
+.code-hit { color: var(--green); }
+.code-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.code-grid article { padding: 24px; min-width: 0; }
+.code-grid article:last-child { grid-column: 1 / -1; }
+
+@media (max-width: 900px) {
+  .compare-row { grid-template-columns: 1fr; gap: 8px; }
+  .compare-head { display: none; }
+  .bench-grid h3 { margin-top: 24px; }
+}
 
 /* responsive */
 
@@ -776,7 +814,7 @@ footer a { color: var(--green-2); text-decoration: none; }
 
 @media (max-width: 620px) {
   .topbar { flex-direction: column; align-items: flex-start; gap: 16px; }
-  nav { gap: 18px; }
+  nav { gap: 10px 18px; flex-wrap: wrap; }
   .hero-copy h1 { font-size: 34px; }
   .upload-row { flex-wrap: wrap; }
   .score-row, .recorder-card, .finding-stats { grid-template-columns: 1fr; }

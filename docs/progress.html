@@ -20,8 +20,9 @@
       <span>VoiceSafeKit</span>
     </a>
     <nav aria-label="Primary navigation">
-      <a href="index.html#workflow">Workflow</a>
+      <a href="index.html#why">Why</a>
       <a href="index.html#demo">Try Demo</a>
+      <a href="index.html#benchmark">Benchmark</a>
       <a href="paper.html">Paper</a>
       <a href="progress.html" aria-current="page">Progress</a>
       <a href="https://github.com/MohamadKanso/VoiceSafeKit">GitHub</a>
@@ -42,18 +43,18 @@
     <section class="progress-summary-grid" aria-label="Current progress summary">
       <article>
         <span class="small-label">Current phase</span>
-        <strong>Phase 0.4</strong>
-        <p>Saved export protection with encrypted browser exports and CLI output files.</p>
+        <strong>Phase 0.5</strong>
+        <p>Voice-native detection: PII that speech-to-text writes as words is now caught, redacted and, when the agent needs it, restored.</p>
       </article>
       <article>
         <span class="small-label">Latest additions</span>
-        <strong>AES-GCM exports</strong>
-        <p>Saved analysis files are encrypted on disk. TLS/HTTPS still handles transport.</p>
+        <strong>Spoken PII, 11% to 100%</strong>
+        <p>On the SpokenPII benchmark, spoken-form normalisation lifts protection of spoken PII from 11% to 100%, with no false alarms.</p>
       </article>
       <article>
-        <span class="small-label">Shipped 15 June 2026</span>
-        <strong>v0.4.0</strong>
-        <p>Encrypted JSON export, encrypted CLI <code>--out</code> and clearer security notes.</p>
+        <span class="small-label">Shipped 7 November 2026</span>
+        <strong>v0.5.0</strong>
+        <p>Reversible placeholders, Pipecat and LiveKit drop-ins, a public benchmark against Presidio and a zero-dependency core.</p>
       </article>
     </section>
 
@@ -216,7 +217,7 @@
       </div>
 
       <div class="progress-timeline">
-        <article class="progress-item current">
+        <article class="progress-item resolved">
           <div class="progress-marker">09</div>
           <div>
             <span class="status-chip">Shipped 3 Jun 2026</span>
@@ -237,7 +238,7 @@
           </div>
         </article>
 
-        <article class="progress-item current">
+        <article class="progress-item resolved">
           <div class="progress-marker">10</div>
           <div>
             <span class="status-chip">Shipped 3 Jun 2026</span>
@@ -252,7 +253,7 @@
           </div>
         </article>
 
-        <article class="progress-item current">
+        <article class="progress-item resolved">
           <div class="progress-marker">11</div>
           <div>
             <span class="status-chip">Shipped 3 Jun 2026</span>
@@ -274,7 +275,7 @@
           </div>
         </article>
 
-        <article class="progress-item current">
+        <article class="progress-item resolved">
           <div class="progress-marker">12</div>
           <div>
             <span class="status-chip">Shipped 3 Jun 2026</span>
@@ -296,7 +297,7 @@
           </div>
         </article>
 
-        <article class="progress-item current">
+        <article class="progress-item resolved">
           <div class="progress-marker">13</div>
           <div>
             <span class="status-chip">Shipped 3 Jun 2026</span>
@@ -317,7 +318,7 @@
           </div>
         </article>
 
-        <article class="progress-item current">
+        <article class="progress-item resolved">
           <div class="progress-marker">14</div>
           <div>
             <span class="status-chip">Shipped 3 Jun 2026</span>
@@ -338,7 +339,7 @@
           </div>
         </article>
 
-        <article class="progress-item current">
+        <article class="progress-item resolved">
           <div class="progress-marker">15</div>
           <div>
             <span class="status-chip">Shipped 3 Jun 2026</span>
@@ -367,7 +368,7 @@
       </div>
 
       <div class="progress-timeline">
-        <article class="progress-item current">
+        <article class="progress-item resolved">
           <div class="progress-marker">16</div>
           <div>
             <span class="status-chip">Shipped 15 Jun 2026</span>
@@ -392,7 +393,7 @@
           </div>
         </article>
 
-        <article class="progress-item current">
+        <article class="progress-item resolved">
           <div class="progress-marker">17</div>
           <div>
             <span class="status-chip">Implementation note</span>
@@ -418,6 +419,218 @@
       </div>
     </section>
 
+    <!-- Phase 0.5 entries, 7 November 2026 -->
+    <section class="progress-section">
+      <div class="section-heading">
+        <p class="eyebrow">Phase 0.5, 7 November 2026</p>
+        <h2>Voice-native detection</h2>
+      </div>
+
+      <div class="progress-timeline">
+        <article class="progress-item current">
+          <div class="progress-marker">18</div>
+          <div>
+            <span class="status-chip">Shipped 7 Nov 2026</span>
+            <h3>Spoken PII went straight through. Every spoken card number came back SAFE.</h3>
+            <p>
+              Speech-to-text often writes what people say, not what they mean:
+              <code>four two four two four two four two ...</code>,
+              <code>alex dot rivera at gmail dot com</code>,
+              <code>oh seven seven double oh nine ...</code>. Every rule in
+              VoiceSafeKit was written for digits and symbols, so a spoken card
+              number, SSN, phone number, email, PIN or one-time code was marked
+              SAFE. The same is true of most regex and NER PII tools.
+            </p>
+            <p>
+              Fixed with a <strong>spoken-form normaliser</strong> that runs before
+              detection. It rewrites digit words, "oh", "double" and "triple",
+              "plus four four", tens and hundreds, spoken emails and spoken dates
+              into written form, and keeps a character map back to the original.
+              Detection runs on the written form; redaction still applies to the
+              words the person said. Findings caught this way are marked
+              <em>caught in spoken form</em> in the app.
+            </p>
+          </div>
+        </article>
+
+        <article class="progress-item current">
+          <div class="progress-marker">19</div>
+          <div>
+            <span class="status-chip">Shipped 7 Nov 2026</span>
+            <h3>Ordinary requests were flagged, and one real password was missed.</h3>
+            <p>
+              Testing with everyday assistant requests showed false alarms:
+              "build an emergency fund" was <strong>BLOCKED</strong> as an emergency,
+              "call Sue" was a legal request, "secret ingredient" and "reset my
+              password" were treated as secrets, and dates such as 2026-11-07 or
+              passport numbers were read as phone numbers. Meanwhile
+              "my password for netflix is hunter22" was missed completely.
+            </p>
+            <p>
+              Fixed by tightening each rule around how people actually speak:
+              emergency excludes phrases like "emergency fund", "sue" only counts
+              as a verb, secrets need a value that looks like a credential, phone
+              matches that look like dates are dropped, and password phrases allow
+              "for my bank" before the value.
+            </p>
+          </div>
+        </article>
+
+        <article class="progress-item current">
+          <div class="progress-marker">20</div>
+          <div>
+            <span class="status-chip">Shipped 7 Nov 2026</span>
+            <h3>Some card numbers were only partly redacted.</h3>
+            <p>
+              The payment card pattern used a lazy quantifier, so when a number
+              was grouped unusually it could stop after 13 digits and leave the
+              last few digits in the "safe" transcript.
+            </p>
+            <p>
+              Fixed by matching the full 13-19 digit number greedily. The
+              SpokenPII benchmark now checks that at least 90% of every sensitive
+              span is masked, so a partial redaction counts as a failure.
+            </p>
+          </div>
+        </article>
+
+        <article class="progress-item current">
+          <div class="progress-marker">21</div>
+          <div>
+            <span class="status-chip">Shipped 7 Nov 2026</span>
+            <h3>Common voice-channel secrets had no detector.</h3>
+            <p>
+              PINs, one-time verification codes (the classic step in an
+              account-takeover scam), passport numbers, UK National Insurance
+              numbers, SSNs said without dashes, API keys, self-introduced names
+              and UK postcodes were not detected.
+            </p>
+            <p>
+              Added all eight. The new rules redact only the value, so the
+              assistant still sees "my pin is [PIN removed]" and understands the
+              request.
+            </p>
+          </div>
+        </article>
+
+        <article class="progress-item current">
+          <div class="progress-marker">22</div>
+          <div>
+            <span class="status-chip">Shipped 7 Nov 2026</span>
+            <h3>Redaction broke agents that need to say the value back.</h3>
+            <p>
+              Replacing an email with <code>[email removed]</code> keeps it away
+              from the model, but then the agent cannot say "I've sent it to your
+              email address" with the real address.
+            </p>
+            <p>
+              Fixed with <strong>reversible placeholders</strong>.
+              <code>PrivacySession</code> swaps values for <code>[EMAIL_1]</code>,
+              <code>[CARD_1]</code> and so on, keeps the map in memory only, and
+              restores them in the model's reply, including streamed tokens that
+              split a placeholder in two. The same value gets the same placeholder
+              for the whole conversation, whether it was spoken or written.
+              Passwords, PINs, CVVs, one-time codes and API keys are never stored,
+              so the voice can never read them back.
+            </p>
+          </div>
+        </article>
+
+        <article class="progress-item current">
+          <div class="progress-marker">23</div>
+          <div>
+            <span class="status-chip">Shipped 7 Nov 2026</span>
+            <h3>There was no drop-in path for the voice frameworks people use.</h3>
+            <p>
+              Only an OpenVoiceOS-style helper existed. The most-used open-source
+              voice agent frameworks, Pipecat and LiveKit Agents, had no input-side
+              privacy filter at all.
+            </p>
+            <p>
+              Added Pipecat processors (filter before the user aggregator, restore
+              before TTS, guard before the assistant aggregator, with
+              <code>on_decision</code> and <code>on_block</code> events) and a
+              LiveKit <code>VoiceSafeAgent</code> that protects each user turn and
+              restores values in <code>tts_node</code>. Both are tested against the
+              real frameworks in CI.
+            </p>
+          </div>
+        </article>
+
+        <article class="progress-item current">
+          <div class="progress-marker">24</div>
+          <div>
+            <span class="status-chip">Shipped 7 Nov 2026</span>
+            <h3>There was no evidence the tool worked on real speech.</h3>
+            <p>
+              Claims about catching spoken PII meant little without a
+              measurement, and no public benchmark measures PII the way
+              speech-to-text writes it.
+            </p>
+            <p>
+              Added <strong>SpokenPII</strong>: 540 labelled sentences in written and
+              spoken form plus 40 tricky no-PII requests, and
+              <strong>SpokenPII-ASR</strong>, where the scripts are read aloud by a
+              TTS voice and transcribed by Whisper. Results are below, next to
+              Microsoft Presidio.
+            </p>
+          </div>
+        </article>
+
+        <article class="progress-item current">
+          <div class="progress-marker">25</div>
+          <div>
+            <span class="status-chip">Shipped 7 Nov 2026</span>
+            <h3>The browser app and the Python library could drift apart.</h3>
+            <p>
+              The live app carries its own JavaScript copy of the rules, so every
+              Python change risked the demo showing different results.
+            </p>
+            <p>
+              The browser engine was ported line for line, then checked against
+              Python on 7,650 inputs (every test case, every sample and 8,000
+              random spoken strings). Decision, score, every finding span, spoken
+              flags and the safe transcript matched on all of them. The core
+              Python package also now has zero runtime dependencies; encrypted
+              exports moved to an optional extra.
+            </p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="progress-section">
+      <div class="section-heading">
+        <p class="eyebrow">SpokenPII benchmark</p>
+        <h2>How much better it is, measured</h2>
+      </div>
+
+      <div class="progress-summary-grid" aria-label="Benchmark headline numbers">
+        <article>
+          <span class="small-label">Spoken PII protected</span>
+          <strong>100% vs 21%</strong>
+          <p>VoiceSafeKit 0.5 against Microsoft Presidio on 270 spoken PII sentences (synthetic set). With spoken mode off, VoiceSafeKit gets 11%.</p>
+        </article>
+        <article>
+          <span class="small-label">Real Whisper transcripts</span>
+          <strong>94% vs 73%</strong>
+          <p>108 utterances read by a TTS voice and transcribed by Whisper <code>base.en</code>. Nothing was tuned on this set.</p>
+        </article>
+        <article>
+          <span class="small-label">False alarms on ordinary requests</span>
+          <strong>0% vs 42%</strong>
+          <p>Requests like "set a timer for twenty five minutes" and "call Sue". Speed: 0.06 ms per sentence against about 3 ms.</p>
+        </article>
+      </div>
+      <p class="progress-note">
+        The synthetic set was written by the same author as the detector, so it works as a
+        regression suite rather than proof. Presidio was run with its defaults and is not
+        built for speech. The seven real-Whisper misses (digit groups split by commas,
+        <code>SSN609507896</code>, digits written as decimals, "fin" heard for "PIN") are the
+        next fixes. Everything is reproducible from <code>benchmarks/</code> in the repo.
+      </p>
+    </section>
+
     <section class="progress-section">
       <div class="section-heading">
         <p class="eyebrow">Latest transcript test</p>
@@ -426,28 +639,28 @@
 
       <div class="progress-test-card">
         <div>
-          <span class="small-label">Test transcript (identity_theft.txt)</span>
-          <p class="progress-output" style="font-size:12px;">"My Social Security Number is 471-55-8843. My bank account IBAN is GB29NWBK60161331926819. The CVV on my Visa is 847. I was born on March 15, 1988."</p>
+          <span class="small-label">Test transcript (the "Spoken digits" sample)</span>
+          <p class="progress-output" style="font-size:12px;">"Hi, my name is Alex Rivera. My card number is four two four two four two four two four two four two four two four two, my email is alex dot rivera at gmail dot com and the code they just texted me is four eight two nine one three."</p>
           <p>&nbsp;</p>
           <span class="small-label">Expected decision</span>
-          <p class="progress-output">BLOCK, score 100/100</p>
+          <p class="progress-output">REVIEW, score 100/100 (spoken mode off: REDACT, 18/100)</p>
         </div>
         <div>
           <span class="small-label">Expected finding cards</span>
           <ul>
-            <li>Social Security Number / critical / 95%</li>
-            <li>IBAN / Bank account / critical / 88%</li>
-            <li>Card security code / critical / 93%</li>
-            <li>Date of birth / medium / 80%</li>
+            <li>Payment card-like number / high / 99% / caught in spoken form</li>
+            <li>One-time or verification code / high / 90% / caught in spoken form</li>
+            <li>Email address / medium / 98% / caught in spoken form</li>
+            <li>Person name / medium / 80%</li>
           </ul>
         </div>
         <div>
           <span class="small-label">Expected behaviour</span>
           <p>
-            The SSN, IBAN and CVV are all replaced. The date of birth is redacted.
-            The Inspect tab shows four colored highlight marks on the original text.
-            The Export JSON button produces an encrypted file so the redaction_map
-            is not stored as plaintext on disk.
+            The card number, email, one-time code and name are replaced in the safe
+            transcript, even though none of them were written as digits or symbols.
+            Turning <strong>Spoken mode</strong> off shows what a text-only filter
+            would have let through: only the name is caught.
           </p>
         </div>
       </div>
@@ -462,20 +675,30 @@
       <div class="progress-summary-grid">
         <article>
           <span class="small-label">Next up</span>
-          <strong>Wyoming middleware</strong>
-          <p>A Wyoming protocol microservice example so any Home Assistant voice satellite can use VoiceSafeKit as a filter stage.</p>
+          <strong>Whisper number formatting</strong>
+          <p>Fix the patterns the real-Whisper benchmark exposed: comma-split digit groups, keywords glued to numbers and digits written as decimals. <a href="https://github.com/MohamadKanso/VoiceSafeKit/issues/6">Issue #6</a></p>
         </article>
         <article>
-          <span class="small-label">Research</span>
-          <strong>Streaming transcription</strong>
-          <p>Word-by-word detection using a sliding-window Whisper approach so risk scores update in real time while the user speaks.</p>
+          <span class="small-label">Next up</span>
+          <strong>Audio redaction</strong>
+          <p>Map findings to STT word timestamps and bleep or mute those spans in recordings, so the audio is as clean as the text.</p>
+        </article>
+        <article>
+          <span class="small-label">Open</span>
+          <strong>Home Assistant and Wyoming</strong>
+          <p>A redacting conversation agent for Home Assistant and a Wyoming proxy, so voice satellites can use VoiceSafeKit as a filter stage. <a href="https://github.com/MohamadKanso/VoiceSafeKit/issues/2">Issue #2</a></p>
         </article>
         <article>
           <span class="small-label">Future</span>
-          <strong>Multilingual detection</strong>
-          <p>Extend PII patterns and intent rules to support French, German, Spanish and Arabic transcripts.</p>
+          <strong>Multilingual spoken numbers</strong>
+          <p>Spoken-number rules and intent rules for French, German, Spanish and Arabic.</p>
         </article>
       </div>
+      <p class="progress-note">
+        Found a transcript VoiceSafeKit missed? Use the
+        <a href="https://github.com/MohamadKanso/VoiceSafeKit/issues/new?template=missed_spoken_pii.yml">Missed spoken PII</a>
+        issue form (fake data only). Each report becomes a test and a benchmark row.
+      </p>
     </section>
   </main>
 

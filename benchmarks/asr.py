@@ -9,7 +9,7 @@
    two four two" left in the text counts as a leak).
 
     python benchmarks/asr.py transcribe   # needs macOS + faster-whisper (slow, cached)
-    python benchmarks/asr.py score [--presidio]
+    python benchmarks/asr.py score [--presidio] [--data FILE.jsonl]
 """
 
 from __future__ import annotations
@@ -104,10 +104,10 @@ def transcribe(model_name: str, voice: str) -> None:
     ASR.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in out))
 
 
-def score(use_presidio: bool) -> None:
+def score(use_presidio: bool, data: Path = ASR) -> None:
     from run import presidio_detector, vsk_detector
 
-    rows = [json.loads(line) for line in ASR.read_text().splitlines() if line]
+    rows = [json.loads(line) for line in Path(data).read_text().splitlines() if line]
     detectors = [("VoiceSafeKit 0.5", vsk_detector(True)),
                  ("VoiceSafeKit 0.5 (spoken mode off)", vsk_detector(False))]
     if use_presidio:
@@ -148,11 +148,12 @@ def main() -> None:
     t.add_argument("--voice", default="Samantha")
     s = sub.add_parser("score")
     s.add_argument("--presidio", action="store_true")
+    s.add_argument("--data", default=str(ASR), help="ASR transcripts JSONL to score.")
     args = parser.parse_args()
     if args.cmd == "transcribe":
         transcribe(args.model, args.voice)
     else:
-        score(args.presidio)
+        score(args.presidio, Path(args.data))
 
 
 if __name__ == "__main__":

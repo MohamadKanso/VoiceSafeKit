@@ -13,14 +13,17 @@
 
 - **Whisper punctuation in numbers** (found by SpokenPII-ASR): join comma-separated digit
   groups after a sensitive keyword, keywords glued to digits (`SSN609507896`), digits that
-  Whisper writes as decimals, and common mishearings ("fin" for PIN).
+  Whisper writes as decimals, and common mishearings ("fin" for PIN). [#6](https://github.com/MohamadKanso/VoiceSafeKit/issues/6)
+- **Pipecat multi-frame turns:** catch a number split across two final transcription frames.
+  [#7](https://github.com/MohamadKanso/VoiceSafeKit/issues/7)
+- **More STT engines in SpokenPII-ASR** (help wanted). [#8](https://github.com/MohamadKanso/VoiceSafeKit/issues/8)
 
 - **Audio redaction:** map findings to STT word timestamps and bleep or mute those spans
   in recordings (`bleep_spans()`), plus a PCI "pause recording" signal.
 - **Streaming input guard:** hold back interim transcripts that end in an unfinished number
   so a card split across STT chunks is still caught.
 - **Home Assistant:** a redacting conversation agent (HACS) that wraps any cloud LLM agent,
-  and a Wyoming proxy for `Transcript` events.
+  and a Wyoming proxy for `Transcript` events ([#2](https://github.com/MohamadKanso/VoiceSafeKit/issues/2)).
 - **Gateways:** a LiteLLM custom guardrail and an Open WebUI filter function.
 - **LiveKit `Redactor` backend** once livekit/agents#6342 lands.
 - **Spelled-out letters and NATO alphabet** ("a for alpha"), and spoken postcodes.
